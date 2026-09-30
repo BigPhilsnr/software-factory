@@ -62,7 +62,7 @@ mvn -q -f orchestrator/pom.xml exec:java -Dexec.args='verify-audit <run-id>'
 
 The ambiguous scenario pauses for `clarify <run-id> <answer>` before planning. `revise <run-id> <task-id>` invalidates affected descendants. `reject <run-id>` ends a pending approval as `NOT_APPROVED`. `review` gives the immutable proposed patch or candidate diff path, scope, baseline commit, and exact hash to approve. The CLI is a local prototype, not an authenticated multi-user approval service.
 
-To attempt a live ADK run, set `ANTHROPIC_API_KEY` and use `live` instead of `fixture`; `CLAUDE_MODEL` and `FACTORY_MAX_MODEL_CALLS` are optional. Live mode makes paid provider calls. No live run was executed in the local validation because no provider key was available. The fixture suite is the reproducible evaluation path.
+To attempt a live ADK run, copy `.env.example` to the ignored `.env` file, replace `ANTHROPIC_API_KEY` with your key, and start with `python3 scripts/factory_cli.py start scenarios/greenfield.json live`. Use the same launcher for `advance`, `review`, and `approve` so the key remains available to later model calls. You can instead export `ANTHROPIC_API_KEY` in the launching shell. `CLAUDE_MODEL` and `FACTORY_MAX_MODEL_CALLS` are optional. Live mode makes paid provider calls. No live run was executed in the local validation because no provider key was available. The fixture suite is the reproducible evaluation path.
 
 ## Product contract
 
