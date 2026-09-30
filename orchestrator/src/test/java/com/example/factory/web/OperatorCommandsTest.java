@@ -7,6 +7,15 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class OperatorCommandsTest {
     @TempDir Path root;
+    @Test void questionsAndImplementationDiscussionNeverCreateRuns() throws Exception {
+        try (var service = new FactoryService(root, null)) {
+            var chat = new ChatConversation(root, (role, prompt) -> "Repository answer");
+            var commands = new OperatorCommands(service, chat);
+            assertEquals("Repository answer", commands.handle("session", "Explain the shortener architecture"));
+            assertEquals("Repository answer", commands.handle("session", "Add expiration support"));
+            assertFalse(java.nio.file.Files.exists(root.resolve(".runs")));
+        }
+    }
     @Test void ambiguousApprovalDoesNotDispatchAnActionOrCreateAFeature() throws Exception {
         try (var service = new FactoryService(root, null)) {
             var commands = new OperatorCommands(service);

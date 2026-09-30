@@ -7,8 +7,10 @@ import java.util.concurrent.ConcurrentHashMap;
 /** Only literal user commands can approve a run; model output never enters this router. */
 final class OperatorCommands {
     private final FactoryService factory;
+    private final ChatConversation chat;
     private final Map<String, String> selected = new ConcurrentHashMap<>();
-    OperatorCommands(FactoryService factory) { this.factory = factory; }
+    OperatorCommands(FactoryService factory) { this(factory, factory.conversation()); }
+    OperatorCommands(FactoryService factory, ChatConversation chat) { this.factory = factory; this.chat = chat; }
 
     String handle(String session, String input) throws Exception {
         String text = input.strip();
@@ -29,16 +31,21 @@ final class OperatorCommands {
             factory.advance(state.id);
             return describe(state) + "\n\nFixture demonstration started. Type `/status` to refresh.";
         }
-        if (!text.startsWith("/") || text.startsWith("/feature ")) {
+        if (!text.startsWith("/")) {
             if (text.matches("(?i)(yes|no|approve|approved|reject|continue)")) {
                 return "Use `/approve EXACT_HASH`, `/reject`, or `/advance` for run actions. Type `/help` for commands.";
             }
-            RunState state = factory.feature(text.startsWith("/feature ") ? text.substring(9) : text);
+            String id = selected.get(session);
+            String context = id == null ? "No run selected." : describe(factory.state(id));
+            return chat.answer(session, text, context);
+        }
+        if (text.startsWith("/feature ")) {
+            RunState state = factory.feature(text.substring(9));
             selected.put(session, state.id);
             return describe(state) + "\n\nFeature request saved. Type `/advance` to begin paid live generation, or [open the run](/factory/?run=" + state.id + ") to review its workflow.";
         }
         String id = selected.get(session);
-        if (id == null) throw new IllegalArgumentException("Select a run with /select RUN_ID, enter a feature request, or try /demo bugfix");
+        if (id == null) throw new IllegalArgumentException("Select a run with /select RUN_ID, use /feature REQUIREMENT, or try /demo bugfix");
         if (text.equals("/status")) return describe(factory.state(id));
         if (text.equals("/advance")) { factory.advance(id); return "Run started. Use `/status` to refresh or follow live progress on the [operator page](/factory/?run=" + id + ")."; }
         if (text.equals("/review")) {
@@ -68,7 +75,7 @@ final class OperatorCommands {
     }
 
     private String help() {
-        return "## Software factory\n\nDescribe a new feature in plain language to save a live feature request, then use `/advance` to start it.\n\n"
+        return "## Software factory\n\nAsk questions about the project or discuss a feature in plain language. Chat answers use the repository and recent conversation; they do not create runs. Use `/feature REQUIREMENT` to save a feature request, then `/advance` to start it. Chat answers use paid model calls, separately from run budgets.\n\n"
             + "- `/demo bugfix` — start a fixture demonstration without model charges\n"
             + "- `/runs` and `/select RUN_ID` — find an existing run\n"
             + "- `/status` — refresh selected run\n"

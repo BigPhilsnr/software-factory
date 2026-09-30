@@ -5,11 +5,11 @@ Start `control-db`, then run `python3 scripts/factory_web.py` from the repositor
 - Operator page: http://localhost:8000/factory/
 - ADK chat: http://localhost:8000/dev-ui/?app=software_factory
 
-The operator page and chat share the existing PostgreSQL control plane. The ADK agent is a deterministic user-command router; it never asks a model to decide whether an approval was granted. The existing ADK/Claude runtime still generates engineering artifacts in background workers.
+The operator page and chat share the existing PostgreSQL control plane. ADK chat answers ordinary questions through a read-only model grounded in allowlisted repository documentation and shortener sources. It remembers the last six exchanges per session (in memory, up to 128 sessions). Explicit slash commands route deterministically to the control plane; model answers cannot grant approval or create runs. Chat calls incur provider charges separately from the per-run model-call budget. The existing ADK/Claude runtime still generates engineering artifacts in background workers.
 
 ## Request and review work
 
-Enter a feature in the operator form or plain-language ADK chat. This saves a run without starting paid calls. Select **Start / resume**, or send `/advance` in chat, to begin generation. New requests target the pinned `url-v3` shortener baseline and use a fixed Java/Spring workflow: requirements, plan, production patch, independent executable test patch, sandbox validation, documentation and release review. This UI accepts feature requirements; it does not grant permission to change control-plane policy or arbitrary repository paths.
+Enter a feature in the operator form or send `/feature YOUR_REQUIREMENT` in ADK chat. Ordinary chat messages discuss the project without creating runs. This saves a run without starting paid calls. Select **Start / resume**, or send `/advance` in chat, to begin generation. New requests target the pinned `url-v3` shortener baseline and use a fixed Java/Spring workflow: requirements, plan, production patch, independent executable test patch, sandbox validation, documentation and release review. This UI accepts feature requirements; it does not grant permission to change control-plane policy or arbitrary repository paths.
 
 The operator page polls progress and audit activity every two seconds. Select artifacts to read plans and test reports. When the run needs clarification, its question and answer form appear. A proposed patch is shown with its exact approval hash; check the review acknowledgement and select **Approve & resume**, **Request changes & resume**, or **Reject run**. Approval applies only that hash. Changed/stale hashes are rejected. Revisions record feedback and invalidate the affected descendants while preserving existing call budgets and retry counts.
 
@@ -19,7 +19,8 @@ Final release approval marks the isolated run complete. It does not merge, push,
 
 | Input | Result |
 | --- | --- |
-| A plain-language feature request | Save a new live run and select it |
+| A plain-language question or feature discussion | Answer using repository context and recent conversation; no workflow action |
+| `/feature requirement` | Save a new live run and select it |
 | `/help` | Show commands and operator-page link |
 | `/demo bugfix` | Start a fixture demonstration |
 | `/runs` | List recent persistent runs |

@@ -21,7 +21,7 @@ final class FactoryAgent extends BaseAgent {
             String answer;
             try { answer = commands.handle(context.session().id(), input); }
             catch (IllegalArgumentException | IllegalStateException failure) { answer = "Action not performed: " + failure.getMessage(); }
-            catch (Exception failure) { answer = "The action failed. Check the operator page and control database, then retry. Error: " + failure.getClass().getSimpleName(); }
+            catch (Exception failure) { answer = "The request failed. For chat, check the configured Anthropic key/model and provider availability; for workflow commands, check the operator page. You can retry. Error: " + failure.getClass().getSimpleName(); }
             return Event.builder().author(name()).invocationId(context.invocationId())
                 .content(Content.builder().role("model").parts(Part.fromText(answer)).build()).build();
         });

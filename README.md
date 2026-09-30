@@ -44,7 +44,7 @@ docker-compose up -d control-db
 python3 scripts/factory_web.py
 ```
 
-Open **[the factory operator page](http://localhost:8000/factory/)** for feature requests, run progress, artifacts, clarification forms and approval buttons. **[ADK chat](http://localhost:8000/dev-ui/?app=software_factory)** connects to the same factory; send `/help` to see its commands. The launcher loads the ignored `.env` file and uses JDK 21. Keep the process running while using the browser.
+Open **[the factory operator page](http://localhost:8000/factory/)** for feature requests, run progress, artifacts, clarification forms and approval buttons. **[ADK chat](http://localhost:8000/dev-ui/?app=software_factory)** connects to the same factory; ask questions about the shortener directly, or send `/help` to see its commands. Chat retains recent follow-ups and uses paid model calls. Use `/feature REQUIREMENT` to explicitly create a run; ordinary conversation never creates one. The launcher loads the ignored `.env` file and uses JDK 21. Keep the process running while using the browser.
 
 New feature requests create a live workflow against `url-v3`; generation begins when you select **Start / resume**. Each implementation/test patch pauses for review, followed by sandbox validation and final release review. **Try a scenario → Fixture demo** exercises the controls without paid model calls. The dependency cache and validator image below are also required for browser-triggered validation. See [UI usage and limits](docs/WEB_UI.md).
 

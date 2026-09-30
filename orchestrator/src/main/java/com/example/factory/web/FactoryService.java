@@ -22,6 +22,11 @@ public final class FactoryService implements AutoCloseable {
         this.engine = new RunEngine(repository, this.root);
     }
 
+    ChatConversation conversation() {
+        return new ChatConversation(root, (role, prompt) -> new AdkClaudeRuntime(
+            System.getenv().getOrDefault("CLAUDE_MODEL", "claude-sonnet-4-5")).generate(role, prompt));
+    }
+
     public List<RunState> runs() throws Exception { return repository.recentRuns(); }
     public RunState state(String id) throws Exception { return repository.load(id); }
     public boolean busy(String id) { return active.contains(id); }
