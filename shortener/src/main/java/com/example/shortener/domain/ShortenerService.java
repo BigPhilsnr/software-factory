@@ -9,11 +9,13 @@ public final class ShortenerService {
     private final LinkRepository links;
     private final CodeGenerator codes;
     private final UrlPolicy urls;
+    private final LinkCache cache;
 
-    public ShortenerService(LinkRepository links, CodeGenerator codes, UrlPolicy urls) {
+    public ShortenerService(LinkRepository links, CodeGenerator codes, UrlPolicy urls, LinkCache cache) {
         this.links = links;
         this.codes = codes;
         this.urls = urls;
+        this.cache = cache;
     }
 
     public Link create(String url) {
@@ -28,14 +30,18 @@ public final class ShortenerService {
                 throw new IllegalArgumentException("Invalid alias");
             }
             try {
-                return links.create(normalized, target);
+                Link created = links.create(normalized, target);
+                cache.put(created);
+                return created;
             } catch (DuplicateKeyException conflict) {
                 throw new AliasConflictException();
             }
         }
         for (int attempt = 0; attempt < 4; attempt++) {
             try {
-                return links.create(codes.next(), target);
+                Link created = links.create(codes.next(), target);
+                cache.put(created);
+                return created;
             } catch (DuplicateKeyException collision) {
                 // A unique constraint is the final authority under concurrent creation.
             }
@@ -44,7 +50,11 @@ public final class ShortenerService {
     }
 
     public Optional<Link> find(String code) {
-        return links.findByCode(code);
+        Optional<Link> hit = cache.get(code);
+        if (hit.isPresent()) return hit;
+        Optional<Link> found = links.findByCode(code);
+        found.ifPresent(cache::put);
+        return found;
     }
 
     public long count(Link link) {
