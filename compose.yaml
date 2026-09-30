@@ -1,0 +1,18 @@
+services:
+  shortener-db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: shortener
+      POSTGRES_USER: shortener
+      POSTGRES_PASSWORD: shortener
+    ports:
+      - "5433:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U shortener -d shortener"]
+      interval: 2s
+      timeout: 2s
+      retries: 15
+    volumes:
+      - shortener-data:/var/lib/postgresql/data
+volumes:
+  shortener-data:
