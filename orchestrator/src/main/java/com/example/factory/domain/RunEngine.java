@@ -152,7 +152,7 @@ public final class RunEngine {
                 state.tasks.put(task.id(), TaskStatus.RUNNING);
                 repository.record(state, "VALIDATION_STARTED", task.id());
                 String report = task.kind() == TaskKind.VALIDATE_RED
-                    ? validator.expectRegression(Path.of(state.candidatePath), task.prompt())
+                    ? validator.expectRegression(Path.of(state.candidatePath), regressionTestClass(state, task))
                     : validator.test(Path.of(state.candidatePath));
                 finishArtifact(state, task, report);
                 if (task.kind() == TaskKind.VALIDATE) {
@@ -173,6 +173,10 @@ public final class RunEngine {
             return false;
         }
         if (task.kind() == TaskKind.PATCH) {
+            String proposalName = task.id() + "-proposal-v" + (state.attempts.getOrDefault(task.id(), 0) + 1);
+            if (!Files.isRegularFile(evidence.path(state.id, proposalName))) {
+                evidence.write(state.id, proposalName, output);
+            }
             try {
                 workspace.validateScope(output, task.writeScope());
             } catch (SecurityException prohibited) {
@@ -180,6 +184,9 @@ public final class RunEngine {
                 state.status = RunStatus.SAFE_STOPPED;
                 state.finishedAt = Instant.now();
                 repository.record(state, "POLICY_SAFE_STOP", task.id() + ":" + prohibited.getMessage());
+                return false;
+            } catch (Exception malformed) {
+                fail(state, task, malformed);
                 return false;
             }
             String patchHash = Hashes.sha256(output + state.baselineCommit + state.requirementHash + state.specHash +
@@ -306,6 +313,23 @@ public final class RunEngine {
             }
         }
         return result.toString();
+    }
+
+    private String regressionTestClass(RunState state, TaskSpec task) throws Exception {
+        if (task.dependsOn().size() != 1) throw new IllegalArgumentException("Red validation requires one test patch dependency");
+        String dependency = task.dependsOn().getFirst();
+        Integer version = state.artifactVersions.get(dependency);
+        if (version == null) throw new IllegalStateException("Regression test patch is missing");
+        String patch = Files.readString(evidence.path(state.id, dependency + "-v" + version));
+        return parseRegressionTestClass(patch);
+    }
+
+    static String parseRegressionTestClass(String patch) {
+        var matcher = java.util.regex.Pattern.compile("(?m)^\\+\\+\\+ b/shortener/src/test/java/(?:[A-Za-z0-9_]+/)*([A-Za-z][A-Za-z0-9]*Test)\\.java$").matcher(patch);
+        if (!matcher.find()) throw new IllegalArgumentException("Regression patch has no Java test class");
+        String className = matcher.group(1);
+        if (matcher.find()) throw new IllegalArgumentException("Regression patch must contain exactly one Java test class");
+        return className;
     }
 
     private void finishArtifact(RunState state, TaskSpec task, String output) throws Exception {

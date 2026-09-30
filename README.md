@@ -62,7 +62,9 @@ mvn -q -f orchestrator/pom.xml exec:java -Dexec.args='verify-audit <run-id>'
 
 The ambiguous scenario pauses for `clarify <run-id> <answer>` before planning. `revise <run-id> <task-id>` invalidates affected descendants. `reject <run-id>` ends a pending approval as `NOT_APPROVED`. `review` gives the immutable proposed patch or candidate diff path, scope, baseline commit, and exact hash to approve. The CLI is a local prototype, not an authenticated multi-user approval service.
 
-To attempt a live ADK run, copy `.env.example` to the ignored `.env` file, replace `ANTHROPIC_API_KEY` with your key, and start with `python3 scripts/factory_cli.py start scenarios/greenfield.json live`. Use the same launcher for `advance`, `review`, and `approve` so the key remains available to later model calls. You can instead export `ANTHROPIC_API_KEY` in the launching shell. `CLAUDE_MODEL` and `FACTORY_MAX_MODEL_CALLS` are optional. Live mode makes paid provider calls. No live run was executed in the local validation because no provider key was available. The fixture suite is the reproducible evaluation path.
+For a live ADK run, copy `.env.example` to the ignored `.env` file, replace `ANTHROPIC_API_KEY` with your key, and start with `python3 scripts/factory_cli.py start scenarios/bugfix.json live`. Then use `python3 scripts/factory_cli.py advance <run-id>` and `review <run-id>`. Use the same launcher for later `approve` and `advance` commands so the key remains available to model calls. You can instead export `ANTHROPIC_API_KEY` in the launching shell. `CLAUDE_MODEL` and `FACTORY_MAX_MODEL_CALLS` are optional. Live mode makes paid provider calls; the release gate requires review of the exact candidate diff and hash. The fixture suite is the reproducible evaluation path.
+
+A live Claude Sonnet 5 bug-fix run reached release review with a verified red regression and five passing candidate tests. Live greenfield generation remains less constrained: one trial chose a different stack and did not produce an acceptable patch. See [the agent-system notes](docs/AGENT_SYSTEM.md) for the run evidence and limits.
 
 ## Product contract
 
