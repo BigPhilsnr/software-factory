@@ -2,7 +2,7 @@
 .idea/
 .DS_Store
 .env
-evidence/
-.runs/
+/evidence/
+/.runs/
 *.log
 __pycache__/
