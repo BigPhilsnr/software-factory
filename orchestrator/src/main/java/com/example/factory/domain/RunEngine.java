@@ -173,12 +173,17 @@ public final class RunEngine {
             return false;
         }
         if (task.kind() == TaskKind.PATCH) {
-            String proposalName = task.id() + "-proposal-v" + (state.attempts.getOrDefault(task.id(), 0) + 1);
-            if (!Files.isRegularFile(evidence.path(state.id, proposalName))) {
+            int proposalVersion = state.artifactVersions.getOrDefault(task.id(), 0) + 1;
+            String proposalName = task.id() + "-proposal-v" + proposalVersion;
+            if (!state.patchDrafts.containsKey(task.id())) {
+                while (Files.exists(evidence.path(state.id, proposalName))) {
+                    proposalName = task.id() + "-proposal-v" + (++proposalVersion);
+                }
                 evidence.write(state.id, proposalName, output);
             }
             try {
                 workspace.validateScope(output, task.writeScope());
+                workspace.checkApply(Path.of(state.candidatePath), output, task.writeScope());
             } catch (SecurityException prohibited) {
                 state.tasks.put(task.id(), TaskStatus.FAILED);
                 state.status = RunStatus.SAFE_STOPPED;
@@ -283,9 +288,18 @@ public final class RunEngine {
         }
         AgentRuntime runtime = new AdkClaudeRuntime(System.getenv().getOrDefault("CLAUDE_MODEL", "claude-sonnet-4-5"));
         StringBuilder context = new StringBuilder("Requirement: ").append(readSpec(state).requirement()).append("\n\nTask: ").append(task.prompt());
+        if (state.reviewFeedback.containsKey(task.id())) {
+            context.append("\n\nOperator review feedback to address:\n").append(state.reviewFeedback.get(task.id()));
+        }
+        if (task.kind() == TaskKind.ARTIFACT && task.role().equals("implementer")) {
+            context.append("\n\nThis is a handoff artifact, not the patch application step. Summarize concrete file edits, APIs, invariants, and test hooks in at most 1,500 words. Do not include full source files or a unified diff; a later PATCH task generates the exact diff.");
+        } else if (task.kind() == TaskKind.ARTIFACT && task.role().equals("test_author")) {
+            context.append("\n\nThis is an independent test plan, not a source patch. Give concise black-box cases and expected results in at most 1,500 words. Do not include full test source files.");
+        }
         if (task.kind() == TaskKind.PATCH) {
             context.append("\n\nReturn only a git apply-compatible unified diff with diff --git headers. Do not include markdown or prose. Stay within these paths: ")
-                .append(task.writeScope());
+                .append(task.writeScope())
+                .append(". Make the smallest complete change that meets the requirement and existing tests.");
         }
         for (String dependency : task.dependsOn()) {
             Integer version = state.artifactVersions.get(dependency);
@@ -420,10 +434,17 @@ public final class RunEngine {
     }
 
     public RunState revise(String id, String taskId) throws Exception {
-        try (var ignored = repository.lease(id)) { return reviseLocked(id, taskId); }
+        return revise(id, taskId, null);
     }
 
-    private RunState reviseLocked(String id, String taskId) throws Exception {
+    public RunState revise(String id, String taskId, String feedback) throws Exception {
+        if (feedback != null && (feedback.isBlank() || feedback.length() > 8000)) {
+            throw new IllegalArgumentException("Review feedback must contain 1..8000 characters");
+        }
+        try (var ignored = repository.lease(id)) { return reviseLocked(id, taskId, feedback); }
+    }
+
+    private RunState reviseLocked(String id, String taskId, String feedback) throws Exception {
         RunState state = repository.load(id);
         if (state.status == RunStatus.COMPLETED || state.status == RunStatus.FAILED ||
             state.status == RunStatus.SAFE_STOPPED || state.status == RunStatus.NOT_APPROVED) {
@@ -431,6 +452,10 @@ public final class RunEngine {
         }
         ScenarioSpec spec = readSpec(state);
         if (spec.tasks().stream().noneMatch(task -> task.id().equals(taskId))) throw new IllegalArgumentException("Unknown task");
+        if (feedback != null) {
+            state.reviewFeedback.put(taskId, feedback);
+            repository.record(state, "REVIEW_FEEDBACK_RECORDED", taskId + ":" + Hashes.sha256(feedback));
+        }
         boolean specChanged = !Hashes.sha256(Files.readString(Path.of(state.specPath))).equals(state.specHash);
         Set<String> affected = specChanged
             ? new HashSet<>(state.tasks.keySet())

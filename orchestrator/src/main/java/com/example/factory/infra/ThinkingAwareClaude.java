@@ -35,7 +35,7 @@ final class ThinkingAwareClaude extends Claude {
         MessageCreateParams.Builder params = MessageCreateParams.builder()
             .model(request.model().orElse(modelName))
             .system(String.join("\n", request.getSystemInstructions()))
-            .maxTokens(16384);
+            .maxTokens(32768);
         for (Content content : request.contents()) {
             StringBuilder text = new StringBuilder();
             for (Part part : content.parts().orElse(List.of())) {

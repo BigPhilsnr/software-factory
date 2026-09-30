@@ -48,8 +48,8 @@ public final class FactoryCli {
                 result = engine.clarify(args[1], String.join(" ", java.util.Arrays.copyOfRange(args, 2, args.length)));
             }
             case "revise" -> {
-                if (args.length != 3) { usage(); return; }
-                result = engine.revise(args[1], args[2]);
+                if (args.length < 3 || args.length > 4) { usage(); return; }
+                result = engine.revise(args[1], args[2], args.length == 4 ? Files.readString(Path.of(args[3])) : null);
             }
             case "status" -> {
                 if (args.length != 2) { usage(); return; }
@@ -83,6 +83,6 @@ public final class FactoryCli {
     }
 
     private static void usage() {
-        System.err.println("Usage: start <scenario.json> <fixture|live> | advance <run-id> | review <run-id> | approve <run-id> <reviewed-hash> | reject <run-id> | clarify <run-id> <answer> | revise <run-id> <task-id> | status <run-id> | verify-audit <run-id>");
+        System.err.println("Usage: start <scenario.json> <fixture|live> | advance <run-id> | review <run-id> | approve <run-id> <reviewed-hash> | reject <run-id> | clarify <run-id> <answer> | revise <run-id> <task-id> [feedback-file] | status <run-id> | verify-audit <run-id>");
     }
 }

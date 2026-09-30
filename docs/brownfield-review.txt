@@ -1,0 +1,10 @@
+Review of brownfield proposal apply-v1 for run a5e9f971-13fd-46b6-8efc-4f62dcf1ff44:
+
+Generate a corrected, minimal complete patch against the supplied baseline sources.
+The previous proposal was not applied. Preserve the existing APIs and Java/Spring stack.
+
+1. Return raw unified diff only, without Markdown fences. Every hunk must have accurate old/new line counts and pass git apply --check --whitespace=error.
+2. Reject leading/trailing alias whitespace instead of trimming it. If aliases are case-folded on creation, actually use the normalized value for redirect and analytics lookup. The previous controller discarded normalize(code)'s return value and looked up the original code, breaking mixed-case access.
+3. Include executable JUnit tests for alias validation, whitespace rejection, duplicate alias conflicts, mixed-case redirect lookup, creation throttling, and redirects remaining unthrottled. The previous patch only adjusted one existing constructor call and added no tests of the new behavior. Follow existing JUnit and Mockito conventions and preserve old tests.
+4. Keep the limiter implementation small and deterministic by injecting Clock. Enforce the configured bound and expire old identities at capacity (the prior size > max condition never swept when size == max). Do not trust arbitrary forwarded headers; use the actual remote address for this single-instance prototype.
+5. Limit changes to the shortener module. Avoid unrelated infrastructure, migrations, dependencies, telemetry abstractions, or extensive prose. A minimal in-process creation-only limiter with documented single-instance scope is sufficient.

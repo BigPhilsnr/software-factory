@@ -59,6 +59,18 @@ public final class GitWorkspace {
         }
     }
 
+    /** Check applicability without changing the candidate or its index. */
+    public void checkApply(Path candidate, String patch, List<String> allowed) throws Exception {
+        validateScope(patch, allowed);
+        Path file = Files.createTempFile("factory-preflight-", ".diff");
+        try {
+            Files.writeString(file, patch);
+            command(candidate, List.of("git", "apply", "--check", "--whitespace=error", file.toString()), Duration.ofSeconds(20));
+        } finally {
+            Files.deleteIfExists(file);
+        }
+    }
+
     public List<String> validateScope(String patch, List<String> allowed) {
         List<String> changed = new ArrayList<>();
         for (String line : patch.lines().toList()) {

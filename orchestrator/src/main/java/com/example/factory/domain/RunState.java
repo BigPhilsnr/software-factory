@@ -30,6 +30,7 @@ public final class RunState {
     public Map<String, Integer> artifactVersions = new HashMap<>();
     public Map<String, String> approvals = new HashMap<>();
     public Map<String, Integer> patchDrafts = new HashMap<>();
+    public Map<String, String> reviewFeedback = new HashMap<>();
 
     public RunState() {}
 
