@@ -18,6 +18,8 @@ evidence/      generated run artifacts (ignored)
 
 The [factory guide](factory/README.md) and [shortener guide](shortener/README.md) map packages to responsibilities. Tests mirror their production packages. The [scenario guide](scenarios/README.md) explains historical baselines; the [documentation index](docs/README.md) separates design, operation, and evaluation material.
 
+ADK chat and live workers have [web browsing and engineering tools](docs/operations/agent-tools.md): web search, public-page reading, source lookup, code search, Git inspection and time. Send `/tools` in chat; ordinary questions can use these tools automatically.
+
 | Path | Purpose |
 | --- | --- |
 | `factory/` | Task DAG, durable run state, ADK chat, browser operator page, policy, approvals, sandbox validator, CLI |

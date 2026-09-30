@@ -9,6 +9,8 @@ The operator page and chat share the existing PostgreSQL control plane. ADK chat
 
 ## Request and review work
 
+Chat and live task agents can now search the web, read public HTTPS pages, inspect source files, search code, inspect Git and check the time. Send `/tools` or read the [tool guide](agent-tools.md) for examples, limits and costs. Chat shows a tool activity footer; workflow calls appear in the operator audit activity.
+
 Enter a feature in the operator form or send `/feature YOUR_REQUIREMENT` in ADK chat. Ordinary chat messages discuss the project without creating runs. This saves a run without starting paid calls. Select **Start / resume**, or send `/advance` in chat, to begin generation. New requests target the pinned `url-v4` shortener baseline and use a fixed Java/Spring workflow: requirements, parallel architecture/risk analysis, a joined plan, an independent test plan, production patch, executable test patch, sandbox validation, documentation and release review. This UI accepts feature requirements; it does not grant permission to change control-plane policy or arbitrary repository paths.
 
 The operator page shows dependency edges and measured run reliability (elapsed time, retries, rollbacks, replans and recovery time). The metrics endpoint `/factory/api/metrics` separates recent fixture and live outcomes. The operator page polls progress and audit activity every two seconds. Select artifacts to read plans and test reports. When the run needs clarification, its question and answer form appear. A proposed patch is shown with its exact approval hash; check the review acknowledgement and select **Approve & resume**, **Request changes & resume**, or **Reject run**. Approval applies only that hash. Changed/stale hashes are rejected. Revisions record feedback and invalidate the affected descendants while preserving existing call budgets and retry counts.
@@ -22,6 +24,7 @@ Final release approval marks the isolated run complete. It does not merge, push,
 | A plain-language question or feature discussion | Answer using repository context and recent conversation; no workflow action |
 | `/feature requirement` | Save a new live run and select it |
 | `/help` | Show commands and operator-page link |
+| `/tools` | Show available browsing and repository tools |
 | `/demo bugfix` | Start a fixture demonstration |
 | `/runs` | List recent persistent runs |
 | `/select RUN_ID` | Select an existing run in this chat session |

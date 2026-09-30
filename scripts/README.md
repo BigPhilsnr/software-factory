@@ -9,6 +9,7 @@ Run commands from the repository root.
 | `checks/evaluate.py` | Run the full local evaluation and retain machine-readable results/logs. |
 | `checks/agent_smoke.py` | Replay all recorded engineering scenarios with sandbox validation. |
 | `checks/web_smoke.py` | Check operator API controls against a running factory server. |
+| `checks/live_tools_smoke.py --live` | Exercise all seven agent tools through native ADK chat; makes paid provider calls. |
 | `checks/acceptance.py` | Check HTTP behavior against the running shortener. |
 
 The checks have moved under `checks/`; the two factory launch commands retain their names. See the [root README](../README.md) for prerequisites and exact commands. Live generation requires `.env`; fixture checks do not use provider calls.

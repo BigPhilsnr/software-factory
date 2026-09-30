@@ -311,12 +311,16 @@ public final class RunEngine {
             if (!file.startsWith(folder)) throw new SecurityException("Fixture escapes scenario directory");
             return new FixtureRuntime(file).generate(task.role(), task.prompt());
         }
-        synchronized (state) {
-            if (state.modelCalls >= state.maxModelCalls) throw new SecurityException("Model call budget exhausted");
-            state.modelCalls++;
-            repository.record(state, "MODEL_CALL_STARTED", task.id() + ":" + state.modelCalls + "/" + state.maxModelCalls);
-        }
-        AgentRuntime runtime = new AdkClaudeRuntime(System.getenv().getOrDefault("CLAUDE_MODEL", "claude-sonnet-4-5"));
+        AgentRuntime runtime = new AdkClaudeRuntime(System.getenv().getOrDefault("CLAUDE_MODEL", "claude-sonnet-4-5"),
+            Path.of(state.candidatePath), () -> {
+                synchronized (state) {
+                    if (state.modelCalls >= state.maxModelCalls) throw new SecurityException("Model call budget exhausted");
+                    state.modelCalls++;
+                    repository.record(state, "MODEL_CALL_STARTED", task.id() + ":" + state.modelCalls + "/" + state.maxModelCalls);
+                }
+            }, (event, detail) -> {
+                synchronized (state) { repository.record(state, event, task.id() + ":" + detail); }
+            });
         StringBuilder context = new StringBuilder("Requirement: ").append(readSpec(state).requirement()).append("\n\nTask: ").append(task.prompt());
         if (state.reviewFeedback.containsKey(task.id())) {
             context.append("\n\nOperator review feedback to address:\n").append(state.reviewFeedback.get(task.id()));

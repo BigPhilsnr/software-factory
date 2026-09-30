@@ -6,11 +6,12 @@ Start with `src/main/java/dev/softwarefactory/`:
 
 | Package | Responsibility and starting point |
 | --- | --- |
-| `operator/web/` | Browser API, ADK chat and operator actions. Start at `FactoryWebServer`, then `FactoryService`. `ChatConversation` answers questions without action tools; `OperatorCommands` routes explicit commands. |
+| `operator/web/` | Browser API, ADK chat and operator actions. Start at `FactoryWebServer`, then `FactoryService`. `ChatConversation` answers with read-only tools; `OperatorCommands` routes explicit commands. |
 | `operator/cli/` | The same workflow through `FactoryCli`. |
 | `workflow/` | Run/task state and transitions. Read `RunEngine`, `TaskGraph`, then `RunState`. |
 | `workflow/scenario/` | Scenario contracts and compatibility with persisted scenario paths. |
 | `agents/` | Live ADK/Claude generation and recorded fixture generation through `AgentRuntime`. |
+| `agents/tools/` | Shared tool catalog, bounded source/Git reads, public web reading/search, request limits and tool audit events. Start at `EngineeringTools`. |
 | `governance/` | Deterministic patch approval rules and hashes. |
 | `execution/` | Detached Git workspaces, patch scope enforcement and container validation. |
 | `persistence/` | PostgreSQL run storage, transition leases and audit events. |

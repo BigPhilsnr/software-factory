@@ -33,7 +33,7 @@ public final class FactoryService implements AutoCloseable {
 
     ChatConversation conversation() {
         return new ChatConversation(root, (role, prompt) -> new AdkClaudeRuntime(
-            System.getenv().getOrDefault("CLAUDE_MODEL", "claude-sonnet-4-5")).generate(role, prompt));
+            System.getenv().getOrDefault("CLAUDE_MODEL", "claude-sonnet-4-5"), root, () -> {}, (event, detail) -> {}).generate(role, prompt));
     }
 
     public List<RunState> runs() throws Exception { return repository.recentRuns(); }

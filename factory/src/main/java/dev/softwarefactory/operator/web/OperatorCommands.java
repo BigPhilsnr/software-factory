@@ -16,6 +16,7 @@ final class OperatorCommands {
     String handle(String session, String input) throws Exception {
         String text = input.strip();
         if (text.isEmpty() || text.equals("/help") || text.equalsIgnoreCase("help")) return help();
+        if (text.equals("/tools")) return dev.softwarefactory.agents.tools.EngineeringTools.help();
         if (text.equals("/runs")) {
             StringBuilder result = new StringBuilder("## Factory runs\n\n");
             for (RunState run : factory.runs()) result.append("- `").append(run.id).append("` · ").append(run.scenario).append(" · **").append(run.status).append("**\n");
@@ -78,6 +79,7 @@ final class OperatorCommands {
     private String help() {
         return "## Software factory\n\nAsk questions about the project or discuss a feature in plain language. Chat answers use the repository and recent conversation; they do not create runs. Use `/feature REQUIREMENT` to save a feature request, then `/advance` to start it. Chat answers use paid model calls, separately from run budgets.\n\n"
             + "- `/demo bugfix` — start a fixture demonstration without model charges\n"
+            + "- `/tools` — show web browsing and engineering tools\n"
             + "- `/runs` and `/select RUN_ID` — find an existing run\n"
             + "- `/status` — refresh selected run\n"
             + "- `/review` — show pending approval details\n"
