@@ -1,0 +1,6 @@
+PASS greenfield: COMPLETED, run=e786e36c-82da-4e11-b99d-1c0953739265
+PASS brownfield: COMPLETED, run=91e95dd1-a5b0-40b7-871c-fd3a11436caf
+PASS ambiguous: COMPLETED, run=f1a8f3a9-9fe1-43a5-a7ae-296402f2cea9
+PASS bugfix: COMPLETED, run=7caf0394-23a6-4e97-8bff-94c665145f53
+PASS policy-violation: SAFE_STOPPED, run=71bee9c3-3360-4bde-a016-03f334c20f63
+PASS retry-exhaustion: FAILED, run=5892f082-afcd-4ac0-a903-04a6d4522d10

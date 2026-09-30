@@ -74,8 +74,43 @@
       "originalSha256": "5359d572e653ef6ca4991d232b07d0dcc6c91e8554b53b310726f845768727bc"
     },
     "README.md": {
-      "exportSha256": "9d897d9283aea410b4ec141d5f856d5f0090d40bb2710c2d16cdafc7916ae264",
+      "exportSha256": "14fe6f0c923402eb5d386fba2ebdf12a1f37cbb8ed21594d5b9911dee4c2f5e4",
       "source": "curation notes"
+    },
+    "review-verification/clean-checkout.json": {
+      "exportSha256": "9b06ee1eb0c4f903448415bdf09ef26f1d19240798c0ab9c0e287a15bd010eca",
+      "originalSha256": "9b06ee1eb0c4f903448415bdf09ef26f1d19240798c0ab9c0e287a15bd010eca",
+      "source": ".runs/clean-checkout/08e8deb7ba555b26e7e95b2732c9a1cb25917bb5/result.json"
+    },
+    "review-verification/clean-checkout-maven.txt": {
+      "exportSha256": "cde33ac104d6667cb515ebd7e141d03b346d85f96d930e75c83c636b359aeaca",
+      "originalSha256": "aae2d3d0e39bc0ce555d54e306ebc155bcd0e26fc7557b490a660fd997ea9653",
+      "source": ".runs/clean-checkout/08e8deb7ba555b26e7e95b2732c9a1cb25917bb5/maven.log"
+    },
+    "review-verification/results.json": {
+      "exportSha256": "994ea92c79b6020afe59f83be81df2400824d68e1e31e11bb33f5c20a1d38c15",
+      "originalSha256": "d8f520eb026135883e06e07ade7ce9494b1ac3edd9275251e1d7a39504d200bd",
+      "source": ".runs/evaluation/20260930T233541Z/results.json"
+    },
+    "review-verification/unit-and-integration.txt": {
+      "exportSha256": "59b5c298a8d687759412b461007505ed1c53170857945766a5bb6ee3b3fbf1d9",
+      "originalSha256": "2b0026ec8eda8594f9d3e464607fb7494fe33bfe7ea58b86c7610561f32cc4a4",
+      "source": ".runs/evaluation/20260930T233541Z/unit-and-integration.log"
+    },
+    "review-verification/operator-controls.txt": {
+      "exportSha256": "2963c37c07e2b183ff410adf89d913c46aceaeaa96b7abed8b90c55f2dd0a4ff",
+      "originalSha256": "2963c37c07e2b183ff410adf89d913c46aceaeaa96b7abed8b90c55f2dd0a4ff",
+      "source": ".runs/evaluation/20260930T233541Z/operator-controls.log"
+    },
+    "review-verification/scenario-replay.txt": {
+      "exportSha256": "07d239d76c7d29bf5a33a25575f82dab0fc104594e0fc24b7085874f82a4a003",
+      "originalSha256": "07d239d76c7d29bf5a33a25575f82dab0fc104594e0fc24b7085874f82a4a003",
+      "source": ".runs/evaluation/20260930T233541Z/scenario-replay.log"
+    },
+    "review-verification/product-http.txt": {
+      "exportSha256": "e383314e8826bf9692cbef7c91f68f60f7942ac8f5c6ac313dcbe496dc158a90",
+      "originalSha256": "e383314e8826bf9692cbef7c91f68f60f7942ac8f5c6ac313dcbe496dc158a90",
+      "source": ".runs/evaluation/20260930T233541Z/product-http.log"
     }
   }
 }

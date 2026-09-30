@@ -1,0 +1,58 @@
+{
+  "startedAt": "20260930T233541Z",
+  "commit": "08e8deb7ba555b26e7e95b2732c9a1cb25917bb5",
+  "workingTreeDirty": false,
+  "mode": "Recorded fixtures and local integration; no live generation; synthetic test approvals",
+  "checks": [
+    {
+      "name": "unit-and-integration",
+      "command": [
+        "mvn",
+        "-q",
+        "-Pintegration",
+        "test"
+      ],
+      "exitCode": 0,
+      "durationSeconds": 68.164,
+      "log": "unit-and-integration.txt"
+    },
+    {
+      "name": "scenario-replay",
+      "command": [
+        "/opt/homebrew/opt/python@3.14/bin/python3.14",
+        "scripts/checks/agent_smoke.py"
+      ],
+      "exitCode": 0,
+      "durationSeconds": 242.488,
+      "log": "scenario-replay.txt"
+    },
+    {
+      "name": "operator-controls",
+      "command": [
+        "/opt/homebrew/opt/python@3.14/bin/python3.14",
+        "scripts/checks/web_smoke.py"
+      ],
+      "exitCode": 0,
+      "durationSeconds": 32.982,
+      "log": "operator-controls.txt"
+    },
+    {
+      "name": "product-http",
+      "command": [
+        "/opt/homebrew/opt/python@3.14/bin/python3.14",
+        "scripts/checks/acceptance.py"
+      ],
+      "exitCode": 0,
+      "durationSeconds": 0.452,
+      "log": "product-http.txt"
+    }
+  ],
+  "surefireTotals": {
+    "tests": 50,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "passed": true,
+  "exportNote": "Tested code revision 08e8deb; later commits that add this evidence only change documentation/evidence."
+}

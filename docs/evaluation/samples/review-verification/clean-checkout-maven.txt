@@ -1,0 +1,165 @@
+[INFO] Scanning for projects...
+[WARNING] 
+[WARNING] Some problems were encountered while building the effective model for dev.softwarefactory:shortener:jar:0.1.0-SNAPSHOT
+[WARNING] 'parent.relativePath' of POM dev.softwarefactory:shortener:0.1.0-SNAPSHOT (/private/var/folders/mx/85kmgnvd3yxgh1dmwsn2zvd40000gn/T/factory-clean-checkout-jo03vijb/repo/shortener/pom.xml) points at dev.softwarefactory:agentic-url-shortener instead of org.springframework.boot:spring-boot-starter-parent, please verify your project structure @ line 4, column 11
+[WARNING] 
+[WARNING] It is highly recommended to fix these problems because they threaten the stability of your build.
+[WARNING] 
+[WARNING] For this reason, future Maven versions might no longer support building such malformed projects.
+[WARNING] 
+[INFO] ------------------------------------------------------------------------
+[INFO] Reactor Build Order:
+[INFO] 
+[INFO] shortener                                                          [jar]
+[INFO] agentic-url-shortener                                              [pom]
+[INFO] factory                                                            [jar]
+[INFO] 
+[INFO] -------------------< dev.softwarefactory:shortener >--------------------
+[INFO] Building shortener 0.1.0-SNAPSHOT                                  [1/3]
+[INFO]   from shortener/pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- clean:3.5.0:clean (default-clean) @ shortener ---
+[INFO] 
+[INFO] --- resources:3.5.0:resources (default-resources) @ shortener ---
+[INFO] Copying 1 resource from src/main/resources to target/classes
+[INFO] Copying 1 resource from src/main/resources to target/classes
+[INFO] 
+[INFO] --- compiler:3.15.0:compile (default-compile) @ shortener ---
+[INFO] Recompiling the module because of changed source code.
+[INFO] Compiling 14 source files with javac [debug parameters release 21] to target/classes
+[INFO] 
+[INFO] --- resources:3.5.0:testResources (default-testResources) @ shortener ---
+[INFO] skip non existing resourceDirectory /private/var/folders/mx/85kmgnvd3yxgh1dmwsn2zvd40000gn/T/factory-clean-checkout-jo03vijb/repo/shortener/src/test/resources
+[INFO] 
+[INFO] --- compiler:3.15.0:testCompile (default-testCompile) @ shortener ---
+[INFO] Recompiling the module because of changed dependency.
+[INFO] Compiling 5 source files with javac [debug parameters release 21] to target/test-classes
+[INFO] 
+[INFO] --- surefire:3.5.6:test (default-test) @ shortener ---
+[INFO] Using auto detected provider org.apache.maven.surefire.junitplatform.JUnitPlatformProvider
+[INFO] 
+[INFO] -------------------------------------------------------
+[INFO]  T E S T S
+[INFO] -------------------------------------------------------
+[INFO] Running dev.shortener.ratelimit.CreationRateLimiterTest
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.032 s -- in dev.shortener.ratelimit.CreationRateLimiterTest
+[INFO] Running dev.shortener.links.ShortenerServiceTest
+Mockito is currently self-attaching to enable the inline-mock-maker. This will no longer work in future releases of the JDK. Please add Mockito as an agent to your build as described in Mockito's documentation: https://javadoc.io/doc/org.mockito/mockito-core/latest/org.mockito/org/mockito/Mockito.html#0.3
+OpenJDK 64-Bit Server VM warning: Sharing is only supported for boot loader classes because bootstrap classpath has been appended
+WARNING: A Java agent has been loaded dynamically (<USER_HOME>/.m2/repository/net/bytebuddy/byte-buddy-agent/1.18.11/byte-buddy-agent-1.18.11.jar)
+WARNING: If a serviceability tool is in use, please run with -XX:+EnableDynamicAgentLoading to hide this warning
+WARNING: If a serviceability tool is not in use, please run with -Djdk.instrument.traceUsage for more information
+WARNING: Dynamic loading of agents will be disallowed by default in a future release
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.819 s -- in dev.shortener.links.ShortenerServiceTest
+[INFO] Running dev.shortener.links.UrlPolicyTest
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.011 s -- in dev.shortener.links.UrlPolicyTest
+[INFO] Running dev.shortener.http.RedirectRateLimitRegressionTest
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.068 s -- in dev.shortener.http.RedirectRateLimitRegressionTest
+[INFO] 
+[INFO] Results:
+[INFO] 
+[INFO] Tests run: 6, Failures: 0, Errors: 0, Skipped: 0
+[INFO] 
+[INFO] 
+[INFO] -------------< dev.softwarefactory:agentic-url-shortener >--------------
+[INFO] Building agentic-url-shortener 0.1.0-SNAPSHOT                      [2/3]
+[INFO]   from pom.xml
+[INFO] --------------------------------[ pom ]---------------------------------
+[INFO] 
+[INFO] --- clean:3.2.0:clean (default-clean) @ agentic-url-shortener ---
+[INFO] 
+[INFO] --------------------< dev.softwarefactory:factory >---------------------
+[INFO] Building factory 0.1.0-SNAPSHOT                                    [3/3]
+[INFO]   from factory/pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- clean:3.2.0:clean (default-clean) @ factory ---
+[INFO] 
+[INFO] --- resources:3.4.0:resources (default-resources) @ factory ---
+[INFO] Copying 4 resources from src/main/resources to target/classes
+[INFO] 
+[INFO] --- compiler:3.14.1:compile (default-compile) @ factory ---
+[INFO] Recompiling the module because of changed source code.
+[INFO] Compiling 39 source files with javac [debug release 21] to target/classes
+[INFO] Annotation processing is enabled because one or more processors were found
+  on the class path. A future release of javac may disable annotation processing
+  unless at least one processor is specified by name (-processor), or a search
+  path is specified (--processor-path, --processor-module-path), or annotation
+  processing is enabled explicitly (-proc:only, -proc:full).
+  Use -Xlint:-options to suppress this message.
+  Use -proc:none to disable annotation processing.
+[INFO] /private/var/folders/mx/85kmgnvd3yxgh1dmwsn2zvd40000gn/T/factory-clean-checkout-jo03vijb/repo/factory/src/main/java/dev/softwarefactory/agents/ThinkingAwareClaude.java: /private/var/folders/mx/85kmgnvd3yxgh1dmwsn2zvd40000gn/T/factory-clean-checkout-jo03vijb/repo/factory/src/main/java/dev/softwarefactory/agents/ThinkingAwareClaude.java uses unchecked or unsafe operations.
+[INFO] /private/var/folders/mx/85kmgnvd3yxgh1dmwsn2zvd40000gn/T/factory-clean-checkout-jo03vijb/repo/factory/src/main/java/dev/softwarefactory/agents/ThinkingAwareClaude.java: Recompile with -Xlint:unchecked for details.
+[INFO] 
+[INFO] --- resources:3.4.0:testResources (default-testResources) @ factory ---
+[INFO] skip non existing resourceDirectory /private/var/folders/mx/85kmgnvd3yxgh1dmwsn2zvd40000gn/T/factory-clean-checkout-jo03vijb/repo/factory/src/test/resources
+[INFO] 
+[INFO] --- compiler:3.14.1:testCompile (default-testCompile) @ factory ---
+[INFO] Recompiling the module because of changed dependency.
+[INFO] Compiling 18 source files with javac [debug release 21] to target/test-classes
+[INFO] Annotation processing is enabled because one or more processors were found
+  on the class path. A future release of javac may disable annotation processing
+  unless at least one processor is specified by name (-processor), or a search
+  path is specified (--processor-path, --processor-module-path), or annotation
+  processing is enabled explicitly (-proc:only, -proc:full).
+  Use -Xlint:-options to suppress this message.
+  Use -proc:none to disable annotation processing.
+[INFO] 
+[INFO] --- surefire:3.5.4:test (default-test) @ factory ---
+[INFO] Using auto detected provider org.apache.maven.surefire.junitplatform.JUnitPlatformProvider
+[INFO] 
+[INFO] -------------------------------------------------------
+[INFO]  T E S T S
+[INFO] -------------------------------------------------------
+[INFO] Running dev.softwarefactory.agents.AgentToolLoopTest
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 1.328 s -- in dev.softwarefactory.agents.AgentToolLoopTest
+[INFO] Running dev.softwarefactory.agents.tools.ToolSessionTest
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.004 s -- in dev.softwarefactory.agents.tools.ToolSessionTest
+[INFO] Running dev.softwarefactory.agents.tools.PublicWebReaderTest
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.035 s -- in dev.softwarefactory.agents.tools.PublicWebReaderTest
+[INFO] Running dev.softwarefactory.agents.tools.RepositoryReaderTest
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.223 s -- in dev.softwarefactory.agents.tools.RepositoryReaderTest
+[INFO] Running dev.softwarefactory.agents.ThinkingAwareClaudeTest
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.005 s -- in dev.softwarefactory.agents.ThinkingAwareClaudeTest
+[INFO] Running dev.softwarefactory.agents.SourceContextTest
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.008 s -- in dev.softwarefactory.agents.SourceContextTest
+[INFO] Running dev.softwarefactory.observability.RunMetricsTest
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.005 s -- in dev.softwarefactory.observability.RunMetricsTest
+[INFO] Running dev.softwarefactory.execution.GitWorkspaceTest
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.054 s -- in dev.softwarefactory.execution.GitWorkspaceTest
+[INFO] Running dev.softwarefactory.workflow.RunEngineBehaviorTest
+[INFO] Tests run: 6, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 1.075 s -- in dev.softwarefactory.workflow.RunEngineBehaviorTest
+[INFO] Running dev.softwarefactory.workflow.RunEngineRegressionTest
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.001 s -- in dev.softwarefactory.workflow.RunEngineRegressionTest
+[INFO] Running dev.softwarefactory.workflow.InvalidationTest
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.001 s -- in dev.softwarefactory.workflow.InvalidationTest
+[INFO] Running dev.softwarefactory.workflow.scenario.ScenarioFilesTest
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.004 s -- in dev.softwarefactory.workflow.scenario.ScenarioFilesTest
+[INFO] Running dev.softwarefactory.workflow.TaskGraphTest
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.004 s -- in dev.softwarefactory.workflow.TaskGraphTest
+[INFO] Running dev.softwarefactory.governance.PatchPolicyTest
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.001 s -- in dev.softwarefactory.governance.PatchPolicyTest
+[INFO] Running dev.softwarefactory.operator.web.OperatorCommandsTest
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.004 s -- in dev.softwarefactory.operator.web.OperatorCommandsTest
+[INFO] Running dev.softwarefactory.operator.web.FeatureScenarioTest
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.004 s -- in dev.softwarefactory.operator.web.FeatureScenarioTest
+[INFO] Running dev.softwarefactory.operator.web.ChatConversationTest
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.003 s -- in dev.softwarefactory.operator.web.ChatConversationTest
+[INFO] 
+[INFO] Results:
+[INFO] 
+[INFO] Tests run: 40, Failures: 0, Errors: 0, Skipped: 0
+[INFO] 
+[INFO] ------------------------------------------------------------------------
+[INFO] Reactor Summary for agentic-url-shortener 0.1.0-SNAPSHOT:
+[INFO] 
+[INFO] shortener .......................................... SUCCESS [  2.834 s]
+[INFO] agentic-url-shortener .............................. SUCCESS [  0.043 s]
+[INFO] factory ............................................ SUCCESS [  6.945 s]
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  10.005 s
+[INFO] Finished at: 2026-09-30T18:35:34-05:00
+[INFO] ------------------------------------------------------------------------

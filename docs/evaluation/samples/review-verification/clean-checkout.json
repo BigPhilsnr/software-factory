@@ -1,0 +1,13 @@
+{
+  "revision": "08e8deb7ba555b26e7e95b2732c9a1cb25917bb5",
+  "sourceWorkingTreeDirty": false,
+  "checkout": "fresh git clone --no-local; ignored/uncommitted files excluded",
+  "exitCode": 0,
+  "testTotals": {
+    "tests": 46,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "passed": true
+}

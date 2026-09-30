@@ -31,3 +31,7 @@ python3 scripts/checks/evaluate.py
 ```
 
 Clean-clone results go to `.runs/clean-checkout/<tested revision>/`; the full evaluation records its commit and dirty-tree state. Historical logs retain their original revision rather than being presented as proof of current HEAD. Clean-clone checks use the host's Maven cache; they are not an air-gapped dependency-installation test.
+
+## Verification outcome
+
+Code revision `08e8deb` passed **46 default tests in a fresh clone**, **50 tests with the integration profile**, all six scenario replays (including expected safe-stop/retry-exhaustion outcomes), operator controls and running-product HTTP acceptance. No failures, errors or skips occurred in Maven. The [committed verification bundle](../evaluation/samples/review-verification/results.json) and [clean-clone result](../evaluation/samples/review-verification/clean-checkout.json) retain exact revision and command results. The following commit adds evidence/documentation only; it does not alter the tested code.

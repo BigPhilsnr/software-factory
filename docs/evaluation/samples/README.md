@@ -4,6 +4,7 @@ This is a small, committed snapshot of real local results. It contains no provid
 
 - `live-bugfix/`: provider-generated diagnosis, regression patch, actual red assertion, production repair, actual green report, runbook, final candidate diff, and selected run/audit metadata. The historical candidate uses the old Java package names.
 - `live-failures/outcomes.json`: failed live greenfield and brownfield outcomes; no claim that the three required scenarios all succeeded live.
+- `review-verification/`: fresh-clone default tests (46), full local unit/integration tests (50), all six scenario replays, operator controls and product HTTP acceptance on code revision `08e8deb`. All passed; the negative controls passed by reaching their expected failure/safe-stop states. Evidence-only documentation commits follow the tested revision.
 - `historical-evaluation/`: the earlier full local suite, explicitly tied to commit `101270c`. It tested the working directory, where an ignored source file masked a clean-clone compilation error. This snapshot is not fresh-clone proof or current-HEAD evidence.
 
 Run `python3 scripts/checks/verify_evidence.py` from the repository root. The manifest covers exported file integrity, not authorship or independently verified execution. The live bug-fix's red/green reports and exact patches are the execution evidence; its model-written runbook is commentary and should be checked against those reports. A run was recorded as operator-approved, but this local prototype does not authenticate the operator.

@@ -49,6 +49,8 @@ Topology comes from trusted templates. Upstream changes invalidate and regenerat
 - A packaging defect was reproduced: `47fa6f6` lacked `EvidenceStore.java` because the bare `evidence/` ignore rule hid the source package. `8cb4d73` anchors runtime ignores to the root and tracks the class; a fresh clone then passed all 40 default tests present at that revision. See the [review response](reviews/external-review-response.md) for current reproduction commands.
 - CI is configured for committed code and evidence checksums. No remote is configured here, so a hosted CI pass is not claimed. Test approvals are synthetic; recorded local operator labels do not establish authenticated human identity.
 
+The final review verification on code revision `08e8deb` passed 46 tests from a fresh clone, 50 tests with integration enabled, all six scenario replays, operator controls and product HTTP acceptance. [Recorded results](evaluation/samples/review-verification/results.json) include the tested revision; subsequent evidence-only commits do not change that code.
+
 ## Risks, trade-offs and assumptions
 
 The operator owns scope and final quality. The prototype assumes one trusted local operator, loopback UI access, a single application instance, JDK 21, Git, Maven, Docker for sandboxed validation and local PostgreSQL for integration. Live generation needs an Anthropic key and provider availability. Separate product/control databases and the restricted candidate container reduce the scope of failures without claiming a complete hostile-code sandbox.
