@@ -5,3 +5,4 @@
 evidence/
 .runs/
 *.log
+__pycache__/

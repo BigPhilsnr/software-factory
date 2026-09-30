@@ -1,5 +1,7 @@
 # Agent system: implementation and validation
 
+The [browser interface](WEB_UI.md) connects the native ADK chat and a Spring-backed operator page to this same control plane. Start it with `python3 scripts/factory_web.py` to submit features, inspect progress and evidence, answer clarifications, and review, revise, approve or reject proposals.
+
 The control plane is a single Java 21 process backed by a separate PostgreSQL database. `RunEngine` owns task readiness and transitions; `TaskGraph` validates dependencies and lifecycle order; `ControlRepository` persists state with an append-only SHA-256 audit chain and a per-run advisory lock. `EvidenceStore` keeps versioned outputs outside candidates. `GitWorkspace` creates detached worktrees from pinned baseline commits and checks patch paths and scope. `SandboxValidator` runs candidate Maven tests with no network, no governance credentials, a read-only host dependency cache, a read-only container filesystem, and CPU/memory/process limits.
 
 Fixture mode reads recorded artifacts from `scenarios/`. Live mode uses `AdkClaudeRuntime` through Google ADK and sends bounded repository source context to Claude; it requires an Anthropic key. The Claude adapter strips private thinking blocks from responses while preserving visible text, because ADK 1.10.1 does not handle the thinking blocks returned by Claude Sonnet 5. The adapter emits patch text for deterministic scope checks and application. There is no Claude Code subprocess or autonomous filesystem tool in the fallback path.

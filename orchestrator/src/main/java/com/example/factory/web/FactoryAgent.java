@@ -1,0 +1,30 @@
+package com.example.factory.web;
+
+import com.google.adk.agents.BaseAgent;
+import com.google.adk.agents.InvocationContext;
+import com.google.adk.events.Event;
+import com.google.genai.types.Content;
+import com.google.genai.types.Part;
+import io.reactivex.rxjava3.core.Flowable;
+
+/** ADK entry point: routes user commands to the same durable control plane as the operator UI. */
+final class FactoryAgent extends BaseAgent {
+    private final OperatorCommands commands;
+    FactoryAgent(FactoryService factory) {
+        super("software_factory", "Feature requests, run progress, evidence and human approvals. Send /help to begin.", null, null, null);
+        commands = new OperatorCommands(factory);
+    }
+
+    @Override protected Flowable<Event> runAsyncImpl(InvocationContext context) {
+        return Flowable.fromCallable(() -> {
+            String input = context.userContent().map(Content::text).orElse("");
+            String answer;
+            try { answer = commands.handle(context.session().id(), input); }
+            catch (IllegalArgumentException | IllegalStateException failure) { answer = "Action not performed: " + failure.getMessage(); }
+            catch (Exception failure) { answer = "The action failed. Check the operator page and control database, then retry. Error: " + failure.getClass().getSimpleName(); }
+            return Event.builder().author(name()).invocationId(context.invocationId())
+                .content(Content.builder().role("model").parts(Part.fromText(answer)).build()).build();
+        });
+    }
+    @Override protected Flowable<Event> runLiveImpl(InvocationContext context) { return runAsyncImpl(context); }
+}

@@ -6,7 +6,7 @@ This repository contains a runnable URL shortener and a Java control plane that 
 
 | Path | Purpose |
 | --- | --- |
-| `orchestrator/` | Task DAG, durable run state, ADK adapter, policy, approvals, sandbox validator, operator CLI |
+| `orchestrator/` | Task DAG, durable run state, ADK chat, browser operator page, policy, approvals, sandbox validator, CLI |
 | `shortener/` | Spring Boot API, OpenAPI contract, domain rules, PostgreSQL persistence, Flyway schema, unit tests |
 | `scenarios/` | Greenfield, brownfield, ambiguous, seeded bug-fix, and negative-control fixtures |
 | `scripts/` | Reproducible agent replay and independent HTTP acceptance check |
@@ -36,6 +36,17 @@ curl -s http://localhost:8080/actuator/health/readiness
 The acceptance check creates a link, verifies its `302` redirect and analytics, tests aliases and conflicts, rejects an invalid URL, and checks an unknown code. The service runs with PostgreSQL on port 5433 and the control plane uses a separate PostgreSQL database on port 5434. Stop the service with Ctrl-C; stop the databases with `docker-compose down` (omit `-v` to retain local data).
 
 ## Replay and inspect the agent system
+
+To use the browser interface, start the control database, then run:
+
+```sh
+docker-compose up -d control-db
+python3 scripts/factory_web.py
+```
+
+Open **[the factory operator page](http://localhost:8000/factory/)** for feature requests, run progress, artifacts, clarification forms and approval buttons. **[ADK chat](http://localhost:8000/dev-ui/?app=software_factory)** connects to the same factory; send `/help` to see its commands. The launcher loads the ignored `.env` file and uses JDK 21. Keep the process running while using the browser.
+
+New feature requests create a live workflow against `url-v3`; generation begins when you select **Start / resume**. Each implementation/test patch pauses for review, followed by sandbox validation and final release review. **Try a scenario → Fixture demo** exercises the controls without paid model calls. The dependency cache and validator image below are also required for browser-triggered validation. See [UI usage and limits](docs/WEB_UI.md).
 
 Warm Maven's local dependency cache and pull the validator image once, then run the full fixture smoke test:
 

@@ -36,6 +36,25 @@ public final class ControlRepository {
         }
     }
 
+    public java.util.List<RunState> recentRuns() throws Exception {
+        java.util.List<RunState> result = new java.util.ArrayList<>();
+        try (Connection connection = connect(); var query = connection.prepareStatement("SELECT state_json FROM runs ORDER BY updated_at DESC LIMIT 100"); var rows = query.executeQuery()) {
+            while (rows.next()) result.add(Json.MAPPER.readValue(rows.getString(1), RunState.class));
+        }
+        return result;
+    }
+
+    public java.util.List<java.util.Map<String, Object>> events(String id) throws Exception {
+        java.util.List<java.util.Map<String, Object>> result = new java.util.ArrayList<>();
+        try (Connection connection = connect(); var query = connection.prepareStatement("SELECT seq, at, type, detail FROM audit_events WHERE run_id = ? ORDER BY seq DESC LIMIT 200")) {
+            query.setObject(1, java.util.UUID.fromString(id));
+            try (var rows = query.executeQuery()) {
+                while (rows.next()) result.add(java.util.Map.of("sequence", rows.getLong(1), "at", rows.getString(2), "type", rows.getString(3), "detail", rows.getString(4)));
+            }
+        }
+        return result;
+    }
+
     /** Holds an exclusive PostgreSQL advisory lock for one operator transition. */
     public RunLease lease(String id) throws Exception {
         java.util.UUID run = java.util.UUID.fromString(id);

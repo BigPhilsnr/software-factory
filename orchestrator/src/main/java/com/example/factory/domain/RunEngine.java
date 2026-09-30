@@ -167,6 +167,10 @@ public final class RunEngine {
         }
         String output;
         try {
+            if (!state.patchDrafts.containsKey(task.id())) {
+                state.tasks.put(task.id(), TaskStatus.RUNNING);
+                repository.record(state, "TASK_STARTED", task.id());
+            }
             output = previousOutputOrGenerate(state, task);
         } catch (Exception failure) {
             fail(state, task, failure);
@@ -365,6 +369,7 @@ public final class RunEngine {
         }
         state.pendingApprovalTask = task.id();
         state.pendingApprovalHash = hash;
+        state.tasks.put(task.id(), TaskStatus.PENDING);
         state.status = RunStatus.PAUSED;
         repository.record(state, "APPROVAL_REQUIRED", task.id() + ":" + hash);
     }
@@ -395,6 +400,9 @@ public final class RunEngine {
     private RunState approveLocked(String id, String reviewedHash, boolean accepted) throws Exception {
         RunState state = repository.load(id);
         if (state.status != RunStatus.PAUSED || state.pendingApprovalTask == null) throw new IllegalStateException("No pending approval");
+        if (reviewedHash != null && !state.pendingApprovalHash.equals(reviewedHash)) {
+            throw new IllegalArgumentException("Reviewed hash differs from the pending approval");
+        }
         if (!accepted) {
             state.status = RunStatus.NOT_APPROVED;
             state.finishedAt = Instant.now();
