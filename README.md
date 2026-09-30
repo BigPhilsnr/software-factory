@@ -64,7 +64,7 @@ The ambiguous scenario pauses for `clarify <run-id> <answer>` before planning. `
 
 For a live ADK run, copy `.env.example` to the ignored `.env` file, replace `ANTHROPIC_API_KEY` with your key, and start with `python3 scripts/factory_cli.py start scenarios/bugfix.json live`. Then use `python3 scripts/factory_cli.py advance <run-id>` and `review <run-id>`. Use the same launcher for later `approve` and `advance` commands so the key remains available to model calls. You can instead export `ANTHROPIC_API_KEY` in the launching shell. `CLAUDE_MODEL` and `FACTORY_MAX_MODEL_CALLS` are optional. Live mode makes paid provider calls; the release gate requires review of the exact candidate diff and hash. The fixture suite is the reproducible evaluation path.
 
-A live Claude Sonnet 5 bug-fix run reached release review with a verified red regression and five passing candidate tests. Live greenfield generation remains less constrained: one trial chose a different stack and did not produce an acceptable patch. See [the agent-system notes](docs/AGENT_SYSTEM.md) for the run evidence and limits.
+A live Claude Sonnet 5 bug-fix run completed after exact-hash release approval, with a verified red regression and five passing candidate tests. Its repair remains in an isolated candidate worktree for review or integration. Live greenfield generation remains less constrained: one trial chose a different stack and did not produce an acceptable patch. See [the agent-system notes](docs/AGENT_SYSTEM.md) for the run evidence and limits.
 
 ## Product contract
 
