@@ -1,6 +1,8 @@
 package com.example.shortener.domain;
 
 import java.util.Optional;
+import java.util.Locale;
+import java.util.Set;
 import org.springframework.dao.DuplicateKeyException;
 
 public final class ShortenerService {
@@ -15,7 +17,22 @@ public final class ShortenerService {
     }
 
     public Link create(String url) {
+        return create(url, null);
+    }
+
+    public Link create(String url, String alias) {
         String target = urls.validate(url);
+        if (alias != null) {
+            String normalized = alias.toLowerCase(Locale.ROOT);
+            if (!normalized.matches("[a-z0-9-]{4,32}") || Set.of("api", "actuator", "health", "favicon.ico").contains(normalized)) {
+                throw new IllegalArgumentException("Invalid alias");
+            }
+            try {
+                return links.create(normalized, target);
+            } catch (DuplicateKeyException conflict) {
+                throw new AliasConflictException();
+            }
+        }
         for (int attempt = 0; attempt < 4; attempt++) {
             try {
                 return links.create(codes.next(), target);
@@ -34,11 +51,9 @@ public final class ShortenerService {
         return links.redirectCount(link.id());
     }
 
-    public void recordRedirect(Link link) {
-        links.recordRedirect(link.id());
-    }
-
     public static final class CapacityException extends RuntimeException {
         public CapacityException(String message) { super(message); }
     }
+
+    public static final class AliasConflictException extends RuntimeException {}
 }

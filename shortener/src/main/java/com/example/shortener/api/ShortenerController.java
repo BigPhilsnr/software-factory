@@ -1,11 +1,12 @@
 package com.example.shortener.api;
 
 import com.example.shortener.domain.Link;
+import com.example.shortener.domain.CreationRateLimiter;
+import com.example.shortener.domain.AnalyticsRecorder;
 import com.example.shortener.domain.ShortenerService;
-import io.micrometer.core.instrument.Counter;
-import io.micrometer.core.instrument.MeterRegistry;
 import java.net.URI;
 import java.util.Map;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -20,28 +21,32 @@ import org.springframework.web.bind.annotation.RestController;
 public class ShortenerController {
     private final ShortenerService service;
     private final String baseUrl;
-    private final Counter analyticsFailures;
+    private final AnalyticsRecorder recorder;
+    private final CreationRateLimiter limiter;
 
-    public ShortenerController(ShortenerService service, @Value("${shortener.base-url}") String baseUrl, MeterRegistry meters) {
+    public ShortenerController(ShortenerService service, CreationRateLimiter limiter, AnalyticsRecorder recorder,
+                               @Value("${shortener.base-url}") String baseUrl) {
         this.service = service;
+        this.limiter = limiter;
+        this.recorder = recorder;
         this.baseUrl = baseUrl.replaceAll("/$", "");
-        this.analyticsFailures = meters.counter("shortener.analytics.failures");
     }
 
     @PostMapping("/api/shorten")
-    public ResponseEntity<CreateResponse> create(@RequestBody CreateRequest request) {
-        Link link = service.create(request.url());
+    public ResponseEntity<CreateResponse> create(@RequestBody CreateRequest request, HttpServletRequest http) {
+        CreationRateLimiter.Result rate = limiter.admit(http.getRemoteAddr());
+        if (!rate.allowed()) {
+            return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
+                .header("Retry-After", Long.toString(rate.retryAfterSeconds())).build();
+        }
+        Link link = service.create(request.url(), request.alias());
         return ResponseEntity.status(HttpStatus.CREATED).body(new CreateResponse(link.code(), baseUrl + "/" + link.code()));
     }
 
     @GetMapping("/{code}")
     public ResponseEntity<Void> redirect(@PathVariable String code) {
         Link link = service.find(code).orElseThrow(NotFoundException::new);
-        try {
-            service.recordRedirect(link);
-        } catch (RuntimeException failure) {
-            analyticsFailures.increment();
-        }
+        recorder.record(link.id());
         return ResponseEntity.status(HttpStatus.FOUND).location(URI.create(link.targetUrl())).build();
     }
 
@@ -51,7 +56,7 @@ public class ShortenerController {
         return Map.of("code", code, "redirectCount", service.count(link));
     }
 
-    public record CreateRequest(String url) {}
+    public record CreateRequest(String url, String alias) {}
     public record CreateResponse(String code, String shortUrl) {}
     static final class NotFoundException extends RuntimeException {}
 }

@@ -21,6 +21,11 @@ public class ApiErrors {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", "not_found"));
     }
 
+    @ExceptionHandler(ShortenerService.AliasConflictException.class)
+    ResponseEntity<Map<String, String>> conflict() {
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("error", "alias_conflict"));
+    }
+
     @ExceptionHandler({DataAccessException.class, ShortenerService.CapacityException.class})
     ResponseEntity<Map<String, String>> unavailable() {
         return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(Map.of("error", "temporarily_unavailable"));

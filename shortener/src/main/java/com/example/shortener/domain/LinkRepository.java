@@ -6,5 +6,4 @@ public interface LinkRepository {
     Link create(String code, String targetUrl);
     Optional<Link> findByCode(String code);
     long redirectCount(long linkId);
-    void recordRedirect(long linkId);
 }

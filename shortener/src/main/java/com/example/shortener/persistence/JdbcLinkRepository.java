@@ -2,8 +2,6 @@ package com.example.shortener.persistence;
 
 import com.example.shortener.domain.Link;
 import com.example.shortener.domain.LinkRepository;
-import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.util.Optional;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
@@ -46,8 +44,4 @@ public class JdbcLinkRepository implements LinkRepository {
         return count == null ? 0 : count;
     }
 
-    @Override
-    public void recordRedirect(long linkId) {
-        jdbc.update("UPDATE link_stats SET redirect_count = redirect_count + 1, last_redirect_at = now() WHERE link_id = ?", linkId);
-    }
 }
