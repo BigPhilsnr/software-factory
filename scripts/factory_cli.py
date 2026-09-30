@@ -34,7 +34,7 @@ def main():
     key = values.get("ANTHROPIC_API_KEY", "")
     if "live" in sys.argv[1:] and (not key or key.startswith("replace-")):
         raise SystemExit("Set ANTHROPIC_API_KEY in .env before starting a live run")
-    command = ["mvn", "-q", "-f", "orchestrator/pom.xml", "exec:java", "-Dexec.args=" + " ".join(sys.argv[1:])]
+    command = ["mvn", "-q", "-f", "factory/pom.xml", "exec:java", "-Dexec.args=" + " ".join(sys.argv[1:])]
     raise SystemExit(subprocess.call(command, cwd=ROOT, env=values))
 
 

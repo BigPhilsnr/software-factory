@@ -1,0 +1,31 @@
+package dev.softwarefactory.workflow.scenario;
+
+import java.nio.file.Files;
+import java.nio.file.Path;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
+import static org.junit.jupiter.api.Assertions.*;
+
+class ScenarioFilesTest {
+    @TempDir Path root;
+
+    @Test void historicalPathsResolveWithoutChangingSpecificationBytes() throws Exception {
+        Path moved = root.resolve("scenarios/bugfix/scenario.json");
+        Files.createDirectories(moved.getParent());
+        String original = "{\"id\":\"original\"}\n";
+        Files.writeString(moved, original);
+        Path resolved = ScenarioFiles.resolve(root.resolve("scenarios/bugfix.json"));
+        assertEquals(moved, resolved);
+        assertEquals(original, Files.readString(resolved));
+        assertEquals(moved, ScenarioFiles.resolve(moved));
+    }
+
+    @Test void customFeatureSpecificationsAreNotRedirected() throws Exception {
+        Path custom = root.resolve("requests/feature.json");
+        Files.createDirectories(custom.getParent());
+        Files.writeString(custom, "{}");
+        assertEquals(custom, ScenarioFiles.resolve(custom));
+        Path missing = root.resolve("requests/missing.json");
+        assertEquals(missing, ScenarioFiles.resolve(missing));
+    }
+}
