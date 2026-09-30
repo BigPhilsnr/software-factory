@@ -1,0 +1,18 @@
+{
+  "id": "ambiguous-reliability",
+  "requirement": "Make the URL shortener highly reliable and scale for heavy traffic.",
+  "baselineTag": "url-v2",
+  "tasks": [
+    {"id":"understand","stage":"REQUIREMENTS","dependsOn":[],"kind":"ARTIFACT","role":"requirements","prompt":"Identify missing reliability, throughput, latency, and loss assumptions.","fixture":"ambiguous-questions.txt","acceptanceCriteria":["AC-RELIABILITY"],"writeScope":[],"requiresApproval":false},
+    {"id":"clarify","stage":"REQUIREMENTS","dependsOn":["understand"],"kind":"CLARIFY","role":"operator","prompt":"Specify target redirect requests/second, p95 latency, acceptable analytics loss, and database/cache failure behavior.","acceptanceCriteria":["AC-RELIABILITY"],"writeScope":[],"requiresApproval":true},
+    {"id":"architecture","stage":"ARCHITECTURE","dependsOn":["clarify"],"kind":"ARTIFACT","role":"architecture","prompt":"Design only the approved reliability change.","fixture":"ambiguous-architecture.txt","acceptanceCriteria":["AC-RELIABILITY"],"writeScope":[],"requiresApproval":false},
+    {"id":"risk","stage":"ARCHITECTURE","dependsOn":["clarify"],"kind":"ARTIFACT","role":"risk","prompt":"State cache and datastore failure risks.","fixture":"ambiguous-risk.txt","acceptanceCriteria":["AC-RELIABILITY"],"writeScope":[],"requiresApproval":false},
+    {"id":"plan","stage":"PLANNING","dependsOn":["architecture","risk"],"kind":"ARTIFACT","role":"planner","prompt":"Sequence change, tests, and review.","fixture":"ambiguous-plan.txt","acceptanceCriteria":["AC-RELIABILITY"],"writeScope":[],"requiresApproval":false},
+    {"id":"implementation","stage":"IMPLEMENTATION","dependsOn":["plan"],"kind":"ARTIFACT","role":"implementer","prompt":"Prepare a bounded patch for immutable-link caching.","fixture":"reliability.patch","acceptanceCriteria":["AC-RELIABILITY"],"writeScope":[],"requiresApproval":false},
+    {"id":"independent-tests","stage":"IMPLEMENTATION","dependsOn":["plan"],"kind":"ARTIFACT","role":"test_author","prompt":"Define black-box resilience and load checks.","fixture":"ambiguous-tests.txt","acceptanceCriteria":["AC-RELIABILITY"],"writeScope":[],"requiresApproval":false},
+    {"id":"apply","stage":"IMPLEMENTATION","dependsOn":["implementation","independent-tests"],"kind":"PATCH","role":"implementer","prompt":"Apply the reviewed cache patch.","fixture":"reliability.patch","acceptanceCriteria":["AC-RELIABILITY"],"writeScope":["shortener"],"requiresApproval":true},
+    {"id":"validate","stage":"VALIDATION","dependsOn":["apply"],"kind":"VALIDATE","role":"validator","prompt":"Run isolated tests; record separate local load evidence.","acceptanceCriteria":["AC-RELIABILITY"],"writeScope":[],"requiresApproval":false},
+    {"id":"documentation","stage":"DOCUMENTATION","dependsOn":["validate"],"kind":"ARTIFACT","role":"documentation","prompt":"Document measured outcome and residual risks.","fixture":"ambiguous-documentation.txt","acceptanceCriteria":[],"writeScope":[],"requiresApproval":false},
+    {"id":"release","stage":"RELEASE","dependsOn":["documentation"],"kind":"RELEASE","role":"release","prompt":"Human review of the validated candidate.","acceptanceCriteria":[],"writeScope":[],"requiresApproval":true}
+  ]
+}

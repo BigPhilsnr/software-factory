@@ -14,5 +14,21 @@ services:
       retries: 15
     volumes:
       - shortener-data:/var/lib/postgresql/data
+  control-db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: control
+      POSTGRES_USER: control
+      POSTGRES_PASSWORD: control
+    ports:
+      - "5434:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U control -d control"]
+      interval: 2s
+      timeout: 2s
+      retries: 15
+    volumes:
+      - control-data:/var/lib/postgresql/data
 volumes:
   shortener-data:
+  control-data:

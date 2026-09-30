@@ -1,0 +1,5 @@
+1. Preserve the url-v1 API and regression tests.
+2. Add alias normalization and unique-conflict mapping.
+3. Add a bounded local creation limiter and tests for minute reset.
+4. Isolate analytics writes and measure redirect fault behavior.
+5. Integrate the patch, run prior and new tests, update documentation, and request review.

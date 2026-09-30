@@ -1,0 +1,1 @@
+The phrase “highly reliable and scale for heavy traffic” is not implementable as stated. Clarify redirect RPS, p95 latency, dataset size, acceptable analytics loss, behavior during PostgreSQL/cache failures, and whether multi-instance deployment is required. The operator must approve measurable acceptance criteria before engineering work continues.

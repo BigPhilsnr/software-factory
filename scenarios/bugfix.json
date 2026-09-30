@@ -1,0 +1,14 @@
+{
+  "id": "brownfield-seeded-bugfix",
+  "requirement": "A short link must continue to redirect after 30 visits. The defect in url-v2-buggy was deliberately seeded; diagnose it, prove the regression is red, fix it, and preserve existing tests.",
+  "baselineTag": "url-v2-buggy",
+  "tasks": [
+    {"id":"diagnose","stage":"CODEBASE","dependsOn":[],"kind":"ARTIFACT","role":"codebase","prompt":"Given only the symptom of a short link returning 429 after repeated visits, inspect the baseline and identify the root cause.","fixture":"bugfix-diagnosis.txt","acceptanceCriteria":["AC-REDIRECT"],"writeScope":[],"requiresApproval":false},
+    {"id":"regression-test","stage":"IMPLEMENTATION","dependsOn":["diagnose"],"kind":"PATCH","role":"test_author","prompt":"Add an independent regression test reproducing redirect throttling.","fixture":"bugfix-test.patch","acceptanceCriteria":["AC-REDIRECT"],"writeScope":["shortener/src/test"],"requiresApproval":false},
+    {"id":"red","stage":"VALIDATION","dependsOn":["regression-test"],"kind":"VALIDATE_RED","role":"validator","prompt":"RedirectRateLimitRegressionTest","acceptanceCriteria":["AC-REDIRECT"],"writeScope":[],"requiresApproval":false},
+    {"id":"fix","stage":"REPAIR","dependsOn":["red"],"kind":"PATCH","role":"implementer","prompt":"Remove the accidental redirect rate limit while leaving creation throttling intact.","fixture":"bugfix-fix.patch","acceptanceCriteria":["AC-REDIRECT"],"writeScope":["shortener/src/main/java/com/example/shortener/api"],"requiresApproval":false},
+    {"id":"green","stage":"REPAIR","dependsOn":["fix"],"kind":"VALIDATE","role":"validator","prompt":"Run the full isolated test suite after the repair.","acceptanceCriteria":["AC-REDIRECT"],"writeScope":[],"requiresApproval":false},
+    {"id":"runbook","stage":"DOCUMENTATION","dependsOn":["green"],"kind":"ARTIFACT","role":"documentation","prompt":"Document the seeded defect and its red/green reproduction.","fixture":"bugfix-runbook.txt","acceptanceCriteria":["AC-REDIRECT"],"writeScope":[],"requiresApproval":false},
+    {"id":"release","stage":"RELEASE","dependsOn":["runbook"],"kind":"RELEASE","role":"release","prompt":"Review exact repaired candidate and red/green evidence.","acceptanceCriteria":["AC-REDIRECT"],"writeScope":[],"requiresApproval":true}
+  ]
+}

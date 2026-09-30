@@ -1,0 +1,1 @@
+Independent contract cases: mixed-case alias normalizes to lowercase; conflicting alias returns 409; redirect remains unaffected by create throttling; 31st create request in one window returns 429 and Retry-After; prior generated codes still redirect. This fixture describes tests and is not execution evidence.

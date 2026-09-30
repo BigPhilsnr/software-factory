@@ -1,0 +1,1 @@
+The seeded bug applied creation throttling to GET redirects. The independent RedirectRateLimitRegressionTest was run against url-v2-buggy and had exactly one expected assertion failure. After the one-line repair, the full shortener test suite passed in the restricted Maven container. The release gate remains subject to operator review.

@@ -1,0 +1,8 @@
+{
+  "id": "retry-exhaustion-fixture",
+  "requirement": "Show bounded retry and terminal failure for an invalid in-scope patch.",
+  "baselineTag": "url-v2",
+  "tasks": [
+    {"id":"broken-patch","stage":"IMPLEMENTATION","dependsOn":[],"kind":"PATCH","role":"implementer","prompt":"Attempt to apply a syntactically valid but inapplicable patch.","fixture":"retry-exhaustion.patch","acceptanceCriteria":["AC-RETRY"],"writeScope":["shortener"],"requiresApproval":false}
+  ]
+}

@@ -1,0 +1,1 @@
+Symptom: a known short link starts returning HTTP 429 after repeated GET requests. The defect was deliberately seeded in url-v2-buggy. ShortenerController.redirect invokes CreationRateLimiter on a redirect-specific key. The limiter belongs to POST creation requests only. A test should reproduce the 31st-visit failure before removing that call.

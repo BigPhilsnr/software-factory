@@ -2,7 +2,7 @@
 
 A Java URL shortener built and evolved through a governed, AI-assisted engineering workflow over a 2–3 day interview assignment.
 
-**Status: updated implementation plan.** This repository currently contains this README only. The application, orchestration engine, commands, tests, and evidence described below are planned deliverables, not completed functionality. Checklists remain unchecked until supported by execution evidence.
+**Status: design target and assignment interpretation.** The runnable implementation and verified local commands are in the root [README](../README.md); agent-system evidence and remaining limits are in [AGENT_SYSTEM.md](AGENT_SYSTEM.md). This document preserves the full target design, including stretch gates that the local prototype does not yet satisfy. Its checklist is a submission gate, not a statement that every item has been completed.
 
 ## Assignment interpretation
 
@@ -260,21 +260,21 @@ Record the selected adapter, pinned dependencies, passing smoke-test evidence, a
 
 For a two-day run, reduce feature breadth and measurement sophistication: keep aggregate analytics, one limiter, one meaningful reliability improvement, a CLI, and small fixtures. Preserve all three scenarios and mandatory orchestration controls. If those do not finish, report the prototype as incomplete rather than checking off prose coverage.
 
-## Planned repository and setup deliverables
+## Repository and setup deliverables
 
-The intended structure below does not yet exist:
+The implementation uses the following structure. The external acceptance script and local Compose file stand in for the originally proposed separate `acceptance-tests/` and `infra/` directories:
 
 ```text
-orchestrator/          # ADK adapters, DAG/state, policies, approvals, recovery
-url-shortener/         # Product API, domain logic, persistence
-acceptance-tests/      # Independently controlled HTTP/contract tests
+orchestrator/          # ADK adapter, DAG/state, policy, approvals, recovery
+shortener/             # Product API, domain logic, persistence
+scripts/               # Independent HTTP and agent replay checks
 scenarios/             # A/B/C inputs, operator answers, fault fixtures
-infra/                 # Local services and worker isolation
+compose.yaml            # Local PostgreSQL services
 docs/                  # Architecture, ADRs, threat boundaries, runbooks
-evidence/<run-id>/     # Generated immutable-after-finalization evidence
+evidence/<run-id>/      # Generated versioned evidence (ignored by Git)
 ```
 
-Before implementation is called runnable, replace this section with tested instructions for the exact JDK, pinned dependencies, Maven wrapper, container runtime, model access, secret provisioning, database initialization, service startup, scenario execution, approval, validation, replay, and cleanup. No launch commands are supplied yet because executable entry points do not exist.
+The root README contains the tested local launch commands. The project requires an installed Maven rather than a Maven wrapper. Live model access is optional for fixture replay and remains unverified without an Anthropic key.
 
 Setup acceptance requires a clean-checkout run on the documented environment, with prerequisite checks, no committed secrets, and explicit provider/network/cost requirements. Offline replay must be separately documented; it must never silently substitute for a requested live model run.
 

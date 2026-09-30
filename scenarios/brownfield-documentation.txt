@@ -1,0 +1,1 @@
+Brownfield review: aliases and creation rate limiting are implemented locally. Rate limiting is per instance and socket peer. Analytics uses a bounded secondary write pool; counts after timeouts may be uncertain. Validate compatibility and fault behavior before release.

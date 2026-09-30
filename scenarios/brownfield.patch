@@ -1,0 +1,369 @@
+diff --git a/shortener/src/main/java/com/example/shortener/api/ApiErrors.java b/shortener/src/main/java/com/example/shortener/api/ApiErrors.java
+index 54b1e73..0fee9b2 100644
+--- a/shortener/src/main/java/com/example/shortener/api/ApiErrors.java
++++ b/shortener/src/main/java/com/example/shortener/api/ApiErrors.java
+@@ -21,6 +21,11 @@ public class ApiErrors {
+         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", "not_found"));
+     }
+ 
++    @ExceptionHandler(ShortenerService.AliasConflictException.class)
++    ResponseEntity<Map<String, String>> conflict() {
++        return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("error", "alias_conflict"));
++    }
++
+     @ExceptionHandler({DataAccessException.class, ShortenerService.CapacityException.class})
+     ResponseEntity<Map<String, String>> unavailable() {
+         return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(Map.of("error", "temporarily_unavailable"));
+diff --git a/shortener/src/main/java/com/example/shortener/api/ShortenerController.java b/shortener/src/main/java/com/example/shortener/api/ShortenerController.java
+index 20a31a3..faf7b6f 100644
+--- a/shortener/src/main/java/com/example/shortener/api/ShortenerController.java
++++ b/shortener/src/main/java/com/example/shortener/api/ShortenerController.java
+@@ -1,11 +1,12 @@
+ package com.example.shortener.api;
+ 
+ import com.example.shortener.domain.Link;
++import com.example.shortener.domain.CreationRateLimiter;
++import com.example.shortener.domain.AnalyticsRecorder;
+ import com.example.shortener.domain.ShortenerService;
+-import io.micrometer.core.instrument.Counter;
+-import io.micrometer.core.instrument.MeterRegistry;
+ import java.net.URI;
+ import java.util.Map;
++import jakarta.servlet.http.HttpServletRequest;
+ import org.springframework.beans.factory.annotation.Value;
+ import org.springframework.http.HttpStatus;
+ import org.springframework.http.ResponseEntity;
+@@ -20,28 +21,32 @@ import org.springframework.web.bind.annotation.RestController;
+ public class ShortenerController {
+     private final ShortenerService service;
+     private final String baseUrl;
+-    private final Counter analyticsFailures;
++    private final AnalyticsRecorder recorder;
++    private final CreationRateLimiter limiter;
+ 
+-    public ShortenerController(ShortenerService service, @Value("${shortener.base-url}") String baseUrl, MeterRegistry meters) {
++    public ShortenerController(ShortenerService service, CreationRateLimiter limiter, AnalyticsRecorder recorder,
++                               @Value("${shortener.base-url}") String baseUrl) {
+         this.service = service;
++        this.limiter = limiter;
++        this.recorder = recorder;
+         this.baseUrl = baseUrl.replaceAll("/$", "");
+-        this.analyticsFailures = meters.counter("shortener.analytics.failures");
+     }
+ 
+     @PostMapping("/api/shorten")
+-    public ResponseEntity<CreateResponse> create(@RequestBody CreateRequest request) {
+-        Link link = service.create(request.url());
++    public ResponseEntity<CreateResponse> create(@RequestBody CreateRequest request, HttpServletRequest http) {
++        CreationRateLimiter.Result rate = limiter.admit(http.getRemoteAddr());
++        if (!rate.allowed()) {
++            return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
++                .header("Retry-After", Long.toString(rate.retryAfterSeconds())).build();
++        }
++        Link link = service.create(request.url(), request.alias());
+         return ResponseEntity.status(HttpStatus.CREATED).body(new CreateResponse(link.code(), baseUrl + "/" + link.code()));
+     }
+ 
+     @GetMapping("/{code}")
+     public ResponseEntity<Void> redirect(@PathVariable String code) {
+         Link link = service.find(code).orElseThrow(NotFoundException::new);
+-        try {
+-            service.recordRedirect(link);
+-        } catch (RuntimeException failure) {
+-            analyticsFailures.increment();
+-        }
++        recorder.record(link.id());
+         return ResponseEntity.status(HttpStatus.FOUND).location(URI.create(link.targetUrl())).build();
+     }
+ 
+@@ -51,7 +56,7 @@ public class ShortenerController {
+         return Map.of("code", code, "redirectCount", service.count(link));
+     }
+ 
+-    public record CreateRequest(String url) {}
++    public record CreateRequest(String url, String alias) {}
+     public record CreateResponse(String code, String shortUrl) {}
+     static final class NotFoundException extends RuntimeException {}
+ }
+diff --git a/shortener/src/main/java/com/example/shortener/config/DomainConfiguration.java b/shortener/src/main/java/com/example/shortener/config/DomainConfiguration.java
+index b34c3c7..65502cc 100644
+--- a/shortener/src/main/java/com/example/shortener/config/DomainConfiguration.java
++++ b/shortener/src/main/java/com/example/shortener/config/DomainConfiguration.java
+@@ -1,11 +1,13 @@
+ package com.example.shortener.config;
+ 
+ import com.example.shortener.domain.CodeGenerator;
++import com.example.shortener.domain.CreationRateLimiter;
+ import com.example.shortener.domain.LinkRepository;
+ import com.example.shortener.domain.ShortenerService;
+ import com.example.shortener.domain.UrlPolicy;
+ import org.springframework.context.annotation.Bean;
+ import org.springframework.context.annotation.Configuration;
++import java.time.Clock;
+ 
+ @Configuration
+ public class DomainConfiguration {
+@@ -13,4 +15,9 @@ public class DomainConfiguration {
+     ShortenerService shortenerService(LinkRepository links) {
+         return new ShortenerService(links, new CodeGenerator(), new UrlPolicy());
+     }
++
++    @Bean
++    CreationRateLimiter creationRateLimiter() {
++        return new CreationRateLimiter(Clock.systemUTC(), 30);
++    }
+ }
+diff --git a/shortener/src/main/java/com/example/shortener/domain/AnalyticsRecorder.java b/shortener/src/main/java/com/example/shortener/domain/AnalyticsRecorder.java
+new file mode 100644
+index 0000000..629fa9a
+--- /dev/null
++++ b/shortener/src/main/java/com/example/shortener/domain/AnalyticsRecorder.java
+@@ -0,0 +1,6 @@
++package com.example.shortener.domain;
++
++public interface AnalyticsRecorder {
++    /** Best-effort and bounded; failure cannot prevent the redirect. */
++    void record(long linkId);
++}
+diff --git a/shortener/src/main/java/com/example/shortener/domain/CreationRateLimiter.java b/shortener/src/main/java/com/example/shortener/domain/CreationRateLimiter.java
+new file mode 100644
+index 0000000..0a3fb49
+--- /dev/null
++++ b/shortener/src/main/java/com/example/shortener/domain/CreationRateLimiter.java
+@@ -0,0 +1,33 @@
++package com.example.shortener.domain;
++
++import java.time.Clock;
++import java.util.concurrent.ConcurrentHashMap;
++
++/** Local fixed-window limiter. A distributed deployment must replace this adapter. */
++public final class CreationRateLimiter {
++    private final Clock clock;
++    private final int limit;
++    private final ConcurrentHashMap<String, Window> windows = new ConcurrentHashMap<>();
++
++    public CreationRateLimiter(Clock clock, int limit) {
++        if (limit < 1) throw new IllegalArgumentException("limit must be positive");
++        this.clock = clock;
++        this.limit = limit;
++    }
++
++    public Result admit(String address) {
++        long second = clock.instant().getEpochSecond();
++        long epoch = Math.floorDiv(second, 60);
++        Window window = windows.compute(address, (key, previous) -> {
++            if (previous == null || previous.epoch != epoch) return new Window(epoch, 1);
++            return new Window(epoch, Math.min(limit + 1, previous.count + 1));
++        });
++        if (windows.size() > 10_000) {
++            windows.entrySet().removeIf(entry -> entry.getValue().epoch < epoch);
++        }
++        return new Result(window.count <= limit, 60 - Math.floorMod(second, 60));
++    }
++
++    private record Window(long epoch, int count) {}
++    public record Result(boolean allowed, long retryAfterSeconds) {}
++}
+diff --git a/shortener/src/main/java/com/example/shortener/domain/LinkRepository.java b/shortener/src/main/java/com/example/shortener/domain/LinkRepository.java
+index d79b303..bf4440e 100644
+--- a/shortener/src/main/java/com/example/shortener/domain/LinkRepository.java
++++ b/shortener/src/main/java/com/example/shortener/domain/LinkRepository.java
+@@ -6,5 +6,4 @@ public interface LinkRepository {
+     Link create(String code, String targetUrl);
+     Optional<Link> findByCode(String code);
+     long redirectCount(long linkId);
+-    void recordRedirect(long linkId);
+ }
+diff --git a/shortener/src/main/java/com/example/shortener/domain/ShortenerService.java b/shortener/src/main/java/com/example/shortener/domain/ShortenerService.java
+index 62ea747..762e31c 100644
+--- a/shortener/src/main/java/com/example/shortener/domain/ShortenerService.java
++++ b/shortener/src/main/java/com/example/shortener/domain/ShortenerService.java
+@@ -1,6 +1,8 @@
+ package com.example.shortener.domain;
+ 
+ import java.util.Optional;
++import java.util.Locale;
++import java.util.Set;
+ import org.springframework.dao.DuplicateKeyException;
+ 
+ public final class ShortenerService {
+@@ -15,7 +17,22 @@ public final class ShortenerService {
+     }
+ 
+     public Link create(String url) {
++        return create(url, null);
++    }
++
++    public Link create(String url, String alias) {
+         String target = urls.validate(url);
++        if (alias != null) {
++            String normalized = alias.toLowerCase(Locale.ROOT);
++            if (!normalized.matches("[a-z0-9-]{4,32}") || Set.of("api", "actuator", "health", "favicon.ico").contains(normalized)) {
++                throw new IllegalArgumentException("Invalid alias");
++            }
++            try {
++                return links.create(normalized, target);
++            } catch (DuplicateKeyException conflict) {
++                throw new AliasConflictException();
++            }
++        }
+         for (int attempt = 0; attempt < 4; attempt++) {
+             try {
+                 return links.create(codes.next(), target);
+@@ -34,11 +51,9 @@ public final class ShortenerService {
+         return links.redirectCount(link.id());
+     }
+ 
+-    public void recordRedirect(Link link) {
+-        links.recordRedirect(link.id());
+-    }
+-
+     public static final class CapacityException extends RuntimeException {
+         public CapacityException(String message) { super(message); }
+     }
++
++    public static final class AliasConflictException extends RuntimeException {}
+ }
+diff --git a/shortener/src/main/java/com/example/shortener/persistence/BoundedAnalyticsRecorder.java b/shortener/src/main/java/com/example/shortener/persistence/BoundedAnalyticsRecorder.java
+new file mode 100644
+index 0000000..2142285
+--- /dev/null
++++ b/shortener/src/main/java/com/example/shortener/persistence/BoundedAnalyticsRecorder.java
+@@ -0,0 +1,79 @@
++package com.example.shortener.persistence;
++
++import com.example.shortener.domain.AnalyticsRecorder;
++import com.zaxxer.hikari.HikariConfig;
++import com.zaxxer.hikari.HikariDataSource;
++import io.micrometer.core.instrument.Counter;
++import io.micrometer.core.instrument.MeterRegistry;
++import java.util.concurrent.ArrayBlockingQueue;
++import java.util.concurrent.Future;
++import java.util.concurrent.ThreadPoolExecutor;
++import java.util.concurrent.TimeUnit;
++import java.util.concurrent.TimeoutException;
++import java.util.concurrent.ExecutionException;
++import org.springframework.beans.factory.DisposableBean;
++import org.springframework.beans.factory.annotation.Value;
++import org.springframework.jdbc.core.JdbcTemplate;
++import org.springframework.stereotype.Component;
++
++/** Isolates counter writes from the lookup pool and bounds request wait and in-flight work. */
++@Component
++public final class BoundedAnalyticsRecorder implements AnalyticsRecorder, DisposableBean {
++    private final HikariDataSource source;
++    private final JdbcTemplate jdbc;
++    private final ThreadPoolExecutor workers;
++    private final Counter failures;
++
++    public BoundedAnalyticsRecorder(
++        @Value("${spring.datasource.url}") String url,
++        @Value("${spring.datasource.username}") String username,
++        @Value("${spring.datasource.password}") String password,
++        MeterRegistry meters
++    ) {
++        HikariConfig config = new HikariConfig();
++        config.setJdbcUrl(url);
++        config.setUsername(username);
++        config.setPassword(password);
++        config.setMaximumPoolSize(2);
++        config.setMinimumIdle(0);
++        config.setConnectionTimeout(250);
++        config.setPoolName("analytics-pool");
++        this.source = new HikariDataSource(config);
++        this.jdbc = new JdbcTemplate(source);
++        this.workers = new ThreadPoolExecutor(2, 2, 0L, TimeUnit.MILLISECONDS,
++            new ArrayBlockingQueue<>(2), runnable -> {
++                Thread thread = new Thread(runnable, "analytics-writer");
++                thread.setDaemon(true);
++                return thread;
++            }, new ThreadPoolExecutor.AbortPolicy());
++        this.failures = meters.counter("shortener.analytics.failures");
++    }
++
++    @Override
++    public void record(long linkId) {
++        Future<?> attempt;
++        try {
++            attempt = workers.submit(() -> jdbc.update(
++                "UPDATE link_stats SET redirect_count = redirect_count + 1, last_redirect_at = now() WHERE link_id = ?", linkId));
++        } catch (RuntimeException saturated) {
++            failures.increment();
++            return;
++        }
++        try {
++            attempt.get(100, TimeUnit.MILLISECONDS);
++        } catch (InterruptedException interrupted) {
++            Thread.currentThread().interrupt();
++            attempt.cancel(true);
++            failures.increment();
++        } catch (TimeoutException | ExecutionException failed) {
++            attempt.cancel(true);
++            failures.increment();
++        }
++    }
++
++    @Override
++    public void destroy() {
++        workers.shutdownNow();
++        source.close();
++    }
++}
+diff --git a/shortener/src/main/java/com/example/shortener/persistence/JdbcLinkRepository.java b/shortener/src/main/java/com/example/shortener/persistence/JdbcLinkRepository.java
+index 93a0334..6af6826 100644
+--- a/shortener/src/main/java/com/example/shortener/persistence/JdbcLinkRepository.java
++++ b/shortener/src/main/java/com/example/shortener/persistence/JdbcLinkRepository.java
+@@ -2,8 +2,6 @@ package com.example.shortener.persistence;
+ 
+ import com.example.shortener.domain.Link;
+ import com.example.shortener.domain.LinkRepository;
+-import java.sql.ResultSet;
+-import java.sql.SQLException;
+ import java.util.Optional;
+ import org.springframework.jdbc.core.JdbcTemplate;
+ import org.springframework.jdbc.core.RowMapper;
+@@ -46,8 +44,4 @@ public class JdbcLinkRepository implements LinkRepository {
+         return count == null ? 0 : count;
+     }
+ 
+-    @Override
+-    public void recordRedirect(long linkId) {
+-        jdbc.update("UPDATE link_stats SET redirect_count = redirect_count + 1, last_redirect_at = now() WHERE link_id = ?", linkId);
+-    }
+ }
+diff --git a/shortener/src/test/java/com/example/shortener/domain/CreationRateLimiterTest.java b/shortener/src/test/java/com/example/shortener/domain/CreationRateLimiterTest.java
+new file mode 100644
+index 0000000..f95edf8
+--- /dev/null
++++ b/shortener/src/test/java/com/example/shortener/domain/CreationRateLimiterTest.java
+@@ -0,0 +1,30 @@
++package com.example.shortener.domain;
++
++import static org.junit.jupiter.api.Assertions.*;
++import java.time.Clock;
++import java.time.Instant;
++import java.time.ZoneId;
++import org.junit.jupiter.api.Test;
++
++class CreationRateLimiterTest {
++    @Test
++    void rejectsOnlyAfterLimitAndResetsAtNextUtcMinute() {
++        MutableClock clock = new MutableClock(Instant.parse("2026-09-30T12:00:59Z"));
++        CreationRateLimiter limiter = new CreationRateLimiter(clock, 2);
++        assertTrue(limiter.admit("127.0.0.1").allowed());
++        assertTrue(limiter.admit("127.0.0.1").allowed());
++        var denied = limiter.admit("127.0.0.1");
++        assertFalse(denied.allowed());
++        assertEquals(1, denied.retryAfterSeconds());
++        clock.value = Instant.parse("2026-09-30T12:01:00Z");
++        assertTrue(limiter.admit("127.0.0.1").allowed());
++    }
++
++    private static final class MutableClock extends Clock {
++        private Instant value;
++        MutableClock(Instant value) { this.value = value; }
++        @Override public ZoneId getZone() { return ZoneId.of("UTC"); }
++        @Override public Clock withZone(ZoneId zone) { return this; }
++        @Override public Instant instant() { return value; }
++    }
++}

@@ -1,0 +1,1 @@
+Independent contract cases: valid create returns 201 and a code; malformed or unsafe URL returns 400; a known code redirects with an exact Location header; unknown code returns 404; aggregate count increases after redirects; collision exhaustion is bounded. These cases must be executed by a trusted harness before release; this fixture is a replay artifact, not a test result.

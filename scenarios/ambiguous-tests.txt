@@ -1,0 +1,1 @@
+Independent resilience cases: recently resolved link still redirects from cache after the lookup database fails; uncached lookup reports a controlled error; cache expires after the configured TTL; normal-load p95 and error rate are reported with machine and dataset context. This fixture is a test plan, not execution evidence.

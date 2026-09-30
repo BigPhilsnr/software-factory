@@ -3,4 +3,5 @@
 .DS_Store
 .env
 evidence/
+.runs/
 *.log

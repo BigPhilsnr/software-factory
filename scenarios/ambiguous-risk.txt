@@ -1,0 +1,1 @@
+The in-process cache is not shared across nodes and does not prove multi-instance scale. It does not retain uncached links during PostgreSQL failure. The simple clear-on-capacity eviction can create a latency spike. A 60-second local load check demonstrates measured behavior only, not an availability SLO.

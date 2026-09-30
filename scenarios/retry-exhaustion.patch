@@ -1,0 +1,7 @@
+diff --git a/shortener/never-existed.txt b/shortener/never-existed.txt
+index 1a2b3c4..5d6e7f8 100644
+--- a/shortener/never-existed.txt
++++ b/shortener/never-existed.txt
+@@ -1 +1 @@
+-old
++new

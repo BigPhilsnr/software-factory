@@ -39,6 +39,7 @@ public class ShortenerController {
             return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
                 .header("Retry-After", Long.toString(rate.retryAfterSeconds())).build();
         }
+        if (request == null) throw new IllegalArgumentException("Request body is required");
         Link link = service.create(request.url(), request.alias());
         return ResponseEntity.status(HttpStatus.CREATED).body(new CreateResponse(link.code(), baseUrl + "/" + link.code()));
     }

@@ -1,0 +1,17 @@
+{
+  "id": "greenfield",
+  "requirement": "Build a URL shortener with creation, redirects, aggregate analytics, and tests.",
+  "baselineTag": "project-start",
+  "tasks": [
+    {"id":"understand","stage":"REQUIREMENTS","dependsOn":[],"kind":"ARTIFACT","role":"requirements","prompt":"Normalize the URL shortener requirement into measurable criteria.","fixture":"greenfield-requirements.txt","acceptanceCriteria":["AC-CREATE","AC-REDIRECT","AC-ANALYTICS"],"writeScope":[],"requiresApproval":false},
+    {"id":"architecture","stage":"ARCHITECTURE","dependsOn":["understand"],"kind":"ARTIFACT","role":"architecture","prompt":"Design the API, schema, and module boundaries.","fixture":"greenfield-architecture.txt","acceptanceCriteria":["AC-CREATE","AC-REDIRECT"],"writeScope":[],"requiresApproval":false},
+    {"id":"risk","stage":"ARCHITECTURE","dependsOn":["understand"],"kind":"ARTIFACT","role":"risk","prompt":"Identify security and reliability risks.","fixture":"greenfield-risk.txt","acceptanceCriteria":["AC-REDIRECT"],"writeScope":[],"requiresApproval":false},
+    {"id":"plan","stage":"PLANNING","dependsOn":["architecture","risk"],"kind":"ARTIFACT","role":"planner","prompt":"Produce a dependency-ordered implementation plan.","fixture":"greenfield-plan.txt","acceptanceCriteria":["AC-CREATE","AC-REDIRECT","AC-ANALYTICS"],"writeScope":[],"requiresApproval":false},
+    {"id":"implementation","stage":"IMPLEMENTATION","dependsOn":["plan"],"kind":"ARTIFACT","role":"implementer","prompt":"Prepare the bounded source patch from the approved design.","fixture":"greenfield.patch","acceptanceCriteria":["AC-CREATE","AC-REDIRECT","AC-ANALYTICS"],"writeScope":[],"requiresApproval":false},
+    {"id":"independent-tests","stage":"IMPLEMENTATION","dependsOn":["plan"],"kind":"ARTIFACT","role":"test_author","prompt":"Write black-box acceptance tests from the approved contract.","fixture":"greenfield-tests.txt","acceptanceCriteria":["AC-CREATE","AC-REDIRECT","AC-ANALYTICS"],"writeScope":[],"requiresApproval":false},
+    {"id":"apply","stage":"IMPLEMENTATION","dependsOn":["implementation","independent-tests"],"kind":"PATCH","role":"implementer","prompt":"Apply the reviewed patch to the isolated candidate.","fixture":"greenfield.patch","acceptanceCriteria":["AC-CREATE","AC-REDIRECT","AC-ANALYTICS"],"writeScope":[".gitignore","compose.yaml","docs","pom.xml","shortener"],"requiresApproval":true},
+    {"id":"validate","stage":"VALIDATION","dependsOn":["apply"],"kind":"VALIDATE","role":"validator","prompt":"Run sandboxed Maven tests against this candidate.","acceptanceCriteria":["AC-CREATE","AC-REDIRECT","AC-ANALYTICS"],"writeScope":[],"requiresApproval":false},
+    {"id":"documentation","stage":"DOCUMENTATION","dependsOn":["validate"],"kind":"ARTIFACT","role":"documentation","prompt":"Review setup and limitations.","fixture":"greenfield-documentation.txt","acceptanceCriteria":[],"writeScope":[],"requiresApproval":false},
+    {"id":"release","stage":"RELEASE","dependsOn":["documentation"],"kind":"RELEASE","role":"release","prompt":"Human review of the validated candidate.","acceptanceCriteria":[],"writeScope":[],"requiresApproval":true}
+  ]
+}

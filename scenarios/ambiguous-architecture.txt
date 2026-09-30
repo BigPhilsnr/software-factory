@@ -1,0 +1,1 @@
+For a local single-instance target, cache immutable links in a bounded map with a 60-second TTL. PostgreSQL remains the source of truth. A recent cache hit can redirect when lookup storage is unavailable; an uncached lookup returns a controlled error. Cache eviction affects latency, not correctness. Replace the local rate limiter before a multi-instance deployment.

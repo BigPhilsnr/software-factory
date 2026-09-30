@@ -1,0 +1,7 @@
+diff --git a/orchestrator/forbidden.txt b/orchestrator/forbidden.txt
+new file mode 100644
+index 0000000..fd71675
+--- /dev/null
++++ b/orchestrator/forbidden.txt
+@@ -0,0 +1 @@
++This path is outside the worker write scope.

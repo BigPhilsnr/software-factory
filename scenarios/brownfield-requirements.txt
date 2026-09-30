@@ -1,0 +1,3 @@
+AC-ALIAS: Allow a validated optional custom alias; normalize case; conflicting aliases return 409.
+AC-LIMIT: Admit at most 30 create requests per source IP per fixed UTC minute, then return 429 with Retry-After. Redirects are outside this limit.
+AC-COMPAT: Existing generated codes and redirect responses remain valid after the extension.

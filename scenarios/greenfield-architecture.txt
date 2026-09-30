@@ -1,0 +1,1 @@
+Java 21 Spring Boot service. Controller handles HTTP contracts; domain service validates URLs and allocates codes; repository owns SQL; PostgreSQL is authoritative. A unique code constraint resolves creation races. Flyway versions the schema. Aggregate counters are separated from link lookup so analytics failures cannot invalidate redirects.

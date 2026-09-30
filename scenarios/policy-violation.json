@@ -1,0 +1,8 @@
+{
+  "id": "policy-violation-fixture",
+  "requirement": "Verify an out-of-scope worker patch causes a safe stop.",
+  "baselineTag": "url-v2",
+  "tasks": [
+    {"id":"attack","stage":"IMPLEMENTATION","dependsOn":[],"kind":"PATCH","role":"implementer","prompt":"Attempt to write outside the authorized shortener scope.","fixture":"policy-violation.patch","acceptanceCriteria":["AC-POLICY"],"writeScope":["shortener"],"requiresApproval":false}
+  ]
+}

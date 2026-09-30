@@ -1,0 +1,144 @@
+diff --git a/shortener/src/main/java/com/example/shortener/config/DomainConfiguration.java b/shortener/src/main/java/com/example/shortener/config/DomainConfiguration.java
+index 65502cc..aaecd0c 100644
+--- a/shortener/src/main/java/com/example/shortener/config/DomainConfiguration.java
++++ b/shortener/src/main/java/com/example/shortener/config/DomainConfiguration.java
+@@ -3,6 +3,7 @@ package com.example.shortener.config;
+ import com.example.shortener.domain.CodeGenerator;
+ import com.example.shortener.domain.CreationRateLimiter;
+ import com.example.shortener.domain.LinkRepository;
++import com.example.shortener.domain.LinkCache;
+ import com.example.shortener.domain.ShortenerService;
+ import com.example.shortener.domain.UrlPolicy;
+ import org.springframework.context.annotation.Bean;
+@@ -13,7 +14,7 @@ import java.time.Clock;
+ public class DomainConfiguration {
+     @Bean
+     ShortenerService shortenerService(LinkRepository links) {
+-        return new ShortenerService(links, new CodeGenerator(), new UrlPolicy());
++        return new ShortenerService(links, new CodeGenerator(), new UrlPolicy(), new LinkCache(Clock.systemUTC()));
+     }
+ 
+     @Bean
+diff --git a/shortener/src/main/java/com/example/shortener/domain/LinkCache.java b/shortener/src/main/java/com/example/shortener/domain/LinkCache.java
+new file mode 100644
+index 0000000..72d8fae
+--- /dev/null
++++ b/shortener/src/main/java/com/example/shortener/domain/LinkCache.java
+@@ -0,0 +1,30 @@
++package com.example.shortener.domain;
++
++import java.time.Clock;
++import java.util.Optional;
++import java.util.concurrent.ConcurrentHashMap;
++
++/** Bounded local acceleration for immutable links; PostgreSQL remains authoritative. */
++public final class LinkCache {
++    private final Clock clock;
++    private final ConcurrentHashMap<String, Entry> entries = new ConcurrentHashMap<>();
++
++    public LinkCache(Clock clock) { this.clock = clock; }
++
++    public Optional<Link> get(String code) {
++        Entry entry = entries.get(code);
++        if (entry == null) return Optional.empty();
++        if (entry.expiresAt <= clock.millis()) {
++            entries.remove(code, entry);
++            return Optional.empty();
++        }
++        return Optional.of(entry.link);
++    }
++
++    public synchronized void put(Link link) {
++        if (entries.size() >= 10_000) entries.clear();
++        entries.put(link.code(), new Entry(link, clock.millis() + 60_000));
++    }
++
++    private record Entry(Link link, long expiresAt) {}
++}
+diff --git a/shortener/src/main/java/com/example/shortener/domain/ShortenerService.java b/shortener/src/main/java/com/example/shortener/domain/ShortenerService.java
+index 762e31c..1d8595e 100644
+--- a/shortener/src/main/java/com/example/shortener/domain/ShortenerService.java
++++ b/shortener/src/main/java/com/example/shortener/domain/ShortenerService.java
+@@ -9,11 +9,13 @@ public final class ShortenerService {
+     private final LinkRepository links;
+     private final CodeGenerator codes;
+     private final UrlPolicy urls;
++    private final LinkCache cache;
+ 
+-    public ShortenerService(LinkRepository links, CodeGenerator codes, UrlPolicy urls) {
++    public ShortenerService(LinkRepository links, CodeGenerator codes, UrlPolicy urls, LinkCache cache) {
+         this.links = links;
+         this.codes = codes;
+         this.urls = urls;
++        this.cache = cache;
+     }
+ 
+     public Link create(String url) {
+@@ -28,14 +30,18 @@ public final class ShortenerService {
+                 throw new IllegalArgumentException("Invalid alias");
+             }
+             try {
+-                return links.create(normalized, target);
++                Link created = links.create(normalized, target);
++                cache.put(created);
++                return created;
+             } catch (DuplicateKeyException conflict) {
+                 throw new AliasConflictException();
+             }
+         }
+         for (int attempt = 0; attempt < 4; attempt++) {
+             try {
+-                return links.create(codes.next(), target);
++                Link created = links.create(codes.next(), target);
++                cache.put(created);
++                return created;
+             } catch (DuplicateKeyException collision) {
+                 // A unique constraint is the final authority under concurrent creation.
+             }
+@@ -44,7 +50,11 @@ public final class ShortenerService {
+     }
+ 
+     public Optional<Link> find(String code) {
+-        return links.findByCode(code);
++        Optional<Link> hit = cache.get(code);
++        if (hit.isPresent()) return hit;
++        Optional<Link> found = links.findByCode(code);
++        found.ifPresent(cache::put);
++        return found;
+     }
+ 
+     public long count(Link link) {
+diff --git a/shortener/src/test/java/com/example/shortener/domain/ShortenerServiceTest.java b/shortener/src/test/java/com/example/shortener/domain/ShortenerServiceTest.java
+index cc7715b..8d09d86 100644
+--- a/shortener/src/test/java/com/example/shortener/domain/ShortenerServiceTest.java
++++ b/shortener/src/test/java/com/example/shortener/domain/ShortenerServiceTest.java
+@@ -4,14 +4,28 @@ import static org.junit.jupiter.api.Assertions.*;
+ import static org.mockito.Mockito.*;
+ import org.junit.jupiter.api.Test;
+ import org.springframework.dao.DuplicateKeyException;
++import java.time.Clock;
++import java.time.Instant;
+ 
+ class ShortenerServiceTest {
+     @Test
+     void stopsAfterBoundedCodeCollisions() {
+         LinkRepository repository = mock(LinkRepository.class);
+         when(repository.create(anyString(), anyString())).thenThrow(new DuplicateKeyException("collision"));
+-        ShortenerService service = new ShortenerService(repository, new CodeGenerator(), new UrlPolicy());
++        ShortenerService service = new ShortenerService(repository, new CodeGenerator(), new UrlPolicy(), new LinkCache(Clock.systemUTC()));
+         assertThrows(ShortenerService.CapacityException.class, () -> service.create("https://example.com"));
+         verify(repository, times(4)).create(anyString(), eq("https://example.com"));
+     }
++
++    @Test
++    void servesPreviouslyResolvedImmutableLinkFromCacheDuringDatabaseFailure() {
++        LinkRepository repository = mock(LinkRepository.class);
++        Link link = new Link(1, "abc12345", "https://example.com", Instant.now());
++        when(repository.findByCode(link.code())).thenReturn(java.util.Optional.of(link))
++            .thenThrow(new org.springframework.dao.DataAccessResourceFailureException("offline"));
++        ShortenerService service = new ShortenerService(repository, new CodeGenerator(), new UrlPolicy(), new LinkCache(Clock.systemUTC()));
++        assertEquals(link, service.find(link.code()).orElseThrow());
++        assertEquals(link, service.find(link.code()).orElseThrow());
++        verify(repository, times(1)).findByCode(link.code());
++    }
+ }

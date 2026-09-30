@@ -1,0 +1,1 @@
+The local limiter is single-instance and can permit a boundary burst between adjacent minutes. It trusts the socket peer rather than forwarded headers. The in-memory key map is capped; a shared limiter would be required for multi-instance deployment. Concurrent alias requests rely on the database unique constraint. Analytics counts may be uncertain after timeout.

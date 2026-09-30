@@ -18,5 +18,8 @@ management:
     health:
       probes:
         enabled: true
+      group:
+        readiness:
+          include: readinessState,db
 shortener:
   base-url: ${SHORTENER_BASE_URL:http://localhost:8080}

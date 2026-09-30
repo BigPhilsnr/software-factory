@@ -15,16 +15,17 @@ public final class CreationRateLimiter {
         this.limit = limit;
     }
 
-    public Result admit(String address) {
+    public synchronized Result admit(String address) {
         long second = clock.instant().getEpochSecond();
         long epoch = Math.floorDiv(second, 60);
+        if (!windows.containsKey(address) && windows.size() >= 10_000) {
+            windows.entrySet().removeIf(entry -> entry.getValue().epoch < epoch);
+            if (windows.size() >= 10_000) return new Result(false, 60 - Math.floorMod(second, 60));
+        }
         Window window = windows.compute(address, (key, previous) -> {
             if (previous == null || previous.epoch != epoch) return new Window(epoch, 1);
             return new Window(epoch, Math.min(limit + 1, previous.count + 1));
         });
-        if (windows.size() > 10_000) {
-            windows.entrySet().removeIf(entry -> entry.getValue().epoch < epoch);
-        }
         return new Result(window.count <= limit, 60 - Math.floorMod(second, 60));
     }
 

@@ -1,0 +1,4 @@
+1. Define API and Flyway schema from AC-CREATE, AC-REDIRECT, and AC-ANALYTICS.
+2. Implement URL policy, code allocation, SQL repository, and HTTP controller.
+3. In parallel, author independent acceptance cases from the approved contract.
+4. Join the implementation and tests, apply the reviewed patch, run sandboxed tests, and document the candidate.

@@ -1,0 +1,18 @@
+{
+  "id": "brownfield",
+  "requirement": "Add custom aliases and creation rate limiting to the existing URL shortener without breaking redirects.",
+  "baselineTag": "url-v1",
+  "tasks": [
+    {"id":"understand","stage":"REQUIREMENTS","dependsOn":[],"kind":"ARTIFACT","role":"requirements","prompt":"Normalize alias and rate-limit behavior.","fixture":"brownfield-requirements.txt","acceptanceCriteria":["AC-ALIAS","AC-LIMIT","AC-COMPAT"],"writeScope":[],"requiresApproval":false},
+    {"id":"impact","stage":"CODEBASE","dependsOn":["understand"],"kind":"ARTIFACT","role":"codebase","prompt":"Map affected API, domain, persistence, tests, and data flows in url-v1.","fixture":"brownfield-impact.txt","acceptanceCriteria":["AC-COMPAT"],"writeScope":[],"requiresApproval":false},
+    {"id":"architecture","stage":"ARCHITECTURE","dependsOn":["impact"],"kind":"ARTIFACT","role":"architecture","prompt":"Propose a compatible extension and design choices.","fixture":"brownfield-architecture.txt","acceptanceCriteria":["AC-ALIAS","AC-LIMIT"],"writeScope":[],"requiresApproval":false},
+    {"id":"risk","stage":"ARCHITECTURE","dependsOn":["impact"],"kind":"ARTIFACT","role":"risk","prompt":"Analyze abuse, concurrency, and scale limits.","fixture":"brownfield-risk.txt","acceptanceCriteria":["AC-LIMIT"],"writeScope":[],"requiresApproval":false},
+    {"id":"plan","stage":"PLANNING","dependsOn":["architecture","risk"],"kind":"ARTIFACT","role":"planner","prompt":"Sequence the implementation and independent tests.","fixture":"brownfield-plan.txt","acceptanceCriteria":["AC-ALIAS","AC-LIMIT","AC-COMPAT"],"writeScope":[],"requiresApproval":false},
+    {"id":"implementation","stage":"IMPLEMENTATION","dependsOn":["plan"],"kind":"ARTIFACT","role":"implementer","prompt":"Prepare the source patch.","fixture":"brownfield.patch","acceptanceCriteria":["AC-ALIAS","AC-LIMIT"],"writeScope":[],"requiresApproval":false},
+    {"id":"independent-tests","stage":"IMPLEMENTATION","dependsOn":["plan"],"kind":"ARTIFACT","role":"test_author","prompt":"Define contract and compatibility tests independently.","fixture":"brownfield-tests.txt","acceptanceCriteria":["AC-ALIAS","AC-LIMIT","AC-COMPAT"],"writeScope":[],"requiresApproval":false},
+    {"id":"apply","stage":"IMPLEMENTATION","dependsOn":["implementation","independent-tests"],"kind":"PATCH","role":"implementer","prompt":"Apply the reviewed patch to the isolated candidate.","fixture":"brownfield.patch","acceptanceCriteria":["AC-ALIAS","AC-LIMIT","AC-COMPAT"],"writeScope":["shortener"],"requiresApproval":true},
+    {"id":"validate","stage":"VALIDATION","dependsOn":["apply"],"kind":"VALIDATE","role":"validator","prompt":"Build and test the isolated candidate.","acceptanceCriteria":["AC-ALIAS","AC-LIMIT","AC-COMPAT"],"writeScope":[],"requiresApproval":false},
+    {"id":"documentation","stage":"DOCUMENTATION","dependsOn":["validate"],"kind":"ARTIFACT","role":"documentation","prompt":"Summarize API delta and known limitations.","fixture":"brownfield-documentation.txt","acceptanceCriteria":[],"writeScope":[],"requiresApproval":false},
+    {"id":"release","stage":"RELEASE","dependsOn":["documentation"],"kind":"RELEASE","role":"release","prompt":"Human review of candidate and evidence.","acceptanceCriteria":[],"writeScope":[],"requiresApproval":true}
+  ]
+}

@@ -1,0 +1,4 @@
+AC-CREATE: Accept a valid absolute HTTP(S) URL and return a unique short code; reject unsupported schemes and credentials.
+AC-REDIRECT: A known code returns HTTP 302 with the original URL; an unknown code returns HTTP 404.
+AC-ANALYTICS: Count redirect attempts atomically; a failed count must not break an otherwise valid redirect.
+Assumption: aggregate click count is sufficient for the greenfield baseline; no geographic or personal analytics data is collected.

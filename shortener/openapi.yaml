@@ -1,0 +1,114 @@
+openapi: 3.1.0
+info:
+  title: Local URL Shortener
+  version: 0.1.0
+  description: Local prototype with immutable short links and aggregate redirect counts.
+servers:
+  - url: http://localhost:8080
+paths:
+  /api/shorten:
+    post:
+      summary: Create a short link
+      description: Creation requests are limited to 30 per socket peer IP per fixed 60-second window.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [url]
+              properties:
+                url:
+                  type: string
+                  format: uri
+                  description: Absolute HTTP or HTTPS URL.
+                alias:
+                  type: string
+                  pattern: '^[A-Za-z0-9-]{4,32}$'
+                  description: Optional custom code; stored lowercase.
+      responses:
+        '201':
+          description: Link created
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [code, shortUrl]
+                properties:
+                  code: {type: string}
+                  shortUrl: {type: string, format: uri}
+        '400': {$ref: '#/components/responses/Invalid'}
+        '409': {$ref: '#/components/responses/Conflict'}
+        '429':
+          description: Creation rate limit exceeded
+          headers:
+            Retry-After:
+              description: Seconds until the fixed window resets.
+              schema: {type: integer, minimum: 1}
+        '503': {$ref: '#/components/responses/Unavailable'}
+  /{code}:
+    get:
+      summary: Redirect to the original URL
+      parameters:
+        - name: code
+          in: path
+          required: true
+          schema: {type: string}
+      responses:
+        '302':
+          description: Redirect
+          headers:
+            Location:
+              required: true
+              schema: {type: string, format: uri}
+        '404': {$ref: '#/components/responses/Missing'}
+        '503': {$ref: '#/components/responses/Unavailable'}
+  /api/urls/{code}/analytics:
+    get:
+      summary: Get aggregate redirect count
+      parameters:
+        - name: code
+          in: path
+          required: true
+          schema: {type: string}
+      responses:
+        '200':
+          description: Current recorded count
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [code, redirectCount]
+                properties:
+                  code: {type: string}
+                  redirectCount: {type: integer, format: int64, minimum: 0}
+        '404': {$ref: '#/components/responses/Missing'}
+        '503': {$ref: '#/components/responses/Unavailable'}
+components:
+  responses:
+    Invalid:
+      description: Invalid input
+      content:
+        application/json:
+          schema: {$ref: '#/components/schemas/Error'}
+    Conflict:
+      description: Alias already exists
+      content:
+        application/json:
+          schema: {$ref: '#/components/schemas/Error'}
+    Missing:
+      description: Unknown short code
+      content:
+        application/json:
+          schema: {$ref: '#/components/schemas/Error'}
+    Unavailable:
+      description: Service dependency or capacity unavailable
+      content:
+        application/json:
+          schema: {$ref: '#/components/schemas/Error'}
+  schemas:
+    Error:
+      type: object
+      required: [error]
+      properties:
+        error: {type: string}

@@ -1,0 +1,2 @@
+# Unified-diff fixtures contain a single-space context marker on blank lines.
+scenarios/*.patch whitespace=-blank-at-eol

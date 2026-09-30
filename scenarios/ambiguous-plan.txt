@@ -1,0 +1,5 @@
+1. Obtain operator clarification and approve measurable local acceptance criteria.
+2. Add bounded immutable-link caching without changing redirect semantics.
+3. Independently test cache hit after repository failure and cache expiration.
+4. Run isolated build/test and a documented local load benchmark.
+5. Review residual risk and release decision.

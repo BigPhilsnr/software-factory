@@ -1,0 +1,1 @@
+Affected: ShortenerController request/response behavior; ShortenerService code allocation; LinkRepository unique code namespace; DomainConfiguration limiter wiring; new CreationRateLimiter; HTTP and domain tests. Existing links and link_stats schema remain compatible. This replay input reflects the reviewed url-v1 baseline.

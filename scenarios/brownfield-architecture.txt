@@ -1,0 +1,1 @@
+Keep generated and custom codes in one unique links.code namespace. Normalize alias before insert and map unique conflicts to 409. Put the local fixed-window limiter in a domain adapter and only invoke it on creation. Preserve existing redirect contract. Isolate analytics writes from link lookup so stalled writes have bounded effect.
