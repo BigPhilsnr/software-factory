@@ -1,0 +1,28 @@
+name: Verify committed prototype
+
+"on":
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  default-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+      - name: Compile and test both applications from a clean checkout
+        run: mvn --batch-mode --no-transfer-progress clean test
+      - name: Verify committed evidence checksums
+        run: python3 scripts/checks/verify_evidence.py

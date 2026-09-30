@@ -14,7 +14,7 @@ Start with `src/main/java/dev/softwarefactory/`:
 | `agents/tools/` | Shared tool catalog, bounded source/Git reads, public web reading/search, request limits and tool audit events. Start at `EngineeringTools`. |
 | `governance/` | Deterministic patch approval rules and hashes. |
 | `execution/` | Detached Git workspaces, patch scope enforcement and container validation. |
-| `persistence/` | PostgreSQL run storage, transition leases and audit events. |
+| `persistence/` | `RunStore` workflow authority boundary; PostgreSQL storage, leases and audit events in `ControlRepository`. |
 | `evidence/` | Immutable, versioned engineering outputs. |
 | `observability/` | Reliability measurements derived from the complete audit timeline. |
 | `serialization/` | Shared JSON configuration. |

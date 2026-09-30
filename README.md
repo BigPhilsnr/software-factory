@@ -2,6 +2,8 @@
 
 This repository contains a runnable URL shortener and a Java control plane that plans and replays four engineering scenarios against isolated Git candidates. The control plane uses Google ADK for **live** Claude calls and recorded fixtures for deterministic local replay. The fixture runs exercise real patch application, sandboxed tests, approvals, recovery, and audit transitions; they are not evidence of live AI generation.
 
+Read the [Final Engineering Summary](docs/SUMMARY.md) for the plan, rationale, artifacts, validation, assumptions and remaining limitations. The [review response](docs/reviews/external-review-response.md) distinguishes verified fixes from open gaps.
+
 ## Repository map
 
 Read the repository as two applications, their engineering scenarios, and the tools needed to operate them:

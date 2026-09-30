@@ -1,0 +1,208 @@
+{
+  "id": "d44416f4-8d94-4d6a-9671-1c54ffd9f15f",
+  "scenario": "brownfield-seeded-bugfix",
+  "mode": "live",
+  "status": "COMPLETED",
+  "baselineTag": "url-v2-buggy",
+  "baselineCommit": "2d22cc6068752448ff0871ba121fb07f0b1d5844",
+  "modelCalls": 4,
+  "maxModelCalls": 24,
+  "createdAt": null,
+  "finishedAt": 1790797510.191794,
+  "artifactVersions": {
+    "diagnose": 1,
+    "regression-test": 2,
+    "red": 1,
+    "fix": 2,
+    "green": 1,
+    "runbook": 1,
+    "release": 1
+  },
+  "artifactHashes": {
+    "diagnose": "1894f4c0e71ec8ebc08e28237b152e7de4a6d095fcc744e1a87e83e87f800d37",
+    "regression-test": "54d35ad295a2a568d9df24731327ff18e4858eb918051ac6c9189342381da31a",
+    "red": "d4fe12e0d0b272dec660a53355b6c4cd0cf9c6c15db9ef6758603a5f8bb84380",
+    "fix": "689e0ba2bf29717558e4c758e660e77ed8d15726872f330aa1a5829e7b24609e",
+    "green": "10a6ac5860ad3b2c64c2c28baff7beaf7929ee0351c99cbdd2a4643b6937459f",
+    "runbook": "72d34d2a97f89f54222448bb2a48c4a3c6ff782de83c5e74b3666fc12cb083c4"
+  },
+  "validatedCandidateHash": "795bf640ff30d392d196fd4b5f3e00c314884dce76638430e1dbdb0bbfcd69f4",
+  "approvals": {
+    "release": "a4ba50caa030fb3dce329dfcadfdb0d05bad6f2efdc4ede55d96122c7ec6c979"
+  },
+  "auditValidAtExport": true,
+  "taskStates": {
+    "red": "DONE",
+    "green": "DONE",
+    "fix": "DONE",
+    "release": "DONE",
+    "diagnose": "DONE",
+    "regression-test": "DONE",
+    "runbook": "DONE"
+  },
+  "events": [
+    {
+      "detail": "live:brownfield-seeded-bugfix",
+      "at": "2026-09-30 14:32:01.713498-05",
+      "type": "RUN_CREATED",
+      "sequence": 1
+    },
+    {
+      "detail": "brownfield-seeded-bugfix",
+      "at": "2026-09-30 14:32:07.702273-05",
+      "type": "RUN_RESUMED",
+      "sequence": 2
+    },
+    {
+      "detail": "diagnose:1/24",
+      "at": "2026-09-30 14:32:07.737096-05",
+      "type": "MODEL_CALL_STARTED",
+      "sequence": 3
+    },
+    {
+      "detail": "diagnose:1894f4c0e71ec8ebc08e28237b152e7de4a6d095fcc744e1a87e83e87f800d37",
+      "at": "2026-09-30 14:32:45.453163-05",
+      "type": "TASK_DONE",
+      "sequence": 4
+    },
+    {
+      "detail": "regression-test:2/24",
+      "at": "2026-09-30 14:32:45.465918-05",
+      "type": "MODEL_CALL_STARTED",
+      "sequence": 5
+    },
+    {
+      "detail": "regression-test:v1",
+      "at": "2026-09-30 14:32:55.136972-05",
+      "type": "PATCH_DRAFTED",
+      "sequence": 6
+    },
+    {
+      "detail": "regression-test:e9c5b0e53dacb7cc9ffffe2ee9ae935605bc3e074cb86f55987da0428bd5145d",
+      "at": "2026-09-30 14:32:55.152491-05",
+      "type": "PATCH_STARTED",
+      "sequence": 7
+    },
+    {
+      "detail": "regression-test:54d35ad295a2a568d9df24731327ff18e4858eb918051ac6c9189342381da31a",
+      "at": "2026-09-30 14:32:55.225233-05",
+      "type": "TASK_DONE",
+      "sequence": 8
+    },
+    {
+      "detail": "red",
+      "at": "2026-09-30 14:32:55.236608-05",
+      "type": "VALIDATION_STARTED",
+      "sequence": 9
+    },
+    {
+      "detail": "red:red-error-v1",
+      "at": "2026-09-30 14:33:16.729998-05",
+      "type": "RETRY_AVAILABLE",
+      "sequence": 10
+    },
+    {
+      "detail": "brownfield-seeded-bugfix",
+      "at": "2026-09-30 14:34:51.876396-05",
+      "type": "RUN_RESUMED",
+      "sequence": 11
+    },
+    {
+      "detail": "red",
+      "at": "2026-09-30 14:34:51.911513-05",
+      "type": "VALIDATION_STARTED",
+      "sequence": 12
+    },
+    {
+      "detail": "red:d4fe12e0d0b272dec660a53355b6c4cd0cf9c6c15db9ef6758603a5f8bb84380",
+      "at": "2026-09-30 14:35:09.187815-05",
+      "type": "TASK_DONE",
+      "sequence": 13
+    },
+    {
+      "detail": "fix:3/24",
+      "at": "2026-09-30 14:35:09.202411-05",
+      "type": "MODEL_CALL_STARTED",
+      "sequence": 14
+    },
+    {
+      "detail": "fix:v1",
+      "at": "2026-09-30 14:35:14.475117-05",
+      "type": "PATCH_DRAFTED",
+      "sequence": 15
+    },
+    {
+      "detail": "fix:083ecf2caed957f31f90575e3e8ef4524f185bdcc68680cb979de2d3f1006bff",
+      "at": "2026-09-30 14:35:14.487193-05",
+      "type": "PATCH_STARTED",
+      "sequence": 16
+    },
+    {
+      "detail": "fix:689e0ba2bf29717558e4c758e660e77ed8d15726872f330aa1a5829e7b24609e",
+      "at": "2026-09-30 14:35:14.552131-05",
+      "type": "TASK_DONE",
+      "sequence": 17
+    },
+    {
+      "detail": "green",
+      "at": "2026-09-30 14:35:14.563516-05",
+      "type": "VALIDATION_STARTED",
+      "sequence": 18
+    },
+    {
+      "detail": "green:10a6ac5860ad3b2c64c2c28baff7beaf7929ee0351c99cbdd2a4643b6937459f",
+      "at": "2026-09-30 14:35:40.662336-05",
+      "type": "TASK_DONE",
+      "sequence": 19
+    },
+    {
+      "detail": "795bf640ff30d392d196fd4b5f3e00c314884dce76638430e1dbdb0bbfcd69f4",
+      "at": "2026-09-30 14:35:40.720921-05",
+      "type": "CANDIDATE_VALIDATED",
+      "sequence": 20
+    },
+    {
+      "detail": "runbook:4/24",
+      "at": "2026-09-30 14:35:40.733865-05",
+      "type": "MODEL_CALL_STARTED",
+      "sequence": 21
+    },
+    {
+      "detail": "runbook:72d34d2a97f89f54222448bb2a48c4a3c6ff782de83c5e74b3666fc12cb083c4",
+      "at": "2026-09-30 14:36:09.526733-05",
+      "type": "TASK_DONE",
+      "sequence": 22
+    },
+    {
+      "detail": "release:a4ba50caa030fb3dce329dfcadfdb0d05bad6f2efdc4ede55d96122c7ec6c979",
+      "at": "2026-09-30 14:36:09.654799-05",
+      "type": "APPROVAL_REQUIRED",
+      "sequence": 23
+    },
+    {
+      "detail": "release:a4ba50caa030fb3dce329dfcadfdb0d05bad6f2efdc4ede55d96122c7ec6c979:user",
+      "at": "2026-09-30 14:45:04.199968-05",
+      "type": "APPROVAL_GRANTED",
+      "sequence": 24
+    },
+    {
+      "detail": "brownfield-seeded-bugfix",
+      "at": "2026-09-30 14:45:10.064578-05",
+      "type": "RUN_RESUMED",
+      "sequence": 25
+    },
+    {
+      "detail": "release",
+      "at": "2026-09-30 14:45:10.187881-05",
+      "type": "RELEASE_APPROVED",
+      "sequence": 26
+    },
+    {
+      "detail": "All tasks passed",
+      "at": "2026-09-30 14:45:10.201911-05",
+      "type": "RUN_COMPLETED",
+      "sequence": 27
+    }
+  ],
+  "note": "Historical live run, before package reorganization. Operator labels are not authenticated identity proof. Events omit hash-chain columns; this is a curated snapshot, not a full signed audit export."
+}

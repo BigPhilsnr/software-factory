@@ -1,0 +1,58 @@
+{
+  "startedAt": "20260930T222107Z",
+  "commit": "101270c56d6b2c1342511ef67c83def2451335db",
+  "workingTreeDirty": false,
+  "mode": "Recorded fixtures and local integration; no live generation; synthetic test approvals",
+  "checks": [
+    {
+      "name": "unit-and-integration",
+      "command": [
+        "mvn",
+        "-q",
+        "-Pintegration",
+        "test"
+      ],
+      "exitCode": 0,
+      "durationSeconds": 67.066,
+      "log": "unit-and-integration.txt"
+    },
+    {
+      "name": "scenario-replay",
+      "command": [
+        "/opt/homebrew/opt/python@3.14/bin/python3.14",
+        "scripts/checks/agent_smoke.py"
+      ],
+      "exitCode": 0,
+      "durationSeconds": 241.665,
+      "log": "scenario-replay.txt"
+    },
+    {
+      "name": "operator-controls",
+      "command": [
+        "/opt/homebrew/opt/python@3.14/bin/python3.14",
+        "scripts/checks/web_smoke.py"
+      ],
+      "exitCode": 0,
+      "durationSeconds": 31.51,
+      "log": "operator-controls.txt"
+    },
+    {
+      "name": "product-http",
+      "command": [
+        "/opt/homebrew/opt/python@3.14/bin/python3.14",
+        "scripts/checks/acceptance.py"
+      ],
+      "exitCode": 0,
+      "durationSeconds": 0.394,
+      "log": "product-http.txt"
+    }
+  ],
+  "surefireTotals": {
+    "tests": 35,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "passed": true,
+  "exportNote": "Historical run on commit 101270c. Local working-directory verification only; it did not detect ignored uncommitted sources. See clean-checkout evidence for portability."
+}

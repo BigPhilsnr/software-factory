@@ -11,7 +11,7 @@ import dev.softwarefactory.execution.GitWorkspace;
 import dev.softwarefactory.execution.SandboxValidator;
 import dev.softwarefactory.governance.Hashes;
 import dev.softwarefactory.governance.PatchPolicy;
-import dev.softwarefactory.persistence.ControlRepository;
+import dev.softwarefactory.persistence.RunStore;
 import dev.softwarefactory.serialization.Json;
 import dev.softwarefactory.workflow.scenario.ScenarioSpec;
 
@@ -29,12 +29,12 @@ import java.util.concurrent.Executors;
 
 /** Small single-process control plane. Every transition is committed before the next action. */
 public final class RunEngine {
-    private final ControlRepository repository;
+    private final RunStore repository;
     private final EvidenceStore evidence;
     private final GitWorkspace workspace;
     private final SandboxValidator validator;
 
-    public RunEngine(ControlRepository repository, Path projectRoot) {
+    public RunEngine(RunStore repository, Path projectRoot) {
         this.repository = repository;
         this.evidence = new EvidenceStore(projectRoot.resolve("evidence"));
         this.workspace = new GitWorkspace(projectRoot);

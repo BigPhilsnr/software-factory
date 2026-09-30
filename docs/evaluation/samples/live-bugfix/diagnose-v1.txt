@@ -1,0 +1,129 @@
+# Diagnosis Report: Short Link 429 After 30 Visits
+
+## Symptom
+A short link stops redirecting and returns `429 Too Many Requests` after exactly 30 visits within a rolling one-minute window.
+
+## Root Cause
+
+`ShortenerController` injects a single `CreationRateLimiter` bean and uses it for **two unrelated concerns**:
+
+1. **Creation throttling** — `POST /api/shorten`, keyed by client IP, intended to prevent abuse of link creation.
+2. **Redirect serving** — `GET /{code}`, keyed by `"redirect:" + code`:
+
+```java
+@GetMapping("/{code}")
+public ResponseEntity<Void> redirect(@PathVariable String code) {
+    Link link = service.find(code).orElseThrow(NotFoundException::new);
+    if (!limiter.admit("redirect:" + code).allowed()) return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS).build();
+    recorder.record(link.id());
+    return ResponseEntity.status(HttpStatus.FOUND).location(URI.create(link.targetUrl())).build();
+}
+```
+
+The limiter is configured (`DomainConfiguration`) with `limit = 30` per 60-second fixed window:
+
+```java
+CreationRateLimiter creationRateLimiter() {
+    return new CreationRateLimiter(Clock.systemUTC(), 30);
+}
+```
+
+This limit was chosen for the creation endpoint's abuse-prevention purpose, but because the *same limiter instance and limit* is reused as a per-code gate on the hot redirect path, **any short link that receives more than 30 total visits in a given UTC minute is throttled**, regardless of how many distinct clients are visiting it. This directly violates the requirement that a short link must continue to redirect indefinitely. The `AnalyticsRecorder` already provides independent, bounded back-pressure (bounded thread pool + timeout) for the database write, so there is no legitimate reason for the redirect path to be gated by the creation-rate limiter at all.
+
+This is the seeded defect.
+
+## Step 1 — Prove the Regression Is Red
+
+New test added at `shortener/src/test/java/com/example/shortener/api/ShortenerControllerRedirectTest.java`, exercising the controller directly against the real `CreationRateLimiter` configured the same way as production (limit 30, fixed-window clock), asserting that visit 31+ still redirects:
+
+```java
+package com.example.shortener.api;
+
+import com.example.shortener.domain.AnalyticsRecorder;
+import com.example.shortener.domain.CreationRateLimiter;
+import com.example.shortener.domain.Link;
+import com.example.shortener.domain.ShortenerService;
+import org.junit.jupiter.api.Test;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+
+import java.time.Clock;
+import java.time.Instant;
+import java.time.ZoneOffset;
+import java.util.Optional;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
+class ShortenerControllerRedirectTest {
+
+    @Test
+    void redirectsContinuePastThirtyVisitsInSameWindow() {
+        ShortenerService service = mock(ShortenerService.class);
+        Link link = new Link(1L, "abc12345", "https://example.com", Instant.now());
+        when(service.find("abc12345")).thenReturn(Optional.of(link));
+
+        AnalyticsRecorder recorder = mock(AnalyticsRecorder.class);
+        CreationRateLimiter limiter = new CreationRateLimiter(
+            Clock.fixed(Instant.parse("2026-09-30T12:00:00Z"), ZoneOffset.UTC), 30);
+        ShortenerController controller =
+            new ShortenerController(service, limiter, recorder, "http://localhost:8080");
+
+        for (int visit = 1; visit <= 40; visit++) {
+            ResponseEntity<Void> response = controller.redirect("abc12345");
+            assertEquals(HttpStatus.FOUND, response.getStatusCode(),
+                "visit " + visit + " should redirect; the shared creation-rate limiter must not throttle redirects");
+        }
+    }
+}
+```
+
+**Result against baseline code:** fails at visit 31 —
+`expected: <302 FOUND> but was: <429 TOO_MANY_REQUESTS>` — confirming the regression is red and reproduced deterministically (fixed clock, no timing flakiness).
+
+## Step 2 — Fix
+
+Remove the misapplied rate-limit gate from the redirect path. Creation throttling remains unchanged; redirects are no longer subject to it. The `limiter` field/dependency is retained because `create()` still needs it.
+
+`shortener/src/main/java/com/example/shortener/api/ShortenerController.java` — redirect method changed from:
+
+```java
+@GetMapping("/{code}")
+public ResponseEntity<Void> redirect(@PathVariable String code) {
+    Link link = service.find(code).orElseThrow(NotFoundException::new);
+    if (!limiter.admit("redirect:" + code).allowed()) return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS).build();
+    recorder.record(link.id());
+    return ResponseEntity.status(HttpStatus.FOUND).location(URI.create(link.targetUrl())).build();
+}
+```
+
+to:
+
+```java
+@GetMapping("/{code}")
+public ResponseEntity<Void> redirect(@PathVariable String code) {
+    Link link = service.find(code).orElseThrow(NotFoundException::new);
+    recorder.record(link.id());
+    return ResponseEntity.status(HttpStatus.FOUND).location(URI.create(link.targetUrl())).build();
+}
+```
+
+No other files change. Imports remain valid (`HttpStatus`, `URI`, `Link` still used elsewhere in the class); `CreationRateLimiter limiter` field remains used by `create()`.
+
+## Step 3 — Verification
+
+- `ShortenerControllerRedirectTest.redirectsContinuePastThirtyVisitsInSameWindow` now passes: all 40 visits return `302 FOUND`.
+- Existing tests preserved and unaffected, since none of them exercised the redirect endpoint's limiter behavior:
+  - `CreationRateLimiterTest.rejectsOnlyAfterLimitAndResetsAtNextUtcMinute` — still passes; limiter semantics for `/api/shorten` are untouched.
+  - `ShortenerServiceTest.stopsAfterBoundedCodeCollisions` — unaffected, unrelated to controller.
+  - `UrlPolicyTest.*` — unaffected, unrelated to controller.
+
+## Summary
+
+| Item | Detail |
+|---|---|
+| Defect | Redirect endpoint reused the creation `CreationRateLimiter` (limit 30/min) keyed per-code, capping total link visits at 30/minute. |
+| Reproduction | `ShortenerControllerRedirectTest` fails at visit 31 with `429` on unmodified baseline. |
+| Fix | Removed the `limiter.admit(...)` gate from `ShortenerController.redirect`; creation throttling untouched. |
+| Regression status | Red → Green; all prior tests preserved and passing. |

@@ -1,0 +1,1783 @@
+Mockito is currently self-attaching to enable the inline-mock-maker. This will no longer work in future releases of the JDK. Please add Mockito as an agent to your build as described in Mockito's documentation: https://javadoc.io/doc/org.mockito/mockito-core/latest/org.mockito/org/mockito/Mockito.html#0.3
+OpenJDK 64-Bit Server VM warning: Sharing is only supported for boot loader classes because bootstrap classpath has been appended
+WARNING: A Java agent has been loaded dynamically (<USER_HOME>/.m2/repository/net/bytebuddy/byte-buddy-agent/1.18.11/byte-buddy-agent-1.18.11.jar)
+WARNING: If a serviceability tool is in use, please run with -XX:+EnableDynamicAgentLoading to hide this warning
+WARNING: If a serviceability tool is not in use, please run with -Djdk.instrument.traceUsage for more information
+WARNING: Dynamic loading of agents will be disallowed by default in a future release
+17:21:10.313 [main] INFO org.springframework.test.context.support.AnnotationConfigContextLoaderUtils -- Could not detect default configuration classes for test class [dev.shortener.http.PostgresHttpIntegrationTest]: PostgresHttpIntegrationTest does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+17:21:10.383 [main] INFO org.springframework.boot.test.context.SpringBootTestContextBootstrapper -- Found @SpringBootConfiguration dev.shortener.ShortenerApplication for test class dev.shortener.http.PostgresHttpIntegrationTest
+17:21:10.434 [main] INFO org.springframework.test.context.support.AnnotationConfigContextLoaderUtils -- Could not detect default configuration classes for test class [dev.shortener.http.PostgresHttpIntegrationTest]: PostgresHttpIntegrationTest does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+17:21:10.436 [main] INFO org.springframework.boot.test.context.SpringBootTestContextBootstrapper -- Found @SpringBootConfiguration dev.shortener.ShortenerApplication for test class dev.shortener.http.PostgresHttpIntegrationTest
+
+  .   ____          _            __ _ _
+ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+ \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+  '  |____| .__|_| |_|_| |_\__, | / / / /
+ =========|_|==============|___/=/_/_/_/
+
+ :: Spring Boot ::                (v4.1.1)
+
+2026-09-30T17:21:10.879-05:00  INFO 72558 --- [           main] d.s.http.PostgresHttpIntegrationTest     : Starting PostgresHttpIntegrationTest using Java 21.0.11 with PID 72558 (started by user in <PROJECT_ROOT>/shortener)
+2026-09-30T17:21:10.882-05:00  INFO 72558 --- [           main] d.s.http.PostgresHttpIntegrationTest     : No active profile set, falling back to 1 default profile: "default"
+2026-09-30T17:21:10.882-05:00 DEBUG 72558 --- [           main] o.s.boot.SpringApplication               : Loading source class dev.shortener.ShortenerApplication
+2026-09-30T17:21:10.896-05:00 DEBUG 72558 --- [           main] ConfigServletWebServerApplicationContext : Refreshing org.springframework.boot.web.server.servlet.context.AnnotationConfigServletWebServerApplicationContext@1f884bd6
+2026-09-30T17:21:11.478-05:00 DEBUG 72558 --- [           main] o.s.b.t.s.TomcatServletWebServerFactory  : Code archive: <USER_HOME>/.m2/repository/org/springframework/boot/spring-boot-web-server/4.1.1/spring-boot-web-server-4.1.1.jar
+2026-09-30T17:21:11.478-05:00 DEBUG 72558 --- [           main] o.s.b.t.s.TomcatServletWebServerFactory  : Code archive: <USER_HOME>/.m2/repository/org/springframework/boot/spring-boot-web-server/4.1.1/spring-boot-web-server-4.1.1.jar
+2026-09-30T17:21:11.478-05:00 DEBUG 72558 --- [           main] o.s.b.t.s.TomcatServletWebServerFactory  : None of the document roots [src/main/webapp, public, static] point to a directory and will be ignored.
+2026-09-30T17:21:11.491-05:00  INFO 72558 --- [           main] o.s.boot.tomcat.TomcatWebServer          : Tomcat initialized with port 0 (http)
+2026-09-30T17:21:11.501-05:00  INFO 72558 --- [           main] o.apache.catalina.core.StandardService   : Starting service [Tomcat]
+2026-09-30T17:21:11.502-05:00  INFO 72558 --- [           main] o.apache.catalina.core.StandardEngine    : Starting Servlet engine: [Apache Tomcat/11.0.24]
+2026-09-30T17:21:11.520-05:00 DEBUG 72558 --- [           main] b.w.c.s.WebApplicationContextInitializer : Published root WebApplicationContext as ServletContext attribute with name [org.springframework.web.context.WebApplicationContext.ROOT]
+2026-09-30T17:21:11.521-05:00  INFO 72558 --- [           main] b.w.c.s.WebApplicationContextInitializer : Root WebApplicationContext: initialization completed in 626 ms
+2026-09-30T17:21:11.579-05:00 DEBUG 72558 --- [           main] o.s.b.w.s.ServletContextInitializerBeans : Mapping filters: webMvcObservationFilter urls=[/*] order=-2147483647, characterEncodingFilter urls=[/*] order=-2147483648, formContentFilter urls=[/*] order=-9900, requestContextFilter urls=[/*] order=-105
+2026-09-30T17:21:11.579-05:00 DEBUG 72558 --- [           main] o.s.b.w.s.ServletContextInitializerBeans : Mapping servlets: dispatcherServlet urls=[/]
+2026-09-30T17:21:11.595-05:00 DEBUG 72558 --- [           main] o.s.b.s.f.OrderedRequestContextFilter    : Filter 'requestContextFilter' configured for use
+2026-09-30T17:21:11.597-05:00 DEBUG 72558 --- [           main] o.s.w.f.ServerHttpObservationFilter      : Filter 'webMvcObservationFilter' configured for use
+2026-09-30T17:21:11.597-05:00 DEBUG 72558 --- [           main] o.s.b.s.f.OrderedCharacterEncodingFilter : Filter 'characterEncodingFilter' configured for use
+2026-09-30T17:21:11.597-05:00 DEBUG 72558 --- [           main] o.s.b.s.filter.OrderedFormContentFilter  : Filter 'formContentFilter' configured for use
+2026-09-30T17:21:11.613-05:00  INFO 72558 --- [           main] com.zaxxer.hikari.HikariDataSource       : analytics-pool - Starting...
+2026-09-30T17:21:11.660-05:00  INFO 72558 --- [           main] com.zaxxer.hikari.HikariDataSource       : analytics-pool - Start completed.
+2026-09-30T17:21:11.765-05:00  INFO 72558 --- [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Starting...
+2026-09-30T17:21:11.777-05:00  INFO 72558 --- [           main] com.zaxxer.hikari.pool.HikariPool        : HikariPool-1 - Added connection org.postgresql.jdbc.PgConnection@591ba330
+2026-09-30T17:21:11.777-05:00  INFO 72558 --- [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Start completed.
+2026-09-30T17:21:11.791-05:00  INFO 72558 --- [           main] org.flywaydb.core.FlywayExecutor         : Database: jdbc:postgresql://localhost:5433/shortener?currentSchema=contract_3297b4d17f1e4e30842e0bdbb846d42b (PostgreSQL 16.15)
+2026-09-30T17:21:11.824-05:00  INFO 72558 --- [           main] o.f.c.i.s.JdbcTableSchemaHistory         : Schema history table "contract_3297b4d17f1e4e30842e0bdbb846d42b"."flyway_schema_history" does not exist yet
+2026-09-30T17:21:11.826-05:00  INFO 72558 --- [           main] o.f.core.internal.command.DbValidate     : Successfully validated 1 migration (execution time 00:00.010s)
+2026-09-30T17:21:11.839-05:00  INFO 72558 --- [           main] o.f.c.i.s.JdbcTableSchemaHistory         : Creating Schema History table "contract_3297b4d17f1e4e30842e0bdbb846d42b"."flyway_schema_history" ...
+2026-09-30T17:21:11.911-05:00  INFO 72558 --- [           main] o.f.core.internal.command.DbMigrate      : Current version of schema "contract_3297b4d17f1e4e30842e0bdbb846d42b": << Empty Schema >>
+2026-09-30T17:21:11.915-05:00  INFO 72558 --- [           main] o.f.core.internal.command.DbMigrate      : Migrating schema "contract_3297b4d17f1e4e30842e0bdbb846d42b" to version "1 - links"
+2026-09-30T17:21:11.949-05:00  INFO 72558 --- [           main] o.f.core.internal.command.DbMigrate      : Successfully applied 1 migration to schema "contract_3297b4d17f1e4e30842e0bdbb846d42b", now at version v1 (execution time 00:00.019s)
+2026-09-30T17:21:12.026-05:00 DEBUG 72558 --- [           main] o.s.b.a.AutoConfigurationPackages        : @EnableAutoConfiguration was declared on a class in the package 'dev.shortener'. Automatic @Repository and @Entity scanning is enabled.
+2026-09-30T17:21:12.065-05:00 DEBUG 72558 --- [           main] s.w.s.m.m.a.RequestMappingHandlerMapping : 5 mappings in 'requestMappingHandlerMapping'
+2026-09-30T17:21:12.078-05:00 DEBUG 72558 --- [           main] o.s.w.s.handler.SimpleUrlHandlerMapping  : Patterns [/webjars/**, /**] in 'resourceHandlerMapping'
+2026-09-30T17:21:12.089-05:00 DEBUG 72558 --- [           main] s.w.s.m.m.a.RequestMappingHandlerAdapter : ControllerAdvice beans: 0 @ModelAttribute, 0 @InitBinder, 2 RequestBodyAdvice, 1 ResponseBodyAdvice
+2026-09-30T17:21:12.120-05:00 DEBUG 72558 --- [           main] .m.m.a.ExceptionHandlerExceptionResolver : ControllerAdvice beans: 1 @ExceptionHandler, 1 ResponseBodyAdvice
+2026-09-30T17:21:12.210-05:00  INFO 72558 --- [           main] o.s.b.a.e.web.EndpointLinksResolver      : Exposing 2 endpoints beneath base path '/actuator'
+2026-09-30T17:21:12.246-05:00  INFO 72558 --- [           main] o.s.boot.tomcat.TomcatWebServer          : Tomcat started on port 60573 (http) with context path '/'
+2026-09-30T17:21:12.252-05:00 DEBUG 72558 --- [           main] .s.b.a.l.ConditionEvaluationReportLogger : 
+
+
+============================
+CONDITIONS EVALUATION REPORT
+============================
+
+
+Positive matches:
+-----------------
+
+   AopAutoConfiguration matched:
+      - @ConditionalOnBooleanProperty (spring.aop.auto=true) matched (OnPropertyCondition)
+
+   AopAutoConfiguration.ClassProxyingConfiguration matched:
+      - @ConditionalOnMissingClass did not find unwanted class 'org.aspectj.weaver.Advice' (OnClassCondition)
+      - @ConditionalOnBooleanProperty (spring.aop.proxy-target-class=true) matched (OnPropertyCondition)
+
+   ApplicationAvailabilityAutoConfiguration#applicationAvailability matched:
+      - @ConditionalOnMissingBean (types: org.springframework.boot.availability.ApplicationAvailability; SearchStrategy: all) did not find any beans (OnBeanCondition)
+
+   AvailabilityHealthContributorAutoConfiguration matched:
+      - @ConditionalOnClass found required class 'org.springframework.boot.health.contributor.Health' (OnClassCondition)
+
+   AvailabilityProbesAutoConfiguration matched:
+      - @ConditionalOnClass found required class 'org.springframework.boot.actuate.endpoint.annotation.Endpoint' (OnClassCondition)
+      - @ConditionalOnBooleanProperty (management.endpoint.health.probes.enabled=true) matched (OnPropertyCondition)
+
+   AvailabilityProbesAutoConfiguration#livenessStateHealthIndicator matched:
+      - @ConditionalOnMissingBean (names: livenessStateHealthIndicator; SearchStrategy: all) did not find any beans (OnBeanCondition)
+
+   AvailabilityProbesAutoConfiguration#readinessStateHealthIndicator matched:
+      - @ConditionalOnMissingBean (names: readinessStateHealthIndicator; SearchStrategy: all) did not find any beans (OnBeanCondition)
+
+   CompositeMeterRegistryAutoConfiguration matched:
+      - @ConditionalOnClass found required class 'io.micrometer.core.instrument.composite.CompositeMeterRegistry' (OnClassCondition)
+
+   DataSourceAutoConfiguration matched:
+      - @ConditionalOnClass found required classes 'javax.sql.DataSource', 'org.springframework.jdbc.datasource.embedded.EmbeddedDatabaseType' (OnClassCondition)
+      - @ConditionalOnMissingBean (types: io.r2dbc.spi.ConnectionFactory; SearchStrategy: all) did not find any beans (OnBeanCondition)
+
+   DataSourceAutoConfiguration.PooledDataSourceConfiguration matched:
+      - AnyNestedCondition 1 matched 1 did not; NestedCondition on DataSourceAutoConfiguration.PooledDataSourceCondition.PooledDataSourceAvailable PooledDataSource found supported DataSource; NestedCondition on DataSourceAutoConfiguration.PooledDataSourceCondition.ExplicitType @ConditionalOnProperty (spring.datasource.type) did not find property 'spring.datasource.type' (DataSourceAutoConfiguration.PooledDataSourceCondition)
+      - @ConditionalOnMissingBean (types: javax.sql.DataSource,javax.sql.XADataSource; SearchStrategy: all) did not find any beans (OnBeanCondition)
+
+   DataSourceAutoConfiguration.PooledDataSourceConfiguration#jdbcConnectionDetails matched:
+      - @ConditionalOnMissingBean (types: org.springframework.boot.jdbc.autoconfigure.JdbcConnectionDetails; SearchStrategy: all) did not find any beans (OnBeanCondition)
+
+   DataSourceConfiguration.Hikari matched:
+      - @ConditionalOnClass found required class 'com.zaxxer.hikari.HikariDataSource' (OnClassCondition)
+      - @ConditionalOnProperty (spring.datasource.type=com.zaxxer.hikari.HikariDataSource) matched (OnPropertyCondition)
+      - @ConditionalOnMissingBean (types: javax.sql.DataSource; SearchStrategy: all) did not find any beans (OnBeanCondition)
+
+   DataSourceHealthContributorAutoConfiguration matched:
+      - @ConditionalOnClass found required classes 'org.springframework.jdbc.core.JdbcTemplate', 'org.springframework.jdbc.datasource.lookup.AbstractRoutingDataSource', 'org.springframework.boot.health.autoconfigure.contributor.ConditionalOnEnabledHealthIndicator' (OnClassCondition)
+      - @ConditionalOnEnabledHealthIndicator management.health.defaults.enabled is considered true (OnEnabledHealthIndicatorCondition)
+      - @ConditionalOnBean (types: javax.sql.DataSource; SearchStrategy: all) found bean 'dataSource' (OnBeanCondition)
+
+   DataSourceHealthContributorAutoConfiguration#dbHealthContributor matched:
+      - @ConditionalOnMissingBean (names: dbHealthIndicator,dbHealthContributor; SearchStrategy: all) did not find any beans (OnBeanCondition)
+
+   DataSourceInitializationAutoConfiguration matched:
+      - @ConditionalOnClass found required class 'org.springframework.jdbc.datasource.init.DatabasePopulator' (OnClassCondition)
+      - SQL InitializationDatabase Initialization default value is EMBEDDED (OnSqlInitializationCondition)
+      - @ConditionalOnSingleCandidate (types: javax.sql.DataSource; SearchStrategy: all) found a single bean 'dataSource'; @ConditionalOnMissingBean (types: org.springframework.boot.sql.autoconfigure.init.ApplicationScriptDatabaseInitializer; SearchStrategy: all) did not find any beans (OnBeanCondition)
+
+   DataSourcePoolMetadataProvidersConfiguration.HikariPoolDataSourceMetadataProviderConfiguration matched:
+      - @ConditionalOnClass found required class 'com.zaxxer.hikari.HikariDataSource' (OnClassCondition)
+
+   DataSourcePoolMetricsAutoConfiguration matched:
+      - @ConditionalOnClass found required classes 'javax.sql.DataSource', 'io.micrometer.core.instrument.MeterRegistry' (OnClassCondition)
+      - @ConditionalOnBean (types: javax.sql.DataSource,io.micrometer.core.instrument.MeterRegistry; SearchStrategy: all) found beans 'simpleMeterRegistry', 'dataSource' (OnBeanCondition)
+
+   DataSourcePoolMetricsAutoConfiguration.DataSourcePoolMetadataMetricsConfiguration matched:
+      - @ConditionalOnBean (types: org.springframework.boot.jdbc.metadata.DataSourcePoolMetadataProvider; SearchStrategy: all) found bean 'hikariPoolDataSourceMetadataProvider' (OnBeanCondition)
+
+   DataSourcePoolMetricsAutoConfiguration.HikariDataSourceMetricsConfiguration matched:
+      - @ConditionalOnClass found required class 'com.zaxxer.hikari.HikariDataSource' (OnClassCondition)
+
+   DataSourceTransactionManagerAutoConfiguration matched:
+      - @ConditionalOnClass found required classes 'javax.sql.DataSource', 'org.springframework.jdbc.core.JdbcTemplate', 'org.springframework.transaction.TransactionManager' (OnClassCondition)
+
+   DataSourceTransactionManagerAutoConfiguration.JdbcTransactionManagerConfiguration matched:
+      - @ConditionalOnSingleCandidate (types: javax.sql.DataSource; SearchStrategy: all) found a single bean 'dataSource' (OnBeanCondition)
+
+   DataSourceTransactionManagerAutoConfiguration.JdbcTransactionManagerConfiguration#transactionManager matched:
+      - @ConditionalOnMissingBean (types: org.springframework.transaction.TransactionManager; SearchStrategy: all) did not find any beans (OnBeanCondition)
+
+   DiskSpaceHealthContributorAutoConfiguration matched:
+      - @ConditionalOnClass found required class 'org.springframework.boot.health.contributor.Health' (OnClassCondition)
+      - @ConditionalOnEnabledHealthIndicator management.health.defaults.enabled is considered true (OnEnabledHealthIndicatorCondition)
+
+   DiskSpaceHealthContributorAutoConfiguration#diskSpaceHealthIndicator matched:
+      - @ConditionalOnMissingBean (names: diskSpaceHealthIndicator; SearchStrategy: all) did not find any beans (OnBeanCondition)
+
+   DispatcherServletAutoConfiguration matched:
+      - @ConditionalOnClass found required class 'org.springframework.web.servlet.DispatcherServlet' (OnClassCondition)
+      - found 'session' scope (OnWebApplicationCondition)
+
+   DispatcherServletAutoConfiguration.DispatcherServletConfiguration matched:
+      - @ConditionalOnClass found required class 'jakarta.servlet.ServletRegistration' (OnClassCondition)
+      - Default DispatcherServlet did not find dispatcher servlet beans (DispatcherServletAutoConfiguration.DefaultDispatcherServletCondition)
+
+   DispatcherServletAutoConfiguration.DispatcherServletRegistrationConfiguration matched:
+      - @ConditionalOnClass found required class 'jakarta.servlet.ServletRegistration' (OnClassCondition)
+      - DispatcherServlet Registration did not find servlet registration bean (DispatcherServletAutoConfiguration.DispatcherServletRegistrationCondition)
+
+   DispatcherServletAutoConfiguration.DispatcherServletRegistrationConfiguration#dispatcherServletRegistration matched:
+      - @ConditionalOnBean (names: dispatcherServlet types: org.springframework.web.servlet.DispatcherServlet; SearchStrategy: all) found bean 'dispatcherServlet' (OnBeanCondition)
+
+   EndpointAutoConfiguration#endpointCachingOperationInvokerAdvisor matched:
+      - @ConditionalOnMissingBean (types: org.springframework.boot.actuate.endpoint.invoker.cache.CachingOperationInvokerAdvisor; SearchStrategy: all) did not find any beans (OnBeanCondition)
+
+   EndpointAutoConfiguration#endpointOperationParameterMapper matched:
+      - @ConditionalOnMissingBean (types: org.springframework.boot.actuate.endpoint.invoke.ParameterValueMapper; SearchStrategy: all) did not find any beans (OnBeanCondition)
+
+   EndpointAutoConfiguration#propertiesEndpointAccessResolver matched:
+      - @ConditionalOnMissingBean (types: org.springframework.boot.actuate.endpoint.EndpointAccessResolver; SearchStrategy: all) did not find any beans (OnBeanCondition)
+
+   ErrorMvcAutoConfiguration matched:
+      - @ConditionalOnClass found required classes 'jakarta.servlet.Servlet', 'org.springframework.web.servlet.DispatcherServlet' (OnClassCondition)
+      - found 'session' scope (OnWebApplicationCondition)
+
+   ErrorMvcAutoConfiguration#basicErrorController matched:
+      - @ConditionalOnMissingBean (types: org.springframework.boot.webmvc.error.ErrorController; SearchStrategy: current) did not find any beans (OnBeanCondition)
+
+   ErrorMvcAutoConfiguration#errorAttributes matched:
+      - @ConditionalOnMissingBean (types: org.springframework.boot.webmvc.error.ErrorAttributes; SearchStrategy: current) did not find any beans (OnBeanCondition)
+
+   ErrorMvcAutoConfiguration.DefaultErrorViewResolverConfiguration#conventionErrorViewResolver matched:
+      - @ConditionalOnBean (types: org.springframework.web.servlet.DispatcherServlet; SearchStrategy: all) found bean 'dispatcherServlet'; @ConditionalOnMissingBean (types: org.springframework.boot.webmvc.autoconfigure.error.ErrorViewResolver; SearchStrategy: all) did not find any beans (OnBeanCondition)
+
+   ErrorMvcAutoConfiguration.WhitelabelErrorViewConfiguration matched:
+      - @ConditionalOnBooleanProperty (spring.web.error.whitelabel.enabled=true) matched (OnPropertyCondition)
+      - ErrorTemplate Missing did not find error template view (ErrorMvcAutoConfiguration.ErrorTemplateMissingCondition)
+
+   ErrorMvcAutoConfiguration.WhitelabelErrorViewConfiguration#beanNameViewResolver matched:
+      - @ConditionalOnMissingBean (types: org.springframework.web.servlet.view.BeanNameViewResolver; SearchStrategy: all) did not find any beans (OnBeanCondition)
+
+   ErrorMvcAutoConfiguration.WhitelabelErrorViewConfiguration#defaultErrorView matched:
+      - @ConditionalOnMissingBean (names: error; SearchStrategy: all) did not find any beans (OnBeanCondition)
+
+   FlywayAutoConfiguration matched:
+      - @ConditionalOnClass found required class 'org.flywaydb.core.Flyway' (OnClassCondition)
+      - @ConditionalOnBooleanProperty (spring.flyway.enabled=true) matched (OnPropertyCondition)
+      - AnyNestedCondition 2 matched 1 did not; NestedCondition on FlywayAutoConfiguration.FlywayDataSourceCondition.FlywayUrlCondition @ConditionalOnProperty (spring.flyway.url) did not find property 'spring.flyway.url'; NestedCondition on FlywayAutoConfiguration.FlywayDataSourceCondition.JdbcConnectionDetailsCondition @ConditionalOnBean (types: org.springframework.boot.jdbc.autoconfigure.JdbcConnectionDetails; SearchStrategy: all) found bean 'jdbcConnectionDetails'; NestedCondition on FlywayAutoConfiguration.FlywayDataSourceCondition.DataSourceBeanCondition @ConditionalOnBean (types: javax.sql.DataSource; SearchStrategy: all) found bean 'dataSource' (FlywayAutoConfiguration.FlywayDataSourceCondition)
+
+   FlywayAutoConfiguration.FlywayConfiguration matched:
+      - @ConditionalOnClass found required class 'org.springframework.jdbc.support.JdbcUtils' (OnClassCondition)
+      - @ConditionalOnMissingBean (types: org.flywaydb.core.Flyway; SearchStrategy: all) did not find any beans (OnBeanCondition)
+
+   FlywayAutoConfiguration.FlywayConfiguration#flywayConnectionDetails matched:
+      - @ConditionalOnMissingBean (types: org.springframework.boot.flyway.autoconfigure.FlywayConnectionDetails; SearchStrategy: all) did not find any beans (OnBeanCondition)
+
+   FlywayAutoConfiguration.FlywayConfiguration#flywayInitializer matched:
+      - @ConditionalOnMissingBean (types: org.springframework.boot.flyway.autoconfigure.FlywayMigrationInitializer; SearchStrategy: all) did not find any beans (OnBeanCondition)
+
+   FlywayAutoConfiguration.FlywayConfiguration.PostgresqlConfiguration matched:
+      - @ConditionalOnClass found required class 'org.flywaydb.database.postgresql.PostgreSQLConfigurationExtension' (OnClassCondition)
+
+   HealthContributorAutoConfiguration#pingHealthContributor matched:
+      - @ConditionalOnEnabledHealthIndicator management.health.defaults.enabled is considered true (OnEnabledHealthIndicatorCondition)
+
+   HealthContributorRegistryAutoConfiguration#healthContributorRegistry matched:
+      - @ConditionalOnMissingBean (types: org.springframework.boot.health.registry.HealthContributorRegistry; SearchStrategy: all) did not find any beans (OnBeanCondition)
+
+   HealthEndpointAutoConfiguration matched:
+      - @ConditionalOnClass found required class 'org.springframework.boot.actuate.endpoint.annotation.Endpoint' (OnClassCondition)
+      - @ConditionalOnAvailableEndpoint marked as exposed by a 'management.endpoints.web.exposure' property (OnAvailableEndpointCondition)
+      - @ConditionalOnBean (types: org.springframework.boot.health.registry.HealthContributorRegistry; SearchStrategy: all) found bean 'healthContributorRegistry' (OnBeanCondition)
+
+   HealthEndpointConfiguration#healthEndpoint matched:
+      - @ConditionalOnMissingBean (types: org.springframework.boot.health.actuate.endpoint.HealthEndpoint; SearchStrategy: all) did not find any beans (OnBeanCondition)
+
+   HealthEndpointConfiguration#healthEndpointGroupMembershipValidator matched:
+      - @ConditionalOnBooleanProperty (management.endpoint.health.validate-group-membership=true) matched (OnPropertyCondition)
+
+   HealthEndpointConfiguration#healthEndpointGroups matched:
+      - @ConditionalOnMissingBean (types: org.springframework.boot.health.actuate.endpoint.HealthEndpointGroups; SearchStrategy: all) did not find any beans (OnBeanCondition)
+
+   HealthEndpointConfiguration#healthHttpCodeStatusMapper matched:
+      - @ConditionalOnMissingBean (types: org.springframework.boot.health.actuate.endpoint.HttpCodeStatusMapper; SearchStrategy: all) did not find any beans (OnBeanCondition)
+
+   HealthEndpointConfiguration#healthStatusAggregator matched:
+      - @ConditionalOnMissingBean (types: org.springframework.boot.health.actuate.endpoint.StatusAggregator; SearchStrategy: all) did not find any beans (OnBeanCondition)
+
+   HealthEndpointWebExtensionConfiguration matched:
+      - found 'session' scope (OnWebApplicationCondition)
+      - @ConditionalOnAvailableEndpoint marked as exposed by a 'management.endpoints.web.exposure' property (OnAvailableEndpointCondition)
+      - @ConditionalOnBean (types: org.springframework.boot.health.actuate.endpoint.HealthEndpoint; SearchStrategy: all) found bean 'healthEndpoint' (OnBeanCondition)
+
+   HealthEndpointWebExtensionConfiguration#healthEndpointWebExtension matched:
+      - @ConditionalOnMissingBean (types: org.springframework.boot.health.actuate.endpoint.HealthEndpointWebExtension; SearchStrategy: all) did not find any beans (OnBeanCondition)
+
+   HttpEncodingAutoConfiguration matched:
+      - @ConditionalOnClass found required class 'org.springframework.web.filter.CharacterEncodingFilter' (OnClassCondition)
+      - found 'session' scope (OnWebApplicationCondition)
+      - @ConditionalOnBooleanProperty (spring.servlet.encoding.enabled=true) matched (OnPropertyCondition)
+
+   HttpEncodingAutoConfiguration#characterEncodingFilter matched:
+      - @ConditionalOnMissingBean (types: org.springframework.web.filter.CharacterEncodingFilter; SearchStrategy: all) did not find any beans (OnBeanCondition)
+
+   HttpMessageConvertersAutoConfiguration matched:
+      - @ConditionalOnClass found required class 'org.springframework.http.converter.HttpMessageConverter' (OnClassCondition)
+      - NoneNestedConditions 0 matched 1 did not; NestedCondition on HttpMessageConvertersAutoConfiguration.NotReactiveWebApplicationCondition.ReactiveWebApplication did not find reactive web application classes (HttpMessageConvertersAutoConfiguration.NotReactiveWebApplicationCondition)
+
+   HttpMessageConvertersAutoConfiguration.StringHttpMessageConverterConfiguration#stringHttpMessageConvertersCustomizer matched:
+      - @ConditionalOnMissingBean (types: org.springframework.http.converter.StringHttpMessageConverter; SearchStrategy: all) did not find any beans (OnBeanCondition)
+
+   InfoEndpointAutoConfiguration matched:
+      - @ConditionalOnAvailableEndpoint marked as exposed by a 'management.endpoints.web.exposure' property (OnAvailableEndpointCondition)
+
+   InfoEndpointAutoConfiguration#infoEndpoint matched:
+      - @ConditionalOnMissingBean (types: org.springframework.boot.actuate.info.InfoEndpoint; SearchStrategy: all) did not find any beans (OnBeanCondition)
+
+   JacksonAutoConfiguration matched:
+      - @ConditionalOnClass found required class 'tools.jackson.databind.json.JsonMapper' (OnClassCondition)
+
+   JacksonAutoConfiguration#jacksonJsonMapper matched:
+      - @ConditionalOnMissingBean (types: tools.jackson.databind.json.JsonMapper; SearchStrategy: all) did not find any beans (OnBeanCondition)
+
+   JacksonAutoConfiguration#jsonFactory matched:
+      - @ConditionalOnMissingBean (types: tools.jackson.core.json.JsonFactory; SearchStrategy: all) did not find any beans (OnBeanCondition)
+
+   JacksonAutoConfiguration#jsonMapperBuilder matched:
+      - @ConditionalOnMissingBean (types: tools.jackson.databind.json.JsonMapper$Builder; SearchStrategy: all) did not find any beans (OnBeanCondition)
+
+   JacksonAutoConfiguration.JsonProblemDetailsConfiguration matched:
+      - @ConditionalOnClass found required class 'org.springframework.http.ProblemDetail' (OnClassCondition)
+
+   JacksonEndpointAutoConfiguration matched:
+      - @ConditionalOnClass found required class 'tools.jackson.databind.json.JsonMapper' (OnClassCondition)
+
+   JacksonEndpointAutoConfiguration#endpointJsonMapper matched:
+      - @ConditionalOnBooleanProperty (management.endpoints.jackson.isolated-json-mapper=true) matched (OnPropertyCondition)
+
+   JacksonHttpMessageConvertersConfiguration.JacksonJsonHttpMessageConverterConfiguration matched:
+      - @ConditionalOnClass found required class 'tools.jackson.databind.json.JsonMapper' (OnClassCondition)
+      - @ConditionalOnProperty (spring.http.converters.preferred-json-mapper=jackson) matched (OnPropertyCondition)
+      - @ConditionalOnBean (types: tools.jackson.databind.json.JsonMapper; SearchStrategy: all) found bean 'jacksonJsonMapper' (OnBeanCondition)
+
+   JacksonHttpMessageConvertersConfiguration.JacksonJsonHttpMessageConverterConfiguration#jacksonJsonHttpMessageConvertersCustomizer matched:
+      - @ConditionalOnMissingBean (types: org.springframework.http.converter.json.JacksonJsonHttpMessageConverter ignored: org.springframework.hateoas.server.mvc.TypeConstrainedJacksonJsonHttpMessageConverter,org.springframework.data.rest.webmvc.alps.AlpsJacksonJsonHttpMessageConverter; SearchStrategy: all) did not find any beans (OnBeanCondition)
+
+   JdbcClientAutoConfiguration matched:
+      - @ConditionalOnSingleCandidate (types: org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate; SearchStrategy: all) found a single bean 'namedParameterJdbcTemplate'; @ConditionalOnMissingBean (types: org.springframework.jdbc.core.simple.JdbcClient; SearchStrategy: all) did not find any beans (OnBeanCondition)
+
+   JdbcTemplateAutoConfiguration matched:
+      - @ConditionalOnClass found required classes 'javax.sql.DataSource', 'org.springframework.jdbc.core.JdbcTemplate' (OnClassCondition)
+      - @ConditionalOnSingleCandidate (types: javax.sql.DataSource; SearchStrategy: all) found a single bean 'dataSource' (OnBeanCondition)
+
+   JdbcTemplateConfiguration matched:
+      - @ConditionalOnMissingBean (types: org.springframework.jdbc.core.JdbcOperations; SearchStrategy: all) did not find any beans (OnBeanCondition)
+
+   JvmMetricsAutoConfiguration matched:
+      - @ConditionalOnClass found required class 'io.micrometer.core.instrument.MeterRegistry' (OnClassCondition)
+      - @ConditionalOnBean (types: io.micrometer.core.instrument.MeterRegistry; SearchStrategy: all) found bean 'simpleMeterRegistry' (OnBeanCondition)
+
+   JvmMetricsAutoConfiguration#classLoaderMetrics matched:
+      - @ConditionalOnMissingBean (types: io.micrometer.core.instrument.binder.jvm.ClassLoaderMetrics; SearchStrategy: all) did not find any beans (OnBeanCondition)
+
+   JvmMetricsAutoConfiguration#jvmCompilationMetrics matched:
+      - @ConditionalOnMissingBean (types: io.micrometer.core.instrument.binder.jvm.JvmCompilationMetrics; SearchStrategy: all) did not find any beans (OnBeanCondition)
+
+   JvmMetricsAutoConfiguration#jvmGcMetrics matched:
+      - @ConditionalOnMissingBean (types: io.micrometer.core.instrument.binder.jvm.JvmGcMetrics; SearchStrategy: all) did not find any beans (OnBeanCondition)
+
+   JvmMetricsAutoConfiguration#jvmHeapPressureMetrics matched:
+      - @ConditionalOnMissingBean (types: io.micrometer.core.instrument.binder.jvm.JvmHeapPressureMetrics; SearchStrategy: all) did not find any beans (OnBeanCondition)
+
+   JvmMetricsAutoConfiguration#jvmInfoMetrics matched:
+      - @ConditionalOnMissingBean (types: io.micrometer.core.instrument.binder.jvm.JvmInfoMetrics; SearchStrategy: all) did not find any beans (OnBeanCondition)
+
+   JvmMetricsAutoConfiguration#jvmMemoryMetrics matched:
+      - @ConditionalOnMissingBean (types: io.micrometer.core.instrument.binder.jvm.JvmMemoryMetrics; SearchStrategy: all) did not find any beans (OnBeanCondition)
+
+   JvmMetricsAutoConfiguration#jvmThreadMetrics matched:
+      - @ConditionalOnMissingBean (types: io.micrometer.core.instrument.binder.jvm.JvmThreadMetrics; SearchStrategy: all) did not find any beans (OnBeanCondition)
+
+   LifecycleAutoConfiguration#defaultLifecycleProcessor matched:
+      - @ConditionalOnMissingBean (names: lifecycleProcessor; SearchStrategy: current) did not find any beans (OnBeanCondition)
+
+   LogbackMetricsAutoConfiguration matched:
+      - @ConditionalOnClass found required classes 'io.micrometer.core.instrument.MeterRegistry', 'ch.qos.logback.classic.LoggerContext', 'org.slf4j.LoggerFactory' (OnClassCondition)
+      - LogbackLoggingCondition ILoggerFactory is a Logback LoggerContext (LogbackMetricsAutoConfiguration.LogbackLoggingCondition)
+      - @ConditionalOnBean (types: io.micrometer.core.instrument.MeterRegistry; SearchStrategy: all) found bean 'simpleMeterRegistry' (OnBeanCondition)
+
+   LogbackMetricsAutoConfiguration#logbackMetrics matched:
+      - @ConditionalOnMissingBean (types: io.micrometer.core.instrument.binder.logging.LogbackMetrics; SearchStrategy: all) did not find any beans (OnBeanCondition)
+
+   ManagementContextAutoConfiguration.SameManagementContextConfiguration matched:
+      - Management Port actual port type (SAME) matched required type (OnManagementPortCondition)
+
+   MetricsAutoConfiguration matched:
+      - @ConditionalOnClass found required class 'io.micrometer.core.annotation.Timed' (OnClassCondition)
+
+   MetricsAutoConfiguration#micrometerClock matched:
+      - @ConditionalOnMissingBean (types: io.micrometer.core.instrument.Clock; SearchStrategy: all) did not find any beans (OnBeanCondition)
+
+   MultipartAutoConfiguration matched:
+      - @ConditionalOnClass found required classes 'jakarta.servlet.Servlet', 'org.springframework.web.multipart.support.StandardServletMultipartResolver', 'jakarta.servlet.MultipartConfigElement' (OnClassCondition)
+      - found 'session' scope (OnWebApplicationCondition)
+      - @ConditionalOnBooleanProperty (spring.servlet.multipart.enabled=true) matched (OnPropertyCondition)
+
+   MultipartAutoConfiguration#multipartConfigElement matched:
+      - @ConditionalOnMissingBean (types: jakarta.servlet.MultipartConfigElement; SearchStrategy: all) did not find any beans (OnBeanCondition)
+
+   MultipartAutoConfiguration#multipartResolver matched:
+      - @ConditionalOnMissingBean (types: org.springframework.web.multipart.MultipartResolver; SearchStrategy: all) did not find any beans (OnBeanCondition)
+
+   NamedParameterJdbcTemplateConfiguration matched:
+      - @ConditionalOnSingleCandidate (types: org.springframework.jdbc.core.JdbcTemplate; SearchStrategy: all) found a single bean 'jdbcTemplate'; @ConditionalOnMissingBean (types: org.springframework.jdbc.core.namedparam.NamedParameterJdbcOperations; SearchStrategy: all) did not find any beans (OnBeanCondition)
+
+   ObservationAutoConfiguration matched:
+      - @ConditionalOnClass found required class 'io.micrometer.observation.ObservationRegistry' (OnClassCondition)
+
+   ObservationAutoConfiguration#observationRegistry matched:
+      - @ConditionalOnMissingBean (types: io.micrometer.observation.ObservationRegistry; SearchStrategy: all) did not find any beans (OnBeanCondition)
+
+   ObservationAutoConfiguration#spelValueExpressionResolver matched:
+      - @ConditionalOnMissingBean (types: io.micrometer.common.annotation.ValueExpressionResolver; SearchStrategy: all) did not find any beans (OnBeanCondition)
+
+   PersistenceExceptionTranslationAutoConfiguration matched:
+      - @ConditionalOnClass found required class 'org.springframework.dao.annotation.PersistenceExceptionTranslationPostProcessor' (OnClassCondition)
+
+   PersistenceExceptionTranslationAutoConfiguration#persistenceExceptionTranslationPostProcessor matched:
+      - @ConditionalOnBooleanProperty (spring.persistence.exceptiontranslation.enabled=true) matched (OnPropertyCondition)
+      - @ConditionalOnMissingBean (types: org.springframework.dao.annotation.PersistenceExceptionTranslationPostProcessor; SearchStrategy: all) did not find any beans (OnBeanCondition)
+
+   PropertyPlaceholderAutoConfiguration#propertySourcesPlaceholderConfigurer matched:
+      - @ConditionalOnMissingBean (types: org.springframework.context.support.PropertySourcesPlaceholderConfigurer; SearchStrategy: current) did not find any beans (OnBeanCondition)
+
+   ScheduledTasksObservationAutoConfiguration matched:
+      - @ConditionalOnClass found required class 'org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler' (OnClassCondition)
+      - @ConditionalOnBean (types: io.micrometer.observation.ObservationRegistry; SearchStrategy: all) found bean 'observationRegistry' (OnBeanCondition)
+
+   ServletEndpointManagementContextConfiguration matched:
+      - found 'session' scope (OnWebApplicationCondition)
+
+   ServletManagementContextAutoConfiguration matched:
+      - @ConditionalOnClass found required classes 'jakarta.servlet.Servlet', 'org.springframework.boot.actuate.autoconfigure.endpoint.web.WebEndpointProperties' (OnClassCondition)
+      - found 'session' scope (OnWebApplicationCondition)
+
+   SimpleMetricsExportAutoConfiguration matched:
+      - @ConditionalOnEnabledMetricsExport management.defaults.metrics.export.enabled is considered true (OnMetricsExportEnabledCondition)
+      - @ConditionalOnBean (types: io.micrometer.core.instrument.Clock; SearchStrategy: all) found bean 'micrometerClock'; @ConditionalOnMissingBean (types: io.micrometer.core.instrument.MeterRegistry; SearchStrategy: all) did not find any beans (OnBeanCondition)
+
+   SimpleMetricsExportAutoConfiguration#simpleConfig matched:
+      - @ConditionalOnMissingBean (types: io.micrometer.core.instrument.simple.SimpleConfig; SearchStrategy: all) did not find any beans (OnBeanCondition)
+
+   SslAutoConfiguration#sslBundleRegistry matched:
+      - @ConditionalOnMissingBean (types: org.springframework.boot.ssl.SslBundleRegistry,org.springframework.boot.ssl.SslBundles; SearchStrategy: all) did not find any beans (OnBeanCondition)
+
+   SslHealthContributorAutoConfiguration matched:
+      - @ConditionalOnClass found required class 'org.springframework.boot.health.contributor.Health' (OnClassCondition)
+      - @ConditionalOnEnabledHealthIndicator management.health.defaults.enabled is considered true (OnEnabledHealthIndicatorCondition)
+
+   SslHealthContributorAutoConfiguration#sslHealthIndicator matched:
+      - @ConditionalOnMissingBean (names: sslHealthIndicator; SearchStrategy: all) did not find any beans (OnBeanCondition)
+
+   SslHealthContributorAutoConfiguration#sslInfo matched:
+      - @ConditionalOnMissingBean (types: org.springframework.boot.info.SslInfo; SearchStrategy: all) did not find any beans (OnBeanCondition)
+
+   SslMetricsAutoConfiguration matched:
+      - @ConditionalOnClass found required class 'io.micrometer.core.instrument.MeterRegistry' (OnClassCondition)
+      - @ConditionalOnBean (types: io.micrometer.core.instrument.MeterRegistry,org.springframework.boot.ssl.SslBundles; SearchStrategy: all) found beans 'sslBundleRegistry', 'simpleMeterRegistry' (OnBeanCondition)
+
+   StartupTimeMetricsListenerAutoConfiguration matched:
+      - @ConditionalOnClass found required class 'io.micrometer.core.instrument.MeterRegistry' (OnClassCondition)
+      - @ConditionalOnBean (types: io.micrometer.core.instrument.MeterRegistry; SearchStrategy: all) found bean 'simpleMeterRegistry' (OnBeanCondition)
+
+   StartupTimeMetricsListenerAutoConfiguration#startupTimeMetrics matched:
+      - @ConditionalOnMissingBean (types: org.springframework.boot.micrometer.metrics.startup.StartupTimeMetricsListener; SearchStrategy: all) did not find any beans (OnBeanCondition)
+
+   SystemMetricsAutoConfiguration matched:
+      - @ConditionalOnClass found required class 'io.micrometer.core.instrument.MeterRegistry' (OnClassCondition)
+      - @ConditionalOnBean (types: io.micrometer.core.instrument.MeterRegistry; SearchStrategy: all) found bean 'simpleMeterRegistry' (OnBeanCondition)
+
+   SystemMetricsAutoConfiguration#diskSpaceMetrics matched:
+      - @ConditionalOnMissingBean (types: org.springframework.boot.micrometer.metrics.system.DiskSpaceMetricsBinder; SearchStrategy: all) did not find any beans (OnBeanCondition)
+
+   SystemMetricsAutoConfiguration#fileDescriptorMetrics matched:
+      - @ConditionalOnMissingBean (types: io.micrometer.core.instrument.binder.system.FileDescriptorMetrics; SearchStrategy: all) did not find any beans (OnBeanCondition)
+
+   SystemMetricsAutoConfiguration#processorMetrics matched:
+      - @ConditionalOnMissingBean (types: io.micrometer.core.instrument.binder.system.ProcessorMetrics; SearchStrategy: all) did not find any beans (OnBeanCondition)
+
+   SystemMetricsAutoConfiguration#uptimeMetrics matched:
+      - @ConditionalOnMissingBean (types: io.micrometer.core.instrument.binder.system.UptimeMetrics; SearchStrategy: all) did not find any beans (OnBeanCondition)
+
+   TaskExecutionAutoConfiguration matched:
+      - @ConditionalOnClass found required class 'org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor' (OnClassCondition)
+
+   TaskExecutorConfigurations.AsyncConfigurerConfiguration matched:
+      - @ConditionalOnMissingBean (types: org.springframework.scheduling.annotation.AsyncConfigurer; SearchStrategy: all) did not find any beans (OnBeanCondition)
+
+   TaskExecutorConfigurations.SimpleAsyncTaskExecutorBuilderConfiguration#simpleAsyncTaskExecutorBuilder matched:
+      - @ConditionalOnMissingBean (types: org.springframework.boot.task.SimpleAsyncTaskExecutorBuilder; SearchStrategy: all) did not find any beans (OnBeanCondition)
+      - @ConditionalOnThreading found PLATFORM (OnThreadingCondition)
+
+   TaskExecutorConfigurations.TaskExecutorConfiguration matched:
+      - AnyNestedCondition 1 matched 1 did not; NestedCondition on TaskExecutorConfigurations.OnExecutorCondition.ModelCondition @ConditionalOnProperty (spring.task.execution.mode=force) did not find property 'spring.task.execution.mode'; NestedCondition on TaskExecutorConfigurations.OnExecutorCondition.ExecutorBeanCondition @ConditionalOnMissingBean (types: java.util.concurrent.Executor; SearchStrategy: all) did not find any beans (TaskExecutorConfigurations.OnExecutorCondition)
+
+   TaskExecutorConfigurations.TaskExecutorConfiguration#applicationTaskExecutor matched:
+      - @ConditionalOnThreading found PLATFORM (OnThreadingCondition)
+
+   TaskExecutorConfigurations.ThreadPoolTaskExecutorBuilderConfiguration#threadPoolTaskExecutorBuilder matched:
+      - @ConditionalOnMissingBean (types: org.springframework.boot.task.ThreadPoolTaskExecutorBuilder; SearchStrategy: all) did not find any beans (OnBeanCondition)
+
+   TaskExecutorMetricsAutoConfiguration matched:
+      - @ConditionalOnClass found required class 'io.micrometer.core.instrument.binder.jvm.ExecutorServiceMetrics' (OnClassCondition)
+      - @ConditionalOnBean (types: java.util.concurrent.Executor,io.micrometer.core.instrument.MeterRegistry; SearchStrategy: all) found beans 'applicationTaskExecutor', 'simpleMeterRegistry' (OnBeanCondition)
+
+   TaskSchedulingAutoConfiguration matched:
+      - @ConditionalOnClass found required class 'org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler' (OnClassCondition)
+
+   TaskSchedulingConfigurations.SimpleAsyncTaskSchedulerBuilderConfiguration#simpleAsyncTaskSchedulerBuilder matched:
+      - @ConditionalOnMissingBean (types: org.springframework.boot.task.SimpleAsyncTaskSchedulerBuilder; SearchStrategy: all) did not find any beans (OnBeanCondition)
+      - @ConditionalOnThreading found PLATFORM (OnThreadingCondition)
+
+   TaskSchedulingConfigurations.ThreadPoolTaskSchedulerBuilderConfiguration#threadPoolTaskSchedulerBuilder matched:
+      - @ConditionalOnMissingBean (types: org.springframework.boot.task.ThreadPoolTaskSchedulerBuilder; SearchStrategy: all) did not find any beans (OnBeanCondition)
+
+   TomcatMetricsAutoConfiguration matched:
+      - @ConditionalOnClass found required classes 'io.micrometer.core.instrument.binder.tomcat.TomcatMetrics', 'org.apache.catalina.Manager', 'io.micrometer.core.instrument.MeterRegistry' (OnClassCondition)
+      - @ConditionalOnWebApplication (required) found 'session' scope (OnWebApplicationCondition)
+
+   TomcatMetricsAutoConfiguration#tomcatMetricsBinder matched:
+      - @ConditionalOnBean (types: io.micrometer.core.instrument.MeterRegistry; SearchStrategy: all) found bean 'simpleMeterRegistry'; @ConditionalOnMissingBean (types: io.micrometer.core.instrument.binder.tomcat.TomcatMetrics,org.springframework.boot.tomcat.metrics.TomcatMetricsBinder; SearchStrategy: all) did not find any beans (OnBeanCondition)
+
+   TomcatServletWebServerAutoConfiguration matched:
+      - @ConditionalOnClass found required classes 'jakarta.servlet.ServletRequest', 'org.apache.catalina.startup.Tomcat', 'org.apache.coyote.UpgradeProtocol', 'org.springframework.boot.tomcat.servlet.TomcatServletWebServerFactory' (OnClassCondition)
+      - found 'session' scope (OnWebApplicationCondition)
+
+   TomcatServletWebServerAutoConfiguration#tomcatServletWebServerFactory matched:
+      - @ConditionalOnMissingBean (types: org.springframework.boot.web.server.servlet.ServletWebServerFactory; SearchStrategy: current) did not find any beans (OnBeanCondition)
+
+   TomcatWebServerConfiguration matched:
+      - @ConditionalOnWarDeployment the application is not deployed as a WAR file. (OnWarDeploymentCondition)
+
+   TomcatWebServerConfiguration.TomcatWebSocketConfiguration matched:
+      - @ConditionalOnClass found required class 'org.apache.tomcat.websocket.server.WsSci' (OnClassCondition)
+
+   TransactionAutoConfiguration matched:
+      - @ConditionalOnClass found required class 'org.springframework.transaction.PlatformTransactionManager' (OnClassCondition)
+
+   TransactionAutoConfiguration.EnableTransactionManagementConfiguration matched:
+      - @ConditionalOnBean (types: org.springframework.transaction.TransactionManager; SearchStrategy: all) found bean 'transactionManager'; @ConditionalOnMissingBean (types: org.springframework.transaction.annotation.AbstractTransactionManagementConfiguration; SearchStrategy: all) did not find any beans (OnBeanCondition)
+
+   TransactionAutoConfiguration.EnableTransactionManagementConfiguration.CglibAutoProxyConfiguration matched:
+      - @ConditionalOnBooleanProperty (spring.aop.proxy-target-class=true) matched (OnPropertyCondition)
+
+   TransactionAutoConfiguration.TransactionTemplateConfiguration matched:
+      - @ConditionalOnSingleCandidate (types: org.springframework.transaction.PlatformTransactionManager; SearchStrategy: all) found a single bean 'transactionManager' (OnBeanCondition)
+
+   TransactionAutoConfiguration.TransactionTemplateConfiguration#transactionTemplate matched:
+      - @ConditionalOnMissingBean (types: org.springframework.transaction.support.TransactionOperations; SearchStrategy: all) did not find any beans (OnBeanCondition)
+
+   TransactionManagerCustomizationAutoConfiguration matched:
+      - @ConditionalOnClass found required class 'org.springframework.transaction.PlatformTransactionManager' (OnClassCondition)
+
+   TransactionManagerCustomizationAutoConfiguration#platformTransactionManagerCustomizers matched:
+      - @ConditionalOnMissingBean (types: org.springframework.boot.transaction.autoconfigure.TransactionManagerCustomizers; SearchStrategy: all) did not find any beans (OnBeanCondition)
+
+   ValidationAutoConfiguration matched:
+      - @ConditionalOnClass found required class 'jakarta.validation.executable.ExecutableValidator' (OnClassCondition)
+      - @ConditionalOnResource found location classpath:META-INF/services/jakarta.validation.spi.ValidationProvider (OnResourceCondition)
+
+   ValidationAutoConfiguration#defaultValidator matched:
+      - @ConditionalOnMissingBean (types: jakarta.validation.Validator; SearchStrategy: all) did not find any beans (OnBeanCondition)
+
+   ValidationAutoConfiguration#methodValidationPostProcessor matched:
+      - @ConditionalOnMissingBean (types: org.springframework.validation.beanvalidation.MethodValidationPostProcessor; SearchStrategy: current) did not find any beans (OnBeanCondition)
+
+   WebEndpointAutoConfiguration matched:
+      - @ConditionalOnWebApplication (required) found 'session' scope (OnWebApplicationCondition)
+
+   WebEndpointAutoConfiguration#controllerEndpointDiscoverer matched:
+      - @ConditionalOnMissingBean (types: org.springframework.boot.actuate.endpoint.web.annotation.ControllerEndpointsSupplier; SearchStrategy: all) did not find any beans (OnBeanCondition)
+
+   WebEndpointAutoConfiguration#endpointMediaTypes matched:
+      - @ConditionalOnMissingBean (types: org.springframework.boot.actuate.endpoint.web.EndpointMediaTypes; SearchStrategy: all) did not find any beans (OnBeanCondition)
+
+   WebEndpointAutoConfiguration#pathMappedEndpoints matched:
+      - @ConditionalOnMissingBean (types: org.springframework.boot.actuate.endpoint.web.PathMappedEndpoints; SearchStrategy: all) did not find any beans (OnBeanCondition)
+
+   WebEndpointAutoConfiguration#webEndpointDiscoverer matched:
+      - @ConditionalOnMissingBean (types: org.springframework.boot.actuate.endpoint.web.WebEndpointsSupplier; SearchStrategy: all) did not find any beans (OnBeanCondition)
+
+   WebEndpointAutoConfiguration.WebEndpointServletConfiguration matched:
+      - found 'session' scope (OnWebApplicationCondition)
+
+   WebEndpointAutoConfiguration.WebEndpointServletConfiguration#servletEndpointDiscoverer matched:
+      - @ConditionalOnMissingBean (types: org.springframework.boot.actuate.endpoint.web.annotation.ServletEndpointsSupplier; SearchStrategy: all) did not find any beans (OnBeanCondition)
+
+   WebMvcAutoConfiguration matched:
+      - @ConditionalOnClass found required classes 'jakarta.servlet.Servlet', 'org.springframework.web.servlet.DispatcherServlet', 'org.springframework.web.servlet.config.annotation.WebMvcConfigurer' (OnClassCondition)
+      - found 'session' scope (OnWebApplicationCondition)
+      - @ConditionalOnMissingBean (types: org.springframework.web.servlet.config.annotation.WebMvcConfigurationSupport; SearchStrategy: all) did not find any beans (OnBeanCondition)
+
+   WebMvcAutoConfiguration#formContentFilter matched:
+      - @ConditionalOnBooleanProperty (spring.mvc.formcontent.filter.enabled=true) matched (OnPropertyCondition)
+      - @ConditionalOnMissingBean (types: org.springframework.web.filter.FormContentFilter; SearchStrategy: all) did not find any beans (OnBeanCondition)
+
+   WebMvcAutoConfiguration.EnableWebMvcConfiguration#flashMapManager matched:
+      - @ConditionalOnMissingBean (names: flashMapManager; SearchStrategy: all) did not find any beans (OnBeanCondition)
+
+   WebMvcAutoConfiguration.EnableWebMvcConfiguration#localeResolver matched:
+      - @ConditionalOnMissingBean (names: localeResolver; SearchStrategy: all) did not find any beans (OnBeanCondition)
+
+   WebMvcAutoConfiguration.EnableWebMvcConfiguration#viewNameTranslator matched:
+      - @ConditionalOnMissingBean (names: viewNameTranslator; SearchStrategy: all) did not find any beans (OnBeanCondition)
+
+   WebMvcAutoConfiguration.WebMvcAutoConfigurationAdapter#defaultViewResolver matched:
+      - @ConditionalOnMissingBean (types: org.springframework.web.servlet.view.InternalResourceViewResolver; SearchStrategy: all) did not find any beans (OnBeanCondition)
+
+   WebMvcAutoConfiguration.WebMvcAutoConfigurationAdapter#requestContextFilter matched:
+      - @ConditionalOnMissingBean (types: org.springframework.web.context.request.RequestContextListener,org.springframework.web.filter.RequestContextFilter; SearchStrategy: all) did not find any beans (OnBeanCondition)
+
+   WebMvcAutoConfiguration.WebMvcAutoConfigurationAdapter#viewResolver matched:
+      - @ConditionalOnBean (types: org.springframework.web.servlet.ViewResolver; SearchStrategy: all) found beans 'defaultViewResolver', 'beanNameViewResolver', 'mvcViewResolver'; @ConditionalOnMissingBean (names: viewResolver types: org.springframework.web.servlet.view.ContentNegotiatingViewResolver; SearchStrategy: all) did not find any beans (OnBeanCondition)
+
+   WebMvcEndpointManagementContextConfiguration matched:
+      - found 'session' scope (OnWebApplicationCondition)
+      - @ConditionalOnBean (types: org.springframework.web.servlet.DispatcherServlet,org.springframework.boot.actuate.endpoint.web.WebEndpointsSupplier; SearchStrategy: all) found beans 'webEndpointDiscoverer', 'dispatcherServlet' (OnBeanCondition)
+
+   WebMvcEndpointManagementContextConfiguration#controllerEndpointHandlerMapping matched:
+      - @ConditionalOnMissingBean (types: org.springframework.boot.webmvc.actuate.endpoint.web.ControllerEndpointHandlerMapping; SearchStrategy: all) did not find any beans (OnBeanCondition)
+
+   WebMvcEndpointManagementContextConfiguration#endpointJsonMapperWebMvcConfigurer matched:
+      - @ConditionalOnBean (types: org.springframework.boot.actuate.endpoint.jackson.EndpointJsonMapper; SearchStrategy: all) found bean 'endpointJsonMapper' (OnBeanCondition)
+
+   WebMvcEndpointManagementContextConfiguration#webEndpointServletHandlerMapping matched:
+      - @ConditionalOnMissingBean (types: org.springframework.boot.webmvc.actuate.endpoint.web.WebMvcEndpointHandlerMapping; SearchStrategy: all) did not find any beans (OnBeanCondition)
+
+   WebMvcEndpointManagementContextConfiguration.HealthConfiguration matched:
+      - @ConditionalOnClass found required class 'org.springframework.boot.health.actuate.endpoint.HealthEndpoint' (OnClassCondition)
+
+   WebMvcHealthEndpointExtensionAutoConfiguration matched:
+      - @ConditionalOnClass found required class 'org.springframework.boot.health.actuate.endpoint.HealthEndpoint' (OnClassCondition)
+      - found 'session' scope (OnWebApplicationCondition)
+      - @ConditionalOnAvailableEndpoint marked as exposed by a 'management.endpoints.web.exposure' property (OnAvailableEndpointCondition)
+      - @ConditionalOnBean (types: org.springframework.boot.health.actuate.endpoint.HealthEndpoint,org.springframework.boot.actuate.endpoint.web.WebEndpointsSupplier,org.springframework.boot.health.actuate.endpoint.HealthEndpointGroups; SearchStrategy: all) found beans 'webEndpointDiscoverer', 'healthEndpoint', 'healthEndpointGroups' (OnBeanCondition)
+
+   WebMvcObservationAutoConfiguration matched:
+      - @ConditionalOnClass found required classes 'org.springframework.web.servlet.DispatcherServlet', 'io.micrometer.observation.Observation', 'org.springframework.boot.micrometer.observation.autoconfigure.ObservationProperties' (OnClassCondition)
+      - found 'session' scope (OnWebApplicationCondition)
+      - @ConditionalOnBean (types: io.micrometer.observation.ObservationRegistry; SearchStrategy: all) found bean 'observationRegistry' (OnBeanCondition)
+
+   WebMvcObservationAutoConfiguration#webMvcObservationFilter matched:
+      - @ConditionalOnMissingBean (types: org.springframework.web.filter.ServerHttpObservationFilter; SearchStrategy: all) did not find any beans (OnBeanCondition)
+
+   WebMvcObservationAutoConfiguration.MeterFilterConfiguration matched:
+      - @ConditionalOnClass found required classes 'io.micrometer.core.instrument.MeterRegistry', 'org.springframework.boot.micrometer.metrics.autoconfigure.MetricsProperties' (OnClassCondition)
+      - @ConditionalOnBean (types: io.micrometer.core.instrument.MeterRegistry; SearchStrategy: all) found bean 'simpleMeterRegistry' (OnBeanCondition)
+
+
+Negative matches:
+-----------------
+
+   AopAutoConfiguration.AspectJAutoProxyingConfiguration:
+      Did not match:
+         - @ConditionalOnClass did not find required class 'org.aspectj.weaver.Advice' (OnClassCondition)
+
+   AppOpticsMetricsExportAutoConfiguration:
+      Did not match:
+         - @ConditionalOnClass did not find required class 'io.micrometer.appoptics.AppOpticsMeterRegistry' (OnClassCondition)
+
+   AtlasMetricsExportAutoConfiguration:
+      Did not match:
+         - @ConditionalOnClass did not find required class 'io.micrometer.atlas.AtlasMeterRegistry' (OnClassCondition)
+
+   AuditAutoConfiguration:
+      Did not match:
+         - @ConditionalOnBean (types: org.springframework.boot.actuate.audit.AuditEventRepository; SearchStrategy: all) did not find any beans of type org.springframework.boot.actuate.audit.AuditEventRepository (OnBeanCondition)
+      Matched:
+         - @ConditionalOnBooleanProperty (management.auditevents.enabled=true) matched (OnPropertyCondition)
+
+   AuditEventsEndpointAutoConfiguration:
+      Did not match:
+         - @ConditionalOnAvailableEndpoint not exposed (OnAvailableEndpointCondition)
+
+   AvailabilityHealthContributorAutoConfiguration#livenessStateHealthIndicator:
+      Did not match:
+         - @ConditionalOnBooleanProperty (management.health.livenessstate.enabled=true) did not find property 'management.health.livenessstate.enabled' (OnPropertyCondition)
+
+   AvailabilityHealthContributorAutoConfiguration#readinessStateHealthIndicator:
+      Did not match:
+         - @ConditionalOnBooleanProperty (management.health.readinessstate.enabled=true) did not find property 'management.health.readinessstate.enabled' (OnPropertyCondition)
+
+   BeansEndpointAutoConfiguration:
+      Did not match:
+         - @ConditionalOnAvailableEndpoint not exposed (OnAvailableEndpointCondition)
+
+   CompositeMeterRegistryConfiguration:
+      Did not match:
+         - NoneNestedConditions 1 matched 1 did not; NestedCondition on CompositeMeterRegistryConfiguration.MultipleNonPrimaryMeterRegistriesCondition.SingleInjectableMeterRegistry @ConditionalOnSingleCandidate (types: io.micrometer.core.instrument.MeterRegistry; SearchStrategy: all) found a single bean 'simpleMeterRegistry'; NestedCondition on CompositeMeterRegistryConfiguration.MultipleNonPrimaryMeterRegistriesCondition.NoMeterRegistryCondition @ConditionalOnMissingBean (types: io.micrometer.core.instrument.MeterRegistry; SearchStrategy: all) found beans of type 'io.micrometer.core.instrument.MeterRegistry' simpleMeterRegistry (CompositeMeterRegistryConfiguration.MultipleNonPrimaryMeterRegistriesCondition)
+
+   ConditionsReportEndpointAutoConfiguration:
+      Did not match:
+         - @ConditionalOnAvailableEndpoint not exposed (OnAvailableEndpointCondition)
+
+   ConfigurationPropertiesReportEndpointAutoConfiguration:
+      Did not match:
+         - @ConditionalOnAvailableEndpoint not exposed (OnAvailableEndpointCondition)
+
+   DataSourceAutoConfiguration.EmbeddedDatabaseConfiguration:
+      Did not match:
+         - EmbeddedDataSource spring.datasource.url is set (DataSourceAutoConfiguration.EmbeddedDatabaseCondition)
+
+   DataSourceCheckpointRestoreConfiguration:
+      Did not match:
+         - @ConditionalOnClass did not find required class 'org.crac.Resource' (OnClassCondition)
+
+   DataSourceConfiguration.Dbcp2:
+      Did not match:
+         - @ConditionalOnClass did not find required class 'org.apache.commons.dbcp2.BasicDataSource' (OnClassCondition)
+
+   DataSourceConfiguration.Generic:
+      Did not match:
+         - @ConditionalOnProperty (spring.datasource.type) did not find property 'spring.datasource.type' (OnPropertyCondition)
+
+   DataSourceConfiguration.OracleUcp:
+      Did not match:
+         - @ConditionalOnClass did not find required classes 'oracle.ucp.jdbc.PoolDataSourceImpl', 'oracle.jdbc.OracleConnection' (OnClassCondition)
+
+   DataSourceConfiguration.Tomcat:
+      Did not match:
+         - @ConditionalOnClass did not find required class 'org.apache.tomcat.jdbc.pool.DataSource' (OnClassCondition)
+
+   DataSourceJmxConfiguration:
+      Did not match:
+         - @ConditionalOnBooleanProperty (spring.jmx.enabled=true) found different value in property 'spring.jmx.enabled' (OnPropertyCondition)
+
+   DataSourcePoolMetadataProvidersConfiguration.CommonsDbcp2PoolDataSourceMetadataProviderConfiguration:
+      Did not match:
+         - @ConditionalOnClass did not find required class 'org.apache.commons.dbcp2.BasicDataSource' (OnClassCondition)
+
+   DataSourcePoolMetadataProvidersConfiguration.OracleUcpPoolDataSourceMetadataProviderConfiguration:
+      Did not match:
+         - @ConditionalOnClass did not find required classes 'oracle.ucp.jdbc.PoolDataSource', 'oracle.jdbc.OracleConnection' (OnClassCondition)
+
+   DataSourcePoolMetadataProvidersConfiguration.TomcatDataSourcePoolMetadataProviderConfiguration:
+      Did not match:
+         - @ConditionalOnClass did not find required class 'org.apache.tomcat.jdbc.pool.DataSource' (OnClassCondition)
+
+   DatadogMetricsExportAutoConfiguration:
+      Did not match:
+         - @ConditionalOnClass did not find required class 'io.micrometer.datadog.DatadogMeterRegistry' (OnClassCondition)
+
+   DispatcherServletAutoConfiguration.DispatcherServletConfiguration#multipartResolver:
+      Did not match:
+         - @ConditionalOnBean (types: org.springframework.web.multipart.MultipartResolver; SearchStrategy: all) did not find any beans of type org.springframework.web.multipart.MultipartResolver (OnBeanCondition)
+
+   DynatraceMetricsExportAutoConfiguration:
+      Did not match:
+         - @ConditionalOnClass did not find required class 'io.micrometer.dynatrace.DynatraceMeterRegistry' (OnClassCondition)
+
+   ElasticMetricsExportAutoConfiguration:
+      Did not match:
+         - @ConditionalOnClass did not find required class 'io.micrometer.elastic.ElasticMeterRegistry' (OnClassCondition)
+
+   EnvironmentEndpointAutoConfiguration:
+      Did not match:
+         - @ConditionalOnAvailableEndpoint not exposed (OnAvailableEndpointCondition)
+
+   FlywayAutoConfiguration.FlywayConfiguration.OracleConfiguration:
+      Did not match:
+         - @ConditionalOnClass did not find required class 'org.flywaydb.database.oracle.OracleConfigurationExtension' (OnClassCondition)
+
+   FlywayAutoConfiguration.FlywayConfiguration.SqlServerConfiguration:
+      Did not match:
+         - @ConditionalOnClass did not find required class 'org.flywaydb.database.sqlserver.SQLServerConfigurationExtension' (OnClassCondition)
+
+   FlywayEndpointAutoConfiguration:
+      Did not match:
+         - @ConditionalOnAvailableEndpoint not exposed (OnAvailableEndpointCondition)
+      Matched:
+         - @ConditionalOnClass found required classes 'org.flywaydb.core.Flyway', 'org.springframework.boot.actuate.autoconfigure.endpoint.condition.ConditionalOnAvailableEndpoint' (OnClassCondition)
+
+   GangliaMetricsExportAutoConfiguration:
+      Did not match:
+         - @ConditionalOnClass did not find required class 'io.micrometer.ganglia.GangliaMeterRegistry' (OnClassCondition)
+
+   GraphiteMetricsExportAutoConfiguration:
+      Did not match:
+         - @ConditionalOnClass did not find required class 'io.micrometer.graphite.GraphiteMeterRegistry' (OnClassCondition)
+
+   GsonHttpMessageConvertersConfiguration:
+      Did not match:
+         - @ConditionalOnClass did not find required class 'com.google.gson.Gson' (OnClassCondition)
+
+   HealthContributorRegistryAutoConfiguration.ReactiveHealthContributorRegistryConfiguration:
+      Did not match:
+         - @ConditionalOnClass did not find required class 'reactor.core.publisher.Flux' (OnClassCondition)
+
+   HealthEndpointReactiveWebExtensionConfiguration:
+      Did not match:
+         - did not find reactive web application classes (OnWebApplicationCondition)
+
+   HeapDumpWebEndpointAutoConfiguration:
+      Did not match:
+         - @ConditionalOnAvailableEndpoint the configured access for endpoint 'heapdump' is NONE (OnAvailableEndpointCondition)
+
+   HttpExchangesEndpointAutoConfiguration:
+      Did not match:
+         - @ConditionalOnAvailableEndpoint not exposed (OnAvailableEndpointCondition)
+
+   HumioMetricsExportAutoConfiguration:
+      Did not match:
+         - @ConditionalOnClass did not find required class 'io.micrometer.humio.HumioMeterRegistry' (OnClassCondition)
+
+   InfluxMetricsExportAutoConfiguration:
+      Did not match:
+         - @ConditionalOnClass did not find required class 'io.micrometer.influx.InfluxMeterRegistry' (OnClassCondition)
+
+   InfoContributorAutoConfiguration#buildInfoContributor:
+      Did not match:
+         - @ConditionalOnSingleCandidate (types: org.springframework.boot.info.BuildProperties; SearchStrategy: all) did not find any beans (OnBeanCondition)
+      Matched:
+         - @ConditionalOnEnabledInfoContributor management.info.defaults.enabled is considered true (OnEnabledInfoContributorCondition)
+
+   InfoContributorAutoConfiguration#envInfoContributor:
+      Did not match:
+         - @ConditionalOnEnabledInfoContributor management.info.env.enabled is not true (OnEnabledInfoContributorCondition)
+
+   InfoContributorAutoConfiguration#gitInfoContributor:
+      Did not match:
+         - @ConditionalOnSingleCandidate (types: org.springframework.boot.info.GitProperties; SearchStrategy: all) did not find any beans (OnBeanCondition)
+      Matched:
+         - @ConditionalOnEnabledInfoContributor management.info.defaults.enabled is considered true (OnEnabledInfoContributorCondition)
+
+   InfoContributorAutoConfiguration#javaInfoContributor:
+      Did not match:
+         - @ConditionalOnEnabledInfoContributor management.info.java.enabled is not true (OnEnabledInfoContributorCondition)
+
+   InfoContributorAutoConfiguration#osInfoContributor:
+      Did not match:
+         - @ConditionalOnEnabledInfoContributor management.info.os.enabled is not true (OnEnabledInfoContributorCondition)
+
+   InfoContributorAutoConfiguration#processInfoContributor:
+      Did not match:
+         - @ConditionalOnEnabledInfoContributor management.info.process.enabled is not true (OnEnabledInfoContributorCondition)
+
+   InfoContributorAutoConfiguration#sslInfo:
+      Did not match:
+         - @ConditionalOnEnabledInfoContributor management.info.ssl.enabled is not true (OnEnabledInfoContributorCondition)
+      Matched:
+         - @ConditionalOnMissingBean (types: org.springframework.boot.info.SslInfo; SearchStrategy: all) did not find any beans (OnBeanCondition)
+
+   InfoContributorAutoConfiguration#sslInfoContributor:
+      Did not match:
+         - @ConditionalOnEnabledInfoContributor management.info.ssl.enabled is not true (OnEnabledInfoContributorCondition)
+
+   Jackson2EndpointAutoConfiguration:
+      Did not match:
+         - @ConditionalOnClass did not find required class 'com.fasterxml.jackson.databind.ObjectMapper' (OnClassCondition)
+
+   Jackson2HttpMessageConvertersConfiguration.MappingJackson2HttpMessageConverterConfiguration:
+      Did not match:
+         - @ConditionalOnClass did not find required class 'com.fasterxml.jackson.databind.ObjectMapper' (OnClassCondition)
+
+   Jackson2HttpMessageConvertersConfiguration.MappingJackson2XmlHttpMessageConverterConfiguration:
+      Did not match:
+         - @ConditionalOnClass did not find required class 'com.fasterxml.jackson.dataformat.xml.XmlMapper' (OnClassCondition)
+
+   JacksonAutoConfiguration.CborConfiguration:
+      Did not match:
+         - @ConditionalOnClass did not find required class 'tools.jackson.dataformat.cbor.CBORMapper' (OnClassCondition)
+
+   JacksonAutoConfiguration.XmlConfiguration:
+      Did not match:
+         - @ConditionalOnClass did not find required class 'tools.jackson.dataformat.xml.XmlMapper' (OnClassCondition)
+
+   JacksonHttpMessageConvertersConfiguration.JacksonXmlHttpMessageConverterConfiguration:
+      Did not match:
+         - @ConditionalOnClass did not find required class 'tools.jackson.dataformat.xml.XmlMapper' (OnClassCondition)
+
+   JmxAutoConfiguration:
+      Did not match:
+         - @ConditionalOnBooleanProperty (spring.jmx.enabled=true) found different value in property 'spring.jmx.enabled' (OnPropertyCondition)
+      Matched:
+         - @ConditionalOnClass found required class 'org.springframework.jmx.export.MBeanExporter' (OnClassCondition)
+
+   JmxEndpointAutoConfiguration:
+      Did not match:
+         - @ConditionalOnBooleanProperty (spring.jmx.enabled=true) found different value in property 'spring.jmx.enabled' (OnPropertyCondition)
+
+   JmxMetricsExportAutoConfiguration:
+      Did not match:
+         - @ConditionalOnClass did not find required class 'io.micrometer.jmx.JmxMeterRegistry' (OnClassCondition)
+
+   JndiDataSourceAutoConfiguration:
+      Did not match:
+         - @ConditionalOnProperty (spring.datasource.jndi-name) did not find property 'spring.datasource.jndi-name' (OnPropertyCondition)
+      Matched:
+         - @ConditionalOnClass found required classes 'javax.sql.DataSource', 'org.springframework.jdbc.datasource.embedded.EmbeddedDatabaseType' (OnClassCondition)
+
+   JsonbHttpMessageConvertersConfiguration:
+      Did not match:
+         - @ConditionalOnClass did not find required class 'jakarta.json.bind.Jsonb' (OnClassCondition)
+
+   JtaAutoConfiguration:
+      Did not match:
+         - @ConditionalOnClass did not find required class 'jakarta.transaction.Transaction' (OnClassCondition)
+
+   JvmMetricsAutoConfiguration.VirtualThreadMetricsConfiguration:
+      Did not match:
+         - @ConditionalOnClass did not find required class 'io.micrometer.java21.instrument.binder.jdk.VirtualThreadMetrics' (OnClassCondition)
+
+   KairosMetricsExportAutoConfiguration:
+      Did not match:
+         - @ConditionalOnClass did not find required class 'io.micrometer.kairos.KairosMeterRegistry' (OnClassCondition)
+
+   KotlinSerializationHttpMessageConvertersConfiguration:
+      Did not match:
+         - @ConditionalOnClass did not find required classes 'kotlinx.serialization.Serializable', 'kotlinx.serialization.json.Json' (OnClassCondition)
+
+   LazyConnectionDataSourceConfiguration:
+      Did not match:
+         - @ConditionalOnProperty (spring.datasource.connection-fetch=lazy) did not find property 'spring.datasource.connection-fetch' (OnPropertyCondition)
+
+   Log4J2MetricsAutoConfiguration:
+      Did not match:
+         - @ConditionalOnClass did not find required class 'org.apache.logging.log4j.core.LoggerContext' (OnClassCondition)
+
+   LogFileWebEndpointAutoConfiguration:
+      Did not match:
+         - @ConditionalOnAvailableEndpoint not exposed (OnAvailableEndpointCondition)
+
+   LoggersEndpointAutoConfiguration:
+      Did not match:
+         - @ConditionalOnAvailableEndpoint not exposed (OnAvailableEndpointCondition)
+
+   ManagementContextAutoConfiguration.DifferentManagementContextConfiguration:
+      Did not match:
+         - Management Port actual port type (SAME) did not match required type (DIFFERENT) (OnManagementPortCondition)
+
+   MappingsEndpointAutoConfiguration:
+      Did not match:
+         - @ConditionalOnAvailableEndpoint not exposed (OnAvailableEndpointCondition)
+
+   MessageSourceAutoConfiguration:
+      Did not match:
+         - ResourceBundle did not find bundle with basename messages (MessageSourceAutoConfiguration.ResourceBundleCondition)
+
+   MetricsAspectsAutoConfiguration:
+      Did not match:
+         - @ConditionalOnClass did not find required class 'org.aspectj.weaver.Advice' (OnClassCondition)
+
+   MetricsEndpointAutoConfiguration:
+      Did not match:
+         - @ConditionalOnAvailableEndpoint not exposed (OnAvailableEndpointCondition)
+      Matched:
+         - @ConditionalOnClass found required classes 'org.springframework.boot.actuate.autoconfigure.endpoint.condition.ConditionalOnAvailableEndpoint', 'io.micrometer.core.annotation.Timed' (OnClassCondition)
+
+   NewRelicMetricsExportAutoConfiguration:
+      Did not match:
+         - @ConditionalOnClass did not find required class 'io.micrometer.newrelic.NewRelicMeterRegistry' (OnClassCondition)
+
+   NoOpMeterRegistryConfiguration:
+      Did not match:
+         - @ConditionalOnMissingBean (types: io.micrometer.core.instrument.MeterRegistry; SearchStrategy: all) found beans of type 'io.micrometer.core.instrument.MeterRegistry' simpleMeterRegistry (OnBeanCondition)
+
+   ObservationAutoConfiguration.ObservedAspectConfiguration:
+      Did not match:
+         - @ConditionalOnClass did not find required class 'org.aspectj.weaver.Advice' (OnClassCondition)
+
+   OtlpMetricsExportAutoConfiguration:
+      Did not match:
+         - @ConditionalOnClass did not find required class 'io.micrometer.registry.otlp.OtlpMeterRegistry' (OnClassCondition)
+
+   ProjectInfoAutoConfiguration#buildProperties:
+      Did not match:
+         - @ConditionalOnResource did not find resource '${spring.info.build.location:classpath:META-INF/build-info.properties}' (OnResourceCondition)
+
+   ProjectInfoAutoConfiguration#gitProperties:
+      Did not match:
+         - GitResource did not find git info at classpath:git.properties (ProjectInfoAutoConfiguration.GitResourceAvailableCondition)
+
+   PrometheusMetricsExportAutoConfiguration:
+      Did not match:
+         - @ConditionalOnClass did not find required class 'io.micrometer.prometheusmetrics.PrometheusMeterRegistry' (OnClassCondition)
+
+   SbomEndpointAutoConfiguration:
+      Did not match:
+         - @ConditionalOnAvailableEndpoint not exposed (OnAvailableEndpointCondition)
+
+   ScheduledTasksEndpointAutoConfiguration:
+      Did not match:
+         - @ConditionalOnAvailableEndpoint not exposed (OnAvailableEndpointCondition)
+
+   ServletHttpExchangesAutoConfiguration:
+      Did not match:
+         - @ConditionalOnBean (types: org.springframework.boot.actuate.web.exchanges.HttpExchangeRepository; SearchStrategy: all) did not find any beans of type org.springframework.boot.actuate.web.exchanges.HttpExchangeRepository (OnBeanCondition)
+      Matched:
+         - found 'session' scope (OnWebApplicationCondition)
+         - @ConditionalOnBooleanProperty (management.httpexchanges.recording.enabled=true) matched (OnPropertyCondition)
+
+   ServletManagementContextAutoConfiguration.ApplicationContextFilterConfiguration:
+      Did not match:
+         - @ConditionalOnBooleanProperty (management.server.add-application-context-header=true) did not find property 'management.server.add-application-context-header' (OnPropertyCondition)
+
+   ServletMappingsAutoConfiguration:
+      Did not match:
+         - @ConditionalOnAvailableEndpoint not exposed (OnAvailableEndpointCondition)
+      Matched:
+         - @ConditionalOnClass found required classes 'org.springframework.boot.actuate.autoconfigure.endpoint.condition.ConditionalOnAvailableEndpoint', 'org.springframework.boot.actuate.web.mappings.MappingsEndpoint' (OnClassCondition)
+         - found 'session' scope (OnWebApplicationCondition)
+
+   ServletWebServerConfiguration#forwardedHeaderFilter:
+      Did not match:
+         - @ConditionalOnProperty (server.forward-headers-strategy=framework) did not find property 'server.forward-headers-strategy' (OnPropertyCondition)
+
+   ShutdownEndpointAutoConfiguration:
+      Did not match:
+         - @ConditionalOnAvailableEndpoint the configured access for endpoint 'shutdown' is NONE (OnAvailableEndpointCondition)
+
+   SpringApplicationAdminJmxAutoConfiguration:
+      Did not match:
+         - @ConditionalOnBooleanProperty (spring.application.admin.enabled=true) did not find property 'spring.application.admin.enabled' (OnPropertyCondition)
+
+   StackdriverMetricsExportAutoConfiguration:
+      Did not match:
+         - @ConditionalOnClass did not find required class 'io.micrometer.stackdriver.StackdriverMeterRegistry' (OnClassCondition)
+
+   StartupEndpointAutoConfiguration:
+      Did not match:
+         - ApplicationStartup configured applicationStartup is of type class org.springframework.core.metrics.DefaultApplicationStartup, expected BufferingApplicationStartup. (StartupEndpointAutoConfiguration.ApplicationStartupCondition)
+
+   StatsdMetricsExportAutoConfiguration:
+      Did not match:
+         - @ConditionalOnClass did not find required class 'io.micrometer.statsd.StatsdMeterRegistry' (OnClassCondition)
+
+   TaskExecutorConfigurations.AsyncConfigurerWrapperConfiguration:
+      Did not match:
+         - @ConditionalOnBean (types: org.springframework.scheduling.annotation.AsyncConfigurer; SearchStrategy: all) did not find any beans of type org.springframework.scheduling.annotation.AsyncConfigurer (OnBeanCondition)
+
+   TaskExecutorConfigurations.SimpleAsyncTaskExecutorBuilderConfiguration#simpleAsyncTaskExecutorBuilderVirtualThreads:
+      Did not match:
+         - @ConditionalOnMissingBean (types: org.springframework.boot.task.SimpleAsyncTaskExecutorBuilder; SearchStrategy: all) found beans of type 'org.springframework.boot.task.SimpleAsyncTaskExecutorBuilder' simpleAsyncTaskExecutorBuilder (OnBeanCondition)
+
+   TaskExecutorConfigurations.TaskExecutorConfiguration#applicationTaskExecutorVirtualThreads:
+      Did not match:
+         - @ConditionalOnThreading did not find VIRTUAL (OnThreadingCondition)
+
+   TaskExecutorConfigurations.TaskExecutorContextPropagationConfiguration:
+      Did not match:
+         - @ConditionalOnClass did not find required class 'io.micrometer.context.ContextSnapshot' (OnClassCondition)
+
+   TaskSchedulingAutoConfiguration#scheduledBeanLazyInitializationExcludeFilter:
+      Did not match:
+         - @ConditionalOnBean (names: org.springframework.scheduling.config.internalScheduledAnnotationProcessor; SearchStrategy: all) did not find any beans named org.springframework.scheduling.config.internalScheduledAnnotationProcessor (OnBeanCondition)
+
+   TaskSchedulingConfigurations.SimpleAsyncTaskSchedulerBuilderConfiguration#simpleAsyncTaskSchedulerBuilderVirtualThreads:
+      Did not match:
+         - @ConditionalOnMissingBean (types: org.springframework.boot.task.SimpleAsyncTaskSchedulerBuilder; SearchStrategy: all) found beans of type 'org.springframework.boot.task.SimpleAsyncTaskSchedulerBuilder' simpleAsyncTaskSchedulerBuilder (OnBeanCondition)
+
+   TaskSchedulingConfigurations.TaskSchedulerConfiguration:
+      Did not match:
+         - @ConditionalOnBean (names: org.springframework.scheduling.config.internalScheduledAnnotationProcessor; SearchStrategy: all) did not find any beans named org.springframework.scheduling.config.internalScheduledAnnotationProcessor (OnBeanCondition)
+
+   ThreadDumpEndpointAutoConfiguration:
+      Did not match:
+         - @ConditionalOnAvailableEndpoint not exposed (OnAvailableEndpointCondition)
+
+   TomcatReactiveManagementContextAutoConfiguration:
+      Did not match:
+         - @ConditionalOnWebApplication did not find reactive web application classes (OnWebApplicationCondition)
+
+   TomcatReactiveWebServerAutoConfiguration:
+      Did not match:
+         - @ConditionalOnWebApplication did not find reactive web application classes (OnWebApplicationCondition)
+
+   TomcatServletManagementContextAutoConfiguration:
+      Did not match:
+         - Management Port actual port type (SAME) did not match required type (DIFFERENT) (OnManagementPortCondition)
+      Matched:
+         - @ConditionalOnClass found required class 'org.springframework.boot.actuate.autoconfigure.web.server.ManagementContextFactory' (OnClassCondition)
+         - found 'session' scope (OnWebApplicationCondition)
+
+   TomcatServletWebServerAutoConfiguration#tomcatForwardedHeaderFilterCustomizer:
+      Did not match:
+         - @ConditionalOnProperty (server.forward-headers-strategy=framework) did not find property 'server.forward-headers-strategy' (OnPropertyCondition)
+
+   TomcatWebServerConfiguration#tomcatVirtualThreadsProtocolHandlerCustomizer:
+      Did not match:
+         - @ConditionalOnThreading did not find VIRTUAL (OnThreadingCondition)
+
+   TransactionAutoConfiguration#transactionalOperator:
+      Did not match:
+         - @ConditionalOnSingleCandidate (types: org.springframework.transaction.ReactiveTransactionManager; SearchStrategy: all) did not find any beans (OnBeanCondition)
+
+   TransactionAutoConfiguration.AspectJTransactionManagementConfiguration:
+      Did not match:
+         - @ConditionalOnBean did not find required type 'org.springframework.transaction.aspectj.AbstractTransactionAspect' (OnBeanCondition)
+         - @ConditionalOnBean (types: org.springframework.transaction.aspectj.AbstractTransactionAspect; SearchStrategy: all) did not find any beans of type org.springframework.transaction.aspectj.AbstractTransactionAspect (OnBeanCondition)
+
+   TransactionAutoConfiguration.EnableTransactionManagementConfiguration.JdkDynamicAutoProxyConfiguration:
+      Did not match:
+         - @ConditionalOnBooleanProperty (spring.aop.proxy-target-class=false) did not find property 'spring.aop.proxy-target-class' (OnPropertyCondition)
+
+   WebMvcAutoConfiguration#hiddenHttpMethodFilter:
+      Did not match:
+         - @ConditionalOnBooleanProperty (spring.mvc.hiddenmethod.filter.enabled=true) did not find property 'spring.mvc.hiddenmethod.filter.enabled' (OnPropertyCondition)
+
+   WebMvcAutoConfiguration.ProblemDetailsErrorHandlingConfiguration:
+      Did not match:
+         - @ConditionalOnBooleanProperty (spring.mvc.problemdetails.enabled=true) did not find property 'spring.mvc.problemdetails.enabled' (OnPropertyCondition)
+
+   WebMvcAutoConfiguration.ResourceChainCustomizerConfiguration:
+      Did not match:
+         - @ConditionalOnEnabledResourceChain did not find class org.webjars.WebJarVersionLocator (OnEnabledResourceChainCondition)
+
+   WebMvcAutoConfiguration.WebMvcAutoConfigurationAdapter#beanNameViewResolver:
+      Did not match:
+         - @ConditionalOnMissingBean (types: org.springframework.web.servlet.view.BeanNameViewResolver; SearchStrategy: all) found beans of type 'org.springframework.web.servlet.view.BeanNameViewResolver' beanNameViewResolver (OnBeanCondition)
+
+   WebMvcEndpointManagementContextConfiguration#endpointJackson2ObjectMapperWebMvcConfigurer:
+      Did not match:
+         - @ConditionalOnBean (types: org.springframework.boot.actuate.endpoint.jackson.EndpointJackson2ObjectMapper; SearchStrategy: all) did not find any beans of type org.springframework.boot.actuate.endpoint.jackson.EndpointJackson2ObjectMapper (OnBeanCondition)
+
+   WebMvcEndpointManagementContextConfiguration.HealthConfiguration#managementHealthEndpointWebMvcHandlerMapping:
+      Did not match:
+         - Management Port actual port type (SAME) did not match required type (DIFFERENT) (OnManagementPortCondition)
+
+   WebMvcMappingsAutoConfiguration:
+      Did not match:
+         - @ConditionalOnAvailableEndpoint not exposed (OnAvailableEndpointCondition)
+      Matched:
+         - @ConditionalOnClass found required classes 'org.springframework.boot.actuate.autoconfigure.endpoint.condition.ConditionalOnAvailableEndpoint', 'org.springframework.web.servlet.DispatcherServlet', 'org.springframework.boot.actuate.web.mappings.MappingsEndpoint' (OnClassCondition)
+         - found 'session' scope (OnWebApplicationCondition)
+
+   XADataSourceAutoConfiguration:
+      Did not match:
+         - @ConditionalOnClass did not find required class 'jakarta.transaction.TransactionManager' (OnClassCondition)
+
+
+Exclusions:
+-----------
+
+    None
+
+
+Unconditional classes:
+----------------------
+
+    org.springframework.boot.health.autoconfigure.registry.HealthContributorRegistryAutoConfiguration
+
+    org.springframework.boot.autoconfigure.context.ConfigurationPropertiesAutoConfiguration
+
+    org.springframework.boot.autoconfigure.ssl.SslAutoConfiguration
+
+    org.springframework.boot.actuate.autoconfigure.info.InfoContributorAutoConfiguration
+
+    org.springframework.boot.autoconfigure.context.PropertyPlaceholderAutoConfiguration
+
+    org.springframework.boot.autoconfigure.context.LifecycleAutoConfiguration
+
+    org.springframework.boot.actuate.autoconfigure.endpoint.EndpointAutoConfiguration
+
+    org.springframework.boot.health.autoconfigure.contributor.HealthContributorAutoConfiguration
+
+    org.springframework.boot.autoconfigure.availability.ApplicationAvailabilityAutoConfiguration
+
+    org.springframework.boot.autoconfigure.info.ProjectInfoAutoConfiguration
+
+    org.springframework.boot.actuate.autoconfigure.web.server.ManagementContextAutoConfiguration
+
+
+
+2026-09-30T17:21:12.256-05:00  INFO 72558 --- [           main] d.s.http.PostgresHttpIntegrationTest     : Started PostgresHttpIntegrationTest in 1.695 seconds (process running for 3.069)
+2026-09-30T17:21:12.301-05:00 DEBUG 72558 --- [           main] o.s.b.a.ApplicationAvailabilityBean      : Application availability state LivenessState changed to CORRECT
+2026-09-30T17:21:12.302-05:00 DEBUG 72558 --- [           main] o.s.b.a.ApplicationAvailabilityBean      : Application availability state ReadinessState changed to ACCEPTING_TRAFFIC
+2026-09-30T17:21:12.354-05:00  INFO 72558 --- [o-auto-1-exec-2] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring DispatcherServlet 'dispatcherServlet'
+2026-09-30T17:21:12.354-05:00  INFO 72558 --- [o-auto-1-exec-2] o.s.web.servlet.DispatcherServlet        : Initializing Servlet 'dispatcherServlet'
+2026-09-30T17:21:12.355-05:00 DEBUG 72558 --- [o-auto-1-exec-2] o.s.web.servlet.DispatcherServlet        : Detected StandardServletMultipartResolver
+2026-09-30T17:21:12.355-05:00 DEBUG 72558 --- [o-auto-1-exec-2] o.s.web.servlet.DispatcherServlet        : Detected AcceptHeaderLocaleResolver
+2026-09-30T17:21:12.355-05:00 DEBUG 72558 --- [o-auto-1-exec-2] o.s.web.servlet.DispatcherServlet        : Detected org.springframework.web.servlet.view.DefaultRequestToViewNameTranslator@7b6b8cea
+2026-09-30T17:21:12.355-05:00 DEBUG 72558 --- [o-auto-1-exec-2] o.s.web.servlet.DispatcherServlet        : Detected org.springframework.web.servlet.support.SessionFlashMapManager@b867869
+2026-09-30T17:21:12.355-05:00 DEBUG 72558 --- [o-auto-1-exec-2] o.s.web.servlet.DispatcherServlet        : enableLoggingRequestDetails='false': request parameters and headers will be masked to prevent unsafe logging of potentially sensitive data
+2026-09-30T17:21:12.355-05:00  INFO 72558 --- [o-auto-1-exec-2] o.s.web.servlet.DispatcherServlet        : Completed initialization in 1 ms
+2026-09-30T17:21:12.363-05:00 DEBUG 72558 --- [o-auto-1-exec-2] o.s.web.servlet.DispatcherServlet        : POST "/api/shorten", parameters={}
+2026-09-30T17:21:12.363-05:00 DEBUG 72558 --- [o-auto-1-exec-1] o.s.web.servlet.DispatcherServlet        : POST "/api/shorten", parameters={}
+2026-09-30T17:21:12.367-05:00 DEBUG 72558 --- [o-auto-1-exec-2] s.w.s.m.m.a.RequestMappingHandlerMapping : Mapped to dev.shortener.http.ShortenerController#create(CreateRequest, HttpServletRequest)
+2026-09-30T17:21:12.367-05:00 DEBUG 72558 --- [o-auto-1-exec-1] s.w.s.m.m.a.RequestMappingHandlerMapping : Mapped to dev.shortener.http.ShortenerController#create(CreateRequest, HttpServletRequest)
+2026-09-30T17:21:12.383-05:00 DEBUG 72558 --- [o-auto-1-exec-1] m.m.a.RequestResponseBodyMethodProcessor : Read "application/json;charset=UTF-8" to [CreateRequest[url=https://example.com/integration, alias=Race-Alias]]
+2026-09-30T17:21:12.383-05:00 DEBUG 72558 --- [o-auto-1-exec-2] m.m.a.RequestResponseBodyMethodProcessor : Read "application/json;charset=UTF-8" to [CreateRequest[url=https://example.com/integration, alias=Race-Alias]]
+2026-09-30T17:21:12.391-05:00 DEBUG 72558 --- [o-auto-1-exec-1] o.s.jdbc.core.JdbcTemplate               : Executing SQL update and returning generated keys
+2026-09-30T17:21:12.391-05:00 DEBUG 72558 --- [o-auto-1-exec-2] o.s.jdbc.core.JdbcTemplate               : Executing SQL update and returning generated keys
+2026-09-30T17:21:12.391-05:00 DEBUG 72558 --- [o-auto-1-exec-1] o.s.jdbc.core.JdbcTemplate               : Executing prepared SQL statement
+2026-09-30T17:21:12.391-05:00 DEBUG 72558 --- [o-auto-1-exec-2] o.s.jdbc.core.JdbcTemplate               : Executing prepared SQL statement
+2026-09-30T17:21:12.396-05:00 DEBUG 72558 --- [o-auto-1-exec-2] o.s.jdbc.core.JdbcTemplate               : Executing prepared SQL update
+2026-09-30T17:21:12.397-05:00 DEBUG 72558 --- [o-auto-1-exec-2] o.s.jdbc.core.JdbcTemplate               : Executing prepared SQL statement [INSERT INTO link_stats(link_id) VALUES (?)]
+2026-09-30T17:21:12.399-05:00 DEBUG 72558 --- [o-auto-1-exec-2] o.s.jdbc.core.JdbcTemplate               : Executing prepared SQL query
+2026-09-30T17:21:12.400-05:00 DEBUG 72558 --- [o-auto-1-exec-2] o.s.jdbc.core.JdbcTemplate               : Executing prepared SQL statement [SELECT id, code, target_url, created_at FROM links WHERE code = ?]
+2026-09-30T17:21:12.407-05:00 DEBUG 72558 --- [o-auto-1-exec-2] o.s.w.s.m.m.a.HttpEntityMethodProcessor  : Using 'application/json', given [*/*] and supported [application/json, application/*+json]
+2026-09-30T17:21:12.407-05:00 DEBUG 72558 --- [o-auto-1-exec-2] o.s.w.s.m.m.a.HttpEntityMethodProcessor  : Writing [CreateResponse[code=race-alias, shortUrl=http://localhost:8080/race-alias]]
+2026-09-30T17:21:12.411-05:00 DEBUG 72558 --- [o-auto-1-exec-1] .m.m.a.ExceptionHandlerExceptionResolver : Using @ExceptionHandler dev.shortener.http.ApiErrors#conflict()
+2026-09-30T17:21:12.411-05:00 DEBUG 72558 --- [o-auto-1-exec-1] o.s.w.s.m.m.a.HttpEntityMethodProcessor  : Using 'application/json', given [*/*] and supported [application/json, application/*+json]
+2026-09-30T17:21:12.411-05:00 DEBUG 72558 --- [o-auto-1-exec-1] o.s.w.s.m.m.a.HttpEntityMethodProcessor  : Writing [{error=alias_conflict}]
+2026-09-30T17:21:12.413-05:00 DEBUG 72558 --- [o-auto-1-exec-2] o.s.web.servlet.DispatcherServlet        : Completed 201 CREATED
+2026-09-30T17:21:12.414-05:00 DEBUG 72558 --- [o-auto-1-exec-1] .m.m.a.ExceptionHandlerExceptionResolver : Resolved [dev.shortener.links.ShortenerService$AliasConflictException]
+2026-09-30T17:21:12.415-05:00 DEBUG 72558 --- [o-auto-1-exec-1] o.s.web.servlet.DispatcherServlet        : Completed 409 CONFLICT
+2026-09-30T17:21:12.421-05:00 DEBUG 72558 --- [o-auto-1-exec-3] o.s.web.servlet.DispatcherServlet        : GET "/race-alias", parameters={}
+2026-09-30T17:21:12.421-05:00 DEBUG 72558 --- [o-auto-1-exec-3] s.w.s.m.m.a.RequestMappingHandlerMapping : Mapped to dev.shortener.http.ShortenerController#redirect(String)
+2026-09-30T17:21:12.422-05:00 DEBUG 72558 --- [nalytics-writer] o.s.jdbc.core.JdbcTemplate               : Executing prepared SQL update
+2026-09-30T17:21:12.422-05:00 DEBUG 72558 --- [nalytics-writer] o.s.jdbc.core.JdbcTemplate               : Executing prepared SQL statement [UPDATE link_stats SET redirect_count = redirect_count + 1, last_redirect_at = now() WHERE link_id = ?]
+2026-09-30T17:21:12.435-05:00 DEBUG 72558 --- [o-auto-1-exec-3] o.s.w.s.m.m.a.HttpEntityMethodProcessor  : Using 'application/json', given [*/*] and supported [application/json, application/*+json]
+2026-09-30T17:21:12.435-05:00 DEBUG 72558 --- [o-auto-1-exec-3] o.s.w.s.m.m.a.HttpEntityMethodProcessor  : Nothing to write: null body
+2026-09-30T17:21:12.435-05:00 DEBUG 72558 --- [o-auto-1-exec-3] o.s.web.servlet.DispatcherServlet        : Completed 302 FOUND
+2026-09-30T17:21:12.437-05:00 DEBUG 72558 --- [o-auto-1-exec-4] o.s.web.servlet.DispatcherServlet        : POST "/api/shorten", parameters={}
+2026-09-30T17:21:12.437-05:00 DEBUG 72558 --- [o-auto-1-exec-4] s.w.s.m.m.a.RequestMappingHandlerMapping : Mapped to dev.shortener.http.ShortenerController#create(CreateRequest, HttpServletRequest)
+2026-09-30T17:21:12.438-05:00 DEBUG 72558 --- [o-auto-1-exec-4] m.m.a.RequestResponseBodyMethodProcessor : Read "application/json;charset=UTF-8" to [CreateRequest[url=file:///etc/passwd, alias=null]]
+2026-09-30T17:21:12.438-05:00 DEBUG 72558 --- [o-auto-1-exec-4] .m.m.a.ExceptionHandlerExceptionResolver : Using @ExceptionHandler dev.shortener.http.ApiErrors#invalid(Exception)
+2026-09-30T17:21:12.438-05:00 DEBUG 72558 --- [o-auto-1-exec-4] o.s.w.s.m.m.a.HttpEntityMethodProcessor  : Using 'application/json', given [*/*] and supported [application/json, application/*+json]
+2026-09-30T17:21:12.438-05:00 DEBUG 72558 --- [o-auto-1-exec-4] o.s.w.s.m.m.a.HttpEntityMethodProcessor  : Writing [{error=invalid_request}]
+2026-09-30T17:21:12.438-05:00 DEBUG 72558 --- [o-auto-1-exec-4] .m.m.a.ExceptionHandlerExceptionResolver : Resolved [java.lang.IllegalArgumentException: URL must be an absolute HTTP or HTTPS URL without credentials]
+2026-09-30T17:21:12.438-05:00 DEBUG 72558 --- [o-auto-1-exec-4] o.s.web.servlet.DispatcherServlet        : Completed 400 BAD_REQUEST
+2026-09-30T17:21:12.440-05:00 DEBUG 72558 --- [o-auto-1-exec-5] o.s.web.servlet.DispatcherServlet        : POST "/api/shorten", parameters={}
+2026-09-30T17:21:12.440-05:00 DEBUG 72558 --- [o-auto-1-exec-5] s.w.s.m.m.a.RequestMappingHandlerMapping : Mapped to dev.shortener.http.ShortenerController#create(CreateRequest, HttpServletRequest)
+2026-09-30T17:21:12.440-05:00 DEBUG 72558 --- [o-auto-1-exec-5] o.s.web.method.HandlerMethod             : Could not resolve parameter [0] in public org.springframework.http.ResponseEntity<dev.shortener.http.ShortenerController$CreateResponse> dev.shortener.http.ShortenerController.create(dev.shortener.http.ShortenerController$CreateRequest,jakarta.servlet.http.HttpServletRequest): JSON parse error: Unrecognized token 'not': was expecting (JSON String, Number, Array, Object or token 'null', 'true' or 'false')
+2026-09-30T17:21:12.441-05:00 DEBUG 72558 --- [o-auto-1-exec-5] .m.m.a.ExceptionHandlerExceptionResolver : Using @ExceptionHandler dev.shortener.http.ApiErrors#invalid(Exception)
+2026-09-30T17:21:12.441-05:00 DEBUG 72558 --- [o-auto-1-exec-5] o.s.w.s.m.m.a.HttpEntityMethodProcessor  : Using 'application/json', given [*/*] and supported [application/json, application/*+json]
+2026-09-30T17:21:12.441-05:00 DEBUG 72558 --- [o-auto-1-exec-5] o.s.w.s.m.m.a.HttpEntityMethodProcessor  : Writing [{error=invalid_request}]
+2026-09-30T17:21:12.441-05:00 DEBUG 72558 --- [o-auto-1-exec-5] .m.m.a.ExceptionHandlerExceptionResolver : Resolved [org.springframework.http.converter.HttpMessageNotReadableException: JSON parse error: Unrecognized token 'not': was expecting (JSON String, Number, Array, Object or token 'null', 'true' or 'false')]
+2026-09-30T17:21:12.441-05:00 DEBUG 72558 --- [o-auto-1-exec-5] o.s.web.servlet.DispatcherServlet        : Completed 400 BAD_REQUEST
+2026-09-30T17:21:12.442-05:00 DEBUG 72558 --- [o-auto-1-exec-6] o.s.web.servlet.DispatcherServlet        : GET "/missing-code", parameters={}
+2026-09-30T17:21:12.443-05:00 DEBUG 72558 --- [o-auto-1-exec-6] s.w.s.m.m.a.RequestMappingHandlerMapping : Mapped to dev.shortener.http.ShortenerController#redirect(String)
+2026-09-30T17:21:12.443-05:00 DEBUG 72558 --- [o-auto-1-exec-6] o.s.jdbc.core.JdbcTemplate               : Executing prepared SQL query
+2026-09-30T17:21:12.443-05:00 DEBUG 72558 --- [o-auto-1-exec-6] o.s.jdbc.core.JdbcTemplate               : Executing prepared SQL statement [SELECT id, code, target_url, created_at FROM links WHERE code = ?]
+2026-09-30T17:21:12.445-05:00 DEBUG 72558 --- [o-auto-1-exec-6] .m.m.a.ExceptionHandlerExceptionResolver : Using @ExceptionHandler dev.shortener.http.ApiErrors#missing()
+2026-09-30T17:21:12.446-05:00 DEBUG 72558 --- [o-auto-1-exec-6] o.s.w.s.m.m.a.HttpEntityMethodProcessor  : Using 'application/json', given [*/*] and supported [application/json, application/*+json]
+2026-09-30T17:21:12.446-05:00 DEBUG 72558 --- [o-auto-1-exec-6] o.s.w.s.m.m.a.HttpEntityMethodProcessor  : Writing [{error=not_found}]
+2026-09-30T17:21:12.446-05:00 DEBUG 72558 --- [o-auto-1-exec-6] .m.m.a.ExceptionHandlerExceptionResolver : Resolved [dev.shortener.http.ShortenerController$NotFoundException]
+2026-09-30T17:21:12.446-05:00 DEBUG 72558 --- [o-auto-1-exec-6] o.s.web.servlet.DispatcherServlet        : Completed 404 NOT_FOUND
+2026-09-30T17:21:12.448-05:00 DEBUG 72558 --- [o-auto-1-exec-7] o.s.web.servlet.DispatcherServlet        : GET "/api/urls/race-alias/analytics", parameters={}
+2026-09-30T17:21:12.448-05:00 DEBUG 72558 --- [o-auto-1-exec-7] s.w.s.m.m.a.RequestMappingHandlerMapping : Mapped to dev.shortener.http.ShortenerController#analytics(String)
+2026-09-30T17:21:12.449-05:00 DEBUG 72558 --- [o-auto-1-exec-7] o.s.jdbc.core.JdbcTemplate               : Executing prepared SQL query
+2026-09-30T17:21:12.449-05:00 DEBUG 72558 --- [o-auto-1-exec-7] o.s.jdbc.core.JdbcTemplate               : Executing prepared SQL statement [SELECT redirect_count FROM link_stats WHERE link_id = ?]
+2026-09-30T17:21:12.451-05:00 DEBUG 72558 --- [o-auto-1-exec-7] m.m.a.RequestResponseBodyMethodProcessor : Using 'application/json', given [*/*] and supported [application/json, application/*+json]
+2026-09-30T17:21:12.451-05:00 DEBUG 72558 --- [o-auto-1-exec-7] m.m.a.RequestResponseBodyMethodProcessor : Writing [{code=race-alias, redirectCount=1}]
+2026-09-30T17:21:12.453-05:00 DEBUG 72558 --- [o-auto-1-exec-7] o.s.web.servlet.DispatcherServlet        : Completed 200 OK
+2026-09-30T17:21:12.455-05:00 DEBUG 72558 --- [o-auto-1-exec-8] o.s.web.servlet.DispatcherServlet        : POST "/api/shorten", parameters={}
+2026-09-30T17:21:12.455-05:00 DEBUG 72558 --- [o-auto-1-exec-8] s.w.s.m.m.a.RequestMappingHandlerMapping : Mapped to dev.shortener.http.ShortenerController#create(CreateRequest, HttpServletRequest)
+2026-09-30T17:21:12.455-05:00 DEBUG 72558 --- [o-auto-1-exec-8] m.m.a.RequestResponseBodyMethodProcessor : Read "application/json;charset=UTF-8" to [CreateRequest[url=https://example.com/integration, alias=null]]
+2026-09-30T17:21:12.455-05:00 DEBUG 72558 --- [o-auto-1-exec-8] o.s.jdbc.core.JdbcTemplate               : Executing SQL update and returning generated keys
+2026-09-30T17:21:12.455-05:00 DEBUG 72558 --- [o-auto-1-exec-8] o.s.jdbc.core.JdbcTemplate               : Executing prepared SQL statement
+2026-09-30T17:21:12.457-05:00 DEBUG 72558 --- [o-auto-1-exec-8] o.s.jdbc.core.JdbcTemplate               : Executing prepared SQL update
+2026-09-30T17:21:12.457-05:00 DEBUG 72558 --- [o-auto-1-exec-8] o.s.jdbc.core.JdbcTemplate               : Executing prepared SQL statement [INSERT INTO link_stats(link_id) VALUES (?)]
+2026-09-30T17:21:12.458-05:00 DEBUG 72558 --- [o-auto-1-exec-8] o.s.jdbc.core.JdbcTemplate               : Executing prepared SQL query
+2026-09-30T17:21:12.458-05:00 DEBUG 72558 --- [o-auto-1-exec-8] o.s.jdbc.core.JdbcTemplate               : Executing prepared SQL statement [SELECT id, code, target_url, created_at FROM links WHERE code = ?]
+2026-09-30T17:21:12.461-05:00 DEBUG 72558 --- [o-auto-1-exec-8] o.s.w.s.m.m.a.HttpEntityMethodProcessor  : Using 'application/json', given [*/*] and supported [application/json, application/*+json]
+2026-09-30T17:21:12.461-05:00 DEBUG 72558 --- [o-auto-1-exec-8] o.s.w.s.m.m.a.HttpEntityMethodProcessor  : Writing [CreateResponse[code=ic99ltp7, shortUrl=http://localhost:8080/ic99ltp7]]
+2026-09-30T17:21:12.461-05:00 DEBUG 72558 --- [o-auto-1-exec-8] o.s.web.servlet.DispatcherServlet        : Completed 201 CREATED
+2026-09-30T17:21:12.463-05:00 DEBUG 72558 --- [o-auto-1-exec-9] o.s.web.servlet.DispatcherServlet        : POST "/api/shorten", parameters={}
+2026-09-30T17:21:12.463-05:00 DEBUG 72558 --- [o-auto-1-exec-9] s.w.s.m.m.a.RequestMappingHandlerMapping : Mapped to dev.shortener.http.ShortenerController#create(CreateRequest, HttpServletRequest)
+2026-09-30T17:21:12.463-05:00 DEBUG 72558 --- [o-auto-1-exec-9] m.m.a.RequestResponseBodyMethodProcessor : Read "application/json;charset=UTF-8" to [CreateRequest[url=https://example.com/integration, alias=null]]
+2026-09-30T17:21:12.463-05:00 DEBUG 72558 --- [o-auto-1-exec-9] o.s.jdbc.core.JdbcTemplate               : Executing SQL update and returning generated keys
+2026-09-30T17:21:12.463-05:00 DEBUG 72558 --- [o-auto-1-exec-9] o.s.jdbc.core.JdbcTemplate               : Executing prepared SQL statement
+2026-09-30T17:21:12.464-05:00 DEBUG 72558 --- [o-auto-1-exec-9] o.s.jdbc.core.JdbcTemplate               : Executing prepared SQL update
+2026-09-30T17:21:12.465-05:00 DEBUG 72558 --- [o-auto-1-exec-9] o.s.jdbc.core.JdbcTemplate               : Executing prepared SQL statement [INSERT INTO link_stats(link_id) VALUES (?)]
+2026-09-30T17:21:12.465-05:00 DEBUG 72558 --- [o-auto-1-exec-9] o.s.jdbc.core.JdbcTemplate               : Executing prepared SQL query
+2026-09-30T17:21:12.465-05:00 DEBUG 72558 --- [o-auto-1-exec-9] o.s.jdbc.core.JdbcTemplate               : Executing prepared SQL statement [SELECT id, code, target_url, created_at FROM links WHERE code = ?]
+2026-09-30T17:21:12.467-05:00 DEBUG 72558 --- [o-auto-1-exec-9] o.s.w.s.m.m.a.HttpEntityMethodProcessor  : Using 'application/json', given [*/*] and supported [application/json, application/*+json]
+2026-09-30T17:21:12.467-05:00 DEBUG 72558 --- [o-auto-1-exec-9] o.s.w.s.m.m.a.HttpEntityMethodProcessor  : Writing [CreateResponse[code=d6zzhjuf, shortUrl=http://localhost:8080/d6zzhjuf]]
+2026-09-30T17:21:12.467-05:00 DEBUG 72558 --- [o-auto-1-exec-9] o.s.web.servlet.DispatcherServlet        : Completed 201 CREATED
+2026-09-30T17:21:12.469-05:00 DEBUG 72558 --- [-auto-1-exec-10] o.s.web.servlet.DispatcherServlet        : POST "/api/shorten", parameters={}
+2026-09-30T17:21:12.469-05:00 DEBUG 72558 --- [-auto-1-exec-10] s.w.s.m.m.a.RequestMappingHandlerMapping : Mapped to dev.shortener.http.ShortenerController#create(CreateRequest, HttpServletRequest)
+2026-09-30T17:21:12.469-05:00 DEBUG 72558 --- [-auto-1-exec-10] m.m.a.RequestResponseBodyMethodProcessor : Read "application/json;charset=UTF-8" to [CreateRequest[url=https://example.com/integration, alias=null]]
+2026-09-30T17:21:12.469-05:00 DEBUG 72558 --- [-auto-1-exec-10] o.s.jdbc.core.JdbcTemplate               : Executing SQL update and returning generated keys
+2026-09-30T17:21:12.469-05:00 DEBUG 72558 --- [-auto-1-exec-10] o.s.jdbc.core.JdbcTemplate               : Executing prepared SQL statement
+2026-09-30T17:21:12.471-05:00 DEBUG 72558 --- [-auto-1-exec-10] o.s.jdbc.core.JdbcTemplate               : Executing prepared SQL update
+2026-09-30T17:21:12.471-05:00 DEBUG 72558 --- [-auto-1-exec-10] o.s.jdbc.core.JdbcTemplate               : Executing prepared SQL statement [INSERT INTO link_stats(link_id) VALUES (?)]
+2026-09-30T17:21:12.471-05:00 DEBUG 72558 --- [-auto-1-exec-10] o.s.jdbc.core.JdbcTemplate               : Executing prepared SQL query
+2026-09-30T17:21:12.471-05:00 DEBUG 72558 --- [-auto-1-exec-10] o.s.jdbc.core.JdbcTemplate               : Executing prepared SQL statement [SELECT id, code, target_url, created_at FROM links WHERE code = ?]
+2026-09-30T17:21:12.473-05:00 DEBUG 72558 --- [-auto-1-exec-10] o.s.w.s.m.m.a.HttpEntityMethodProcessor  : Using 'application/json', given [*/*] and supported [application/json, application/*+json]
+2026-09-30T17:21:12.474-05:00 DEBUG 72558 --- [-auto-1-exec-10] o.s.w.s.m.m.a.HttpEntityMethodProcessor  : Writing [CreateResponse[code=uhdx6yx6, shortUrl=http://localhost:8080/uhdx6yx6]]
+2026-09-30T17:21:12.474-05:00 DEBUG 72558 --- [-auto-1-exec-10] o.s.web.servlet.DispatcherServlet        : Completed 201 CREATED
+2026-09-30T17:21:12.475-05:00 DEBUG 72558 --- [o-auto-1-exec-1] o.s.web.servlet.DispatcherServlet        : POST "/api/shorten", parameters={}
+2026-09-30T17:21:12.475-05:00 DEBUG 72558 --- [o-auto-1-exec-1] s.w.s.m.m.a.RequestMappingHandlerMapping : Mapped to dev.shortener.http.ShortenerController#create(CreateRequest, HttpServletRequest)
+2026-09-30T17:21:12.475-05:00 DEBUG 72558 --- [o-auto-1-exec-1] m.m.a.RequestResponseBodyMethodProcessor : Read "application/json;charset=UTF-8" to [CreateRequest[url=https://example.com/integration, alias=null]]
+2026-09-30T17:21:12.475-05:00 DEBUG 72558 --- [o-auto-1-exec-1] o.s.jdbc.core.JdbcTemplate               : Executing SQL update and returning generated keys
+2026-09-30T17:21:12.476-05:00 DEBUG 72558 --- [o-auto-1-exec-1] o.s.jdbc.core.JdbcTemplate               : Executing prepared SQL statement
+2026-09-30T17:21:12.477-05:00 DEBUG 72558 --- [o-auto-1-exec-1] o.s.jdbc.core.JdbcTemplate               : Executing prepared SQL update
+2026-09-30T17:21:12.477-05:00 DEBUG 72558 --- [o-auto-1-exec-1] o.s.jdbc.core.JdbcTemplate               : Executing prepared SQL statement [INSERT INTO link_stats(link_id) VALUES (?)]
+2026-09-30T17:21:12.478-05:00 DEBUG 72558 --- [o-auto-1-exec-1] o.s.jdbc.core.JdbcTemplate               : Executing prepared SQL query
+2026-09-30T17:21:12.478-05:00 DEBUG 72558 --- [o-auto-1-exec-1] o.s.jdbc.core.JdbcTemplate               : Executing prepared SQL statement [SELECT id, code, target_url, created_at FROM links WHERE code = ?]
+2026-09-30T17:21:12.482-05:00 DEBUG 72558 --- [o-auto-1-exec-1] o.s.w.s.m.m.a.HttpEntityMethodProcessor  : Using 'application/json', given [*/*] and supported [application/json, application/*+json]
+2026-09-30T17:21:12.482-05:00 DEBUG 72558 --- [o-auto-1-exec-1] o.s.w.s.m.m.a.HttpEntityMethodProcessor  : Writing [CreateResponse[code=rwnqjg7v, shortUrl=http://localhost:8080/rwnqjg7v]]
+2026-09-30T17:21:12.482-05:00 DEBUG 72558 --- [o-auto-1-exec-1] o.s.web.servlet.DispatcherServlet        : Completed 201 CREATED
+2026-09-30T17:21:12.485-05:00 DEBUG 72558 --- [o-auto-1-exec-2] o.s.web.servlet.DispatcherServlet        : POST "/api/shorten", parameters={}
+2026-09-30T17:21:12.485-05:00 DEBUG 72558 --- [o-auto-1-exec-2] s.w.s.m.m.a.RequestMappingHandlerMapping : Mapped to dev.shortener.http.ShortenerController#create(CreateRequest, HttpServletRequest)
+2026-09-30T17:21:12.486-05:00 DEBUG 72558 --- [o-auto-1-exec-2] m.m.a.RequestResponseBodyMethodProcessor : Read "application/json;charset=UTF-8" to [CreateRequest[url=https://example.com/integration, alias=null]]
+2026-09-30T17:21:12.486-05:00 DEBUG 72558 --- [o-auto-1-exec-2] o.s.jdbc.core.JdbcTemplate               : Executing SQL update and returning generated keys
+2026-09-30T17:21:12.486-05:00 DEBUG 72558 --- [o-auto-1-exec-2] o.s.jdbc.core.JdbcTemplate               : Executing prepared SQL statement
+2026-09-30T17:21:12.488-05:00 DEBUG 72558 --- [o-auto-1-exec-2] o.s.jdbc.core.JdbcTemplate               : Executing prepared SQL update
+2026-09-30T17:21:12.489-05:00 DEBUG 72558 --- [o-auto-1-exec-2] o.s.jdbc.core.JdbcTemplate               : Executing prepared SQL statement [INSERT INTO link_stats(link_id) VALUES (?)]
+2026-09-30T17:21:12.490-05:00 DEBUG 72558 --- [o-auto-1-exec-2] o.s.jdbc.core.JdbcTemplate               : Executing prepared SQL query
+2026-09-30T17:21:12.490-05:00 DEBUG 72558 --- [o-auto-1-exec-2] o.s.jdbc.core.JdbcTemplate               : Executing prepared SQL statement [SELECT id, code, target_url, created_at FROM links WHERE code = ?]
+2026-09-30T17:21:12.492-05:00 DEBUG 72558 --- [o-auto-1-exec-2] o.s.w.s.m.m.a.HttpEntityMethodProcessor  : Using 'application/json', given [*/*] and supported [application/json, application/*+json]
+2026-09-30T17:21:12.493-05:00 DEBUG 72558 --- [o-auto-1-exec-2] o.s.w.s.m.m.a.HttpEntityMethodProcessor  : Writing [CreateResponse[code=owp1ovta, shortUrl=http://localhost:8080/owp1ovta]]
+2026-09-30T17:21:12.493-05:00 DEBUG 72558 --- [o-auto-1-exec-2] o.s.web.servlet.DispatcherServlet        : Completed 201 CREATED
+2026-09-30T17:21:12.495-05:00 DEBUG 72558 --- [o-auto-1-exec-3] o.s.web.servlet.DispatcherServlet        : POST "/api/shorten", parameters={}
+2026-09-30T17:21:12.495-05:00 DEBUG 72558 --- [o-auto-1-exec-3] s.w.s.m.m.a.RequestMappingHandlerMapping : Mapped to dev.shortener.http.ShortenerController#create(CreateRequest, HttpServletRequest)
+2026-09-30T17:21:12.495-05:00 DEBUG 72558 --- [o-auto-1-exec-3] m.m.a.RequestResponseBodyMethodProcessor : Read "application/json;charset=UTF-8" to [CreateRequest[url=https://example.com/integration, alias=null]]
+2026-09-30T17:21:12.495-05:00 DEBUG 72558 --- [o-auto-1-exec-3] o.s.jdbc.core.JdbcTemplate               : Executing SQL update and returning generated keys
+2026-09-30T17:21:12.495-05:00 DEBUG 72558 --- [o-auto-1-exec-3] o.s.jdbc.core.JdbcTemplate               : Executing prepared SQL statement
+2026-09-30T17:21:12.497-05:00 DEBUG 72558 --- [o-auto-1-exec-3] o.s.jdbc.core.JdbcTemplate               : Executing prepared SQL update
+2026-09-30T17:21:12.497-05:00 DEBUG 72558 --- [o-auto-1-exec-3] o.s.jdbc.core.JdbcTemplate               : Executing prepared SQL statement [INSERT INTO link_stats(link_id) VALUES (?)]
+2026-09-30T17:21:12.497-05:00 DEBUG 72558 --- [o-auto-1-exec-3] o.s.jdbc.core.JdbcTemplate               : Executing prepared SQL query
+2026-09-30T17:21:12.497-05:00 DEBUG 72558 --- [o-auto-1-exec-3] o.s.jdbc.core.JdbcTemplate               : Executing prepared SQL statement [SELECT id, code, target_url, created_at FROM links WHERE code = ?]
+2026-09-30T17:21:12.500-05:00 DEBUG 72558 --- [o-auto-1-exec-3] o.s.w.s.m.m.a.HttpEntityMethodProcessor  : Using 'application/json', given [*/*] and supported [application/json, application/*+json]
+2026-09-30T17:21:12.500-05:00 DEBUG 72558 --- [o-auto-1-exec-3] o.s.w.s.m.m.a.HttpEntityMethodProcessor  : Writing [CreateResponse[code=u0kmwigd, shortUrl=http://localhost:8080/u0kmwigd]]
+2026-09-30T17:21:12.500-05:00 DEBUG 72558 --- [o-auto-1-exec-3] o.s.web.servlet.DispatcherServlet        : Completed 201 CREATED
+2026-09-30T17:21:12.502-05:00 DEBUG 72558 --- [o-auto-1-exec-4] o.s.web.servlet.DispatcherServlet        : POST "/api/shorten", parameters={}
+2026-09-30T17:21:12.502-05:00 DEBUG 72558 --- [o-auto-1-exec-4] s.w.s.m.m.a.RequestMappingHandlerMapping : Mapped to dev.shortener.http.ShortenerController#create(CreateRequest, HttpServletRequest)
+2026-09-30T17:21:12.502-05:00 DEBUG 72558 --- [o-auto-1-exec-4] m.m.a.RequestResponseBodyMethodProcessor : Read "application/json;charset=UTF-8" to [CreateRequest[url=https://example.com/integration, alias=null]]
+2026-09-30T17:21:12.502-05:00 DEBUG 72558 --- [o-auto-1-exec-4] o.s.jdbc.core.JdbcTemplate               : Executing SQL update and returning generated keys
+2026-09-30T17:21:12.502-05:00 DEBUG 72558 --- [o-auto-1-exec-4] o.s.jdbc.core.JdbcTemplate               : Executing prepared SQL statement
+2026-09-30T17:21:12.504-05:00 DEBUG 72558 --- [o-auto-1-exec-4] o.s.jdbc.core.JdbcTemplate               : Executing prepared SQL update
+2026-09-30T17:21:12.504-05:00 DEBUG 72558 --- [o-auto-1-exec-4] o.s.jdbc.core.JdbcTemplate               : Executing prepared SQL statement [INSERT INTO link_stats(link_id) VALUES (?)]
+2026-09-30T17:21:12.504-05:00 DEBUG 72558 --- [o-auto-1-exec-4] o.s.jdbc.core.JdbcTemplate               : Executing prepared SQL query
+2026-09-30T17:21:12.504-05:00 DEBUG 72558 --- [o-auto-1-exec-4] o.s.jdbc.core.JdbcTemplate               : Executing prepared SQL statement [SELECT id, code, target_url, created_at FROM links WHERE code = ?]
+2026-09-30T17:21:12.506-05:00 DEBUG 72558 --- [o-auto-1-exec-4] o.s.w.s.m.m.a.HttpEntityMethodProcessor  : Using 'application/json', given [*/*] and supported [application/json, application/*+json]
+2026-09-30T17:21:12.506-05:00 DEBUG 72558 --- [o-auto-1-exec-4] o.s.w.s.m.m.a.HttpEntityMethodProcessor  : Writing [CreateResponse[code=0zu21xsf, shortUrl=http://localhost:8080/0zu21xsf]]
+2026-09-30T17:21:12.507-05:00 DEBUG 72558 --- [o-auto-1-exec-4] o.s.web.servlet.DispatcherServlet        : Completed 201 CREATED
+2026-09-30T17:21:12.509-05:00 DEBUG 72558 --- [o-auto-1-exec-5] o.s.web.servlet.DispatcherServlet        : POST "/api/shorten", parameters={}
+2026-09-30T17:21:12.509-05:00 DEBUG 72558 --- [o-auto-1-exec-5] s.w.s.m.m.a.RequestMappingHandlerMapping : Mapped to dev.shortener.http.ShortenerController#create(CreateRequest, HttpServletRequest)
+2026-09-30T17:21:12.509-05:00 DEBUG 72558 --- [o-auto-1-exec-5] m.m.a.RequestResponseBodyMethodProcessor : Read "application/json;charset=UTF-8" to [CreateRequest[url=https://example.com/integration, alias=null]]
+2026-09-30T17:21:12.510-05:00 DEBUG 72558 --- [o-auto-1-exec-5] o.s.jdbc.core.JdbcTemplate               : Executing SQL update and returning generated keys
+2026-09-30T17:21:12.510-05:00 DEBUG 72558 --- [o-auto-1-exec-5] o.s.jdbc.core.JdbcTemplate               : Executing prepared SQL statement
+2026-09-30T17:21:12.512-05:00 DEBUG 72558 --- [o-auto-1-exec-5] o.s.jdbc.core.JdbcTemplate               : Executing prepared SQL update
+2026-09-30T17:21:12.512-05:00 DEBUG 72558 --- [o-auto-1-exec-5] o.s.jdbc.core.JdbcTemplate               : Executing prepared SQL statement [INSERT INTO link_stats(link_id) VALUES (?)]
+2026-09-30T17:21:12.513-05:00 DEBUG 72558 --- [o-auto-1-exec-5] o.s.jdbc.core.JdbcTemplate               : Executing prepared SQL query
+2026-09-30T17:21:12.513-05:00 DEBUG 72558 --- [o-auto-1-exec-5] o.s.jdbc.core.JdbcTemplate               : Executing prepared SQL statement [SELECT id, code, target_url, created_at FROM links WHERE code = ?]
+2026-09-30T17:21:12.515-05:00 DEBUG 72558 --- [o-auto-1-exec-5] o.s.w.s.m.m.a.HttpEntityMethodProcessor  : Using 'application/json', given [*/*] and supported [application/json, application/*+json]
+2026-09-30T17:21:12.515-05:00 DEBUG 72558 --- [o-auto-1-exec-5] o.s.w.s.m.m.a.HttpEntityMethodProcessor  : Writing [CreateResponse[code=b4ysre24, shortUrl=http://localhost:8080/b4ysre24]]
+2026-09-30T17:21:12.515-05:00 DEBUG 72558 --- [o-auto-1-exec-5] o.s.web.servlet.DispatcherServlet        : Completed 201 CREATED
+2026-09-30T17:21:12.517-05:00 DEBUG 72558 --- [o-auto-1-exec-6] o.s.web.servlet.DispatcherServlet        : POST "/api/shorten", parameters={}
+2026-09-30T17:21:12.517-05:00 DEBUG 72558 --- [o-auto-1-exec-6] s.w.s.m.m.a.RequestMappingHandlerMapping : Mapped to dev.shortener.http.ShortenerController#create(CreateRequest, HttpServletRequest)
+2026-09-30T17:21:12.517-05:00 DEBUG 72558 --- [o-auto-1-exec-6] m.m.a.RequestResponseBodyMethodProcessor : Read "application/json;charset=UTF-8" to [CreateRequest[url=https://example.com/integration, alias=null]]
+2026-09-30T17:21:12.518-05:00 DEBUG 72558 --- [o-auto-1-exec-6] o.s.jdbc.core.JdbcTemplate               : Executing SQL update and returning generated keys
+2026-09-30T17:21:12.518-05:00 DEBUG 72558 --- [o-auto-1-exec-6] o.s.jdbc.core.JdbcTemplate               : Executing prepared SQL statement
+2026-09-30T17:21:12.519-05:00 DEBUG 72558 --- [o-auto-1-exec-6] o.s.jdbc.core.JdbcTemplate               : Executing prepared SQL update
+2026-09-30T17:21:12.519-05:00 DEBUG 72558 --- [o-auto-1-exec-6] o.s.jdbc.core.JdbcTemplate               : Executing prepared SQL statement [INSERT INTO link_stats(link_id) VALUES (?)]
+2026-09-30T17:21:12.519-05:00 DEBUG 72558 --- [o-auto-1-exec-6] o.s.jdbc.core.JdbcTemplate               : Executing prepared SQL query
+2026-09-30T17:21:12.519-05:00 DEBUG 72558 --- [o-auto-1-exec-6] o.s.jdbc.core.JdbcTemplate               : Executing prepared SQL statement [SELECT id, code, target_url, created_at FROM links WHERE code = ?]
+2026-09-30T17:21:12.521-05:00 DEBUG 72558 --- [o-auto-1-exec-6] o.s.w.s.m.m.a.HttpEntityMethodProcessor  : Using 'application/json', given [*/*] and supported [application/json, application/*+json]
+2026-09-30T17:21:12.521-05:00 DEBUG 72558 --- [o-auto-1-exec-6] o.s.w.s.m.m.a.HttpEntityMethodProcessor  : Writing [CreateResponse[code=0msey80c, shortUrl=http://localhost:8080/0msey80c]]
+2026-09-30T17:21:12.521-05:00 DEBUG 72558 --- [o-auto-1-exec-6] o.s.web.servlet.DispatcherServlet        : Completed 201 CREATED
+2026-09-30T17:21:12.522-05:00 DEBUG 72558 --- [o-auto-1-exec-7] o.s.web.servlet.DispatcherServlet        : POST "/api/shorten", parameters={}
+2026-09-30T17:21:12.523-05:00 DEBUG 72558 --- [o-auto-1-exec-7] s.w.s.m.m.a.RequestMappingHandlerMapping : Mapped to dev.shortener.http.ShortenerController#create(CreateRequest, HttpServletRequest)
+2026-09-30T17:21:12.523-05:00 DEBUG 72558 --- [o-auto-1-exec-7] m.m.a.RequestResponseBodyMethodProcessor : Read "application/json;charset=UTF-8" to [CreateRequest[url=https://example.com/integration, alias=null]]
+2026-09-30T17:21:12.523-05:00 DEBUG 72558 --- [o-auto-1-exec-7] o.s.jdbc.core.JdbcTemplate               : Executing SQL update and returning generated keys
+2026-09-30T17:21:12.523-05:00 DEBUG 72558 --- [o-auto-1-exec-7] o.s.jdbc.core.JdbcTemplate               : Executing prepared SQL statement
+2026-09-30T17:21:12.524-05:00 DEBUG 72558 --- [o-auto-1-exec-7] o.s.jdbc.core.JdbcTemplate               : Executing prepared SQL update
+2026-09-30T17:21:12.524-05:00 DEBUG 72558 --- [o-auto-1-exec-7] o.s.jdbc.core.JdbcTemplate               : Executing prepared SQL statement [INSERT INTO link_stats(link_id) VALUES (?)]
+2026-09-30T17:21:12.525-05:00 DEBUG 72558 --- [o-auto-1-exec-7] o.s.jdbc.core.JdbcTemplate               : Executing prepared SQL query
+2026-09-30T17:21:12.525-05:00 DEBUG 72558 --- [o-auto-1-exec-7] o.s.jdbc.core.JdbcTemplate               : Executing prepared SQL statement [SELECT id, code, target_url, created_at FROM links WHERE code = ?]
+2026-09-30T17:21:12.527-05:00 DEBUG 72558 --- [o-auto-1-exec-7] o.s.w.s.m.m.a.HttpEntityMethodProcessor  : Using 'application/json', given [*/*] and supported [application/json, application/*+json]
+2026-09-30T17:21:12.528-05:00 DEBUG 72558 --- [o-auto-1-exec-7] o.s.w.s.m.m.a.HttpEntityMethodProcessor  : Writing [CreateResponse[code=mpmyk3ut, shortUrl=http://localhost:8080/mpmyk3ut]]
+2026-09-30T17:21:12.528-05:00 DEBUG 72558 --- [o-auto-1-exec-7] o.s.web.servlet.DispatcherServlet        : Completed 201 CREATED
+2026-09-30T17:21:12.529-05:00 DEBUG 72558 --- [o-auto-1-exec-8] o.s.web.servlet.DispatcherServlet        : POST "/api/shorten", parameters={}
+2026-09-30T17:21:12.530-05:00 DEBUG 72558 --- [o-auto-1-exec-8] s.w.s.m.m.a.RequestMappingHandlerMapping : Mapped to dev.shortener.http.ShortenerController#create(CreateRequest, HttpServletRequest)
+2026-09-30T17:21:12.530-05:00 DEBUG 72558 --- [o-auto-1-exec-8] m.m.a.RequestResponseBodyMethodProcessor : Read "application/json;charset=UTF-8" to [CreateRequest[url=https://example.com/integration, alias=null]]
+2026-09-30T17:21:12.530-05:00 DEBUG 72558 --- [o-auto-1-exec-8] o.s.jdbc.core.JdbcTemplate               : Executing SQL update and returning generated keys
+2026-09-30T17:21:12.530-05:00 DEBUG 72558 --- [o-auto-1-exec-8] o.s.jdbc.core.JdbcTemplate               : Executing prepared SQL statement
+2026-09-30T17:21:12.531-05:00 DEBUG 72558 --- [o-auto-1-exec-8] o.s.jdbc.core.JdbcTemplate               : Executing prepared SQL update
+2026-09-30T17:21:12.531-05:00 DEBUG 72558 --- [o-auto-1-exec-8] o.s.jdbc.core.JdbcTemplate               : Executing prepared SQL statement [INSERT INTO link_stats(link_id) VALUES (?)]
+2026-09-30T17:21:12.532-05:00 DEBUG 72558 --- [o-auto-1-exec-8] o.s.jdbc.core.JdbcTemplate               : Executing prepared SQL query
+2026-09-30T17:21:12.532-05:00 DEBUG 72558 --- [o-auto-1-exec-8] o.s.jdbc.core.JdbcTemplate               : Executing prepared SQL statement [SELECT id, code, target_url, created_at FROM links WHERE code = ?]
+2026-09-30T17:21:12.533-05:00 DEBUG 72558 --- [o-auto-1-exec-8] o.s.w.s.m.m.a.HttpEntityMethodProcessor  : Using 'application/json', given [*/*] and supported [application/json, application/*+json]
+2026-09-30T17:21:12.534-05:00 DEBUG 72558 --- [o-auto-1-exec-8] o.s.w.s.m.m.a.HttpEntityMethodProcessor  : Writing [CreateResponse[code=2ffexjsi, shortUrl=http://localhost:8080/2ffexjsi]]
+2026-09-30T17:21:12.534-05:00 DEBUG 72558 --- [o-auto-1-exec-8] o.s.web.servlet.DispatcherServlet        : Completed 201 CREATED
+2026-09-30T17:21:12.535-05:00 DEBUG 72558 --- [o-auto-1-exec-9] o.s.web.servlet.DispatcherServlet        : POST "/api/shorten", parameters={}
+2026-09-30T17:21:12.535-05:00 DEBUG 72558 --- [o-auto-1-exec-9] s.w.s.m.m.a.RequestMappingHandlerMapping : Mapped to dev.shortener.http.ShortenerController#create(CreateRequest, HttpServletRequest)
+2026-09-30T17:21:12.535-05:00 DEBUG 72558 --- [o-auto-1-exec-9] m.m.a.RequestResponseBodyMethodProcessor : Read "application/json;charset=UTF-8" to [CreateRequest[url=https://example.com/integration, alias=null]]
+2026-09-30T17:21:12.536-05:00 DEBUG 72558 --- [o-auto-1-exec-9] o.s.jdbc.core.JdbcTemplate               : Executing SQL update and returning generated keys
+2026-09-30T17:21:12.536-05:00 DEBUG 72558 --- [o-auto-1-exec-9] o.s.jdbc.core.JdbcTemplate               : Executing prepared SQL statement
+2026-09-30T17:21:12.537-05:00 DEBUG 72558 --- [o-auto-1-exec-9] o.s.jdbc.core.JdbcTemplate               : Executing prepared SQL update
+2026-09-30T17:21:12.537-05:00 DEBUG 72558 --- [o-auto-1-exec-9] o.s.jdbc.core.JdbcTemplate               : Executing prepared SQL statement [INSERT INTO link_stats(link_id) VALUES (?)]
+2026-09-30T17:21:12.537-05:00 DEBUG 72558 --- [o-auto-1-exec-9] o.s.jdbc.core.JdbcTemplate               : Executing prepared SQL query
+2026-09-30T17:21:12.537-05:00 DEBUG 72558 --- [o-auto-1-exec-9] o.s.jdbc.core.JdbcTemplate               : Executing prepared SQL statement [SELECT id, code, target_url, created_at FROM links WHERE code = ?]
+2026-09-30T17:21:12.539-05:00 DEBUG 72558 --- [o-auto-1-exec-9] o.s.w.s.m.m.a.HttpEntityMethodProcessor  : Using 'application/json', given [*/*] and supported [application/json, application/*+json]
+2026-09-30T17:21:12.539-05:00 DEBUG 72558 --- [o-auto-1-exec-9] o.s.w.s.m.m.a.HttpEntityMethodProcessor  : Writing [CreateResponse[code=9gbsz3p1, shortUrl=http://localhost:8080/9gbsz3p1]]
+2026-09-30T17:21:12.539-05:00 DEBUG 72558 --- [o-auto-1-exec-9] o.s.web.servlet.DispatcherServlet        : Completed 201 CREATED
+2026-09-30T17:21:12.540-05:00 DEBUG 72558 --- [-auto-1-exec-10] o.s.web.servlet.DispatcherServlet        : POST "/api/shorten", parameters={}
+2026-09-30T17:21:12.540-05:00 DEBUG 72558 --- [-auto-1-exec-10] s.w.s.m.m.a.RequestMappingHandlerMapping : Mapped to dev.shortener.http.ShortenerController#create(CreateRequest, HttpServletRequest)
+2026-09-30T17:21:12.541-05:00 DEBUG 72558 --- [-auto-1-exec-10] m.m.a.RequestResponseBodyMethodProcessor : Read "application/json;charset=UTF-8" to [CreateRequest[url=https://example.com/integration, alias=null]]
+2026-09-30T17:21:12.541-05:00 DEBUG 72558 --- [-auto-1-exec-10] o.s.jdbc.core.JdbcTemplate               : Executing SQL update and returning generated keys
+2026-09-30T17:21:12.541-05:00 DEBUG 72558 --- [-auto-1-exec-10] o.s.jdbc.core.JdbcTemplate               : Executing prepared SQL statement
+2026-09-30T17:21:12.542-05:00 DEBUG 72558 --- [-auto-1-exec-10] o.s.jdbc.core.JdbcTemplate               : Executing prepared SQL update
+2026-09-30T17:21:12.542-05:00 DEBUG 72558 --- [-auto-1-exec-10] o.s.jdbc.core.JdbcTemplate               : Executing prepared SQL statement [INSERT INTO link_stats(link_id) VALUES (?)]
+2026-09-30T17:21:12.543-05:00 DEBUG 72558 --- [-auto-1-exec-10] o.s.jdbc.core.JdbcTemplate               : Executing prepared SQL query
+2026-09-30T17:21:12.543-05:00 DEBUG 72558 --- [-auto-1-exec-10] o.s.jdbc.core.JdbcTemplate               : Executing prepared SQL statement [SELECT id, code, target_url, created_at FROM links WHERE code = ?]
+2026-09-30T17:21:12.544-05:00 DEBUG 72558 --- [-auto-1-exec-10] o.s.w.s.m.m.a.HttpEntityMethodProcessor  : Using 'application/json', given [*/*] and supported [application/json, application/*+json]
+2026-09-30T17:21:12.545-05:00 DEBUG 72558 --- [-auto-1-exec-10] o.s.w.s.m.m.a.HttpEntityMethodProcessor  : Writing [CreateResponse[code=fa525nfc, shortUrl=http://localhost:8080/fa525nfc]]
+2026-09-30T17:21:12.545-05:00 DEBUG 72558 --- [-auto-1-exec-10] o.s.web.servlet.DispatcherServlet        : Completed 201 CREATED
+2026-09-30T17:21:12.546-05:00 DEBUG 72558 --- [o-auto-1-exec-1] o.s.web.servlet.DispatcherServlet        : POST "/api/shorten", parameters={}
+2026-09-30T17:21:12.546-05:00 DEBUG 72558 --- [o-auto-1-exec-1] s.w.s.m.m.a.RequestMappingHandlerMapping : Mapped to dev.shortener.http.ShortenerController#create(CreateRequest, HttpServletRequest)
+2026-09-30T17:21:12.546-05:00 DEBUG 72558 --- [o-auto-1-exec-1] m.m.a.RequestResponseBodyMethodProcessor : Read "application/json;charset=UTF-8" to [CreateRequest[url=https://example.com/integration, alias=null]]
+2026-09-30T17:21:12.546-05:00 DEBUG 72558 --- [o-auto-1-exec-1] o.s.jdbc.core.JdbcTemplate               : Executing SQL update and returning generated keys
+2026-09-30T17:21:12.547-05:00 DEBUG 72558 --- [o-auto-1-exec-1] o.s.jdbc.core.JdbcTemplate               : Executing prepared SQL statement
+2026-09-30T17:21:12.548-05:00 DEBUG 72558 --- [o-auto-1-exec-1] o.s.jdbc.core.JdbcTemplate               : Executing prepared SQL update
+2026-09-30T17:21:12.548-05:00 DEBUG 72558 --- [o-auto-1-exec-1] o.s.jdbc.core.JdbcTemplate               : Executing prepared SQL statement [INSERT INTO link_stats(link_id) VALUES (?)]
+2026-09-30T17:21:12.548-05:00 DEBUG 72558 --- [o-auto-1-exec-1] o.s.jdbc.core.JdbcTemplate               : Executing prepared SQL query
+2026-09-30T17:21:12.548-05:00 DEBUG 72558 --- [o-auto-1-exec-1] o.s.jdbc.core.JdbcTemplate               : Executing prepared SQL statement [SELECT id, code, target_url, created_at FROM links WHERE code = ?]
+2026-09-30T17:21:12.550-05:00 DEBUG 72558 --- [o-auto-1-exec-1] o.s.w.s.m.m.a.HttpEntityMethodProcessor  : Using 'application/json', given [*/*] and supported [application/json, application/*+json]
+2026-09-30T17:21:12.550-05:00 DEBUG 72558 --- [o-auto-1-exec-1] o.s.w.s.m.m.a.HttpEntityMethodProcessor  : Writing [CreateResponse[code=g9m5eaqw, shortUrl=http://localhost:8080/g9m5eaqw]]
+2026-09-30T17:21:12.550-05:00 DEBUG 72558 --- [o-auto-1-exec-1] o.s.web.servlet.DispatcherServlet        : Completed 201 CREATED
+2026-09-30T17:21:12.551-05:00 DEBUG 72558 --- [o-auto-1-exec-2] o.s.web.servlet.DispatcherServlet        : POST "/api/shorten", parameters={}
+2026-09-30T17:21:12.551-05:00 DEBUG 72558 --- [o-auto-1-exec-2] s.w.s.m.m.a.RequestMappingHandlerMapping : Mapped to dev.shortener.http.ShortenerController#create(CreateRequest, HttpServletRequest)
+2026-09-30T17:21:12.551-05:00 DEBUG 72558 --- [o-auto-1-exec-2] m.m.a.RequestResponseBodyMethodProcessor : Read "application/json;charset=UTF-8" to [CreateRequest[url=https://example.com/integration, alias=null]]
+2026-09-30T17:21:12.552-05:00 DEBUG 72558 --- [o-auto-1-exec-2] o.s.jdbc.core.JdbcTemplate               : Executing SQL update and returning generated keys
+2026-09-30T17:21:12.552-05:00 DEBUG 72558 --- [o-auto-1-exec-2] o.s.jdbc.core.JdbcTemplate               : Executing prepared SQL statement
+2026-09-30T17:21:12.553-05:00 DEBUG 72558 --- [o-auto-1-exec-2] o.s.jdbc.core.JdbcTemplate               : Executing prepared SQL update
+2026-09-30T17:21:12.553-05:00 DEBUG 72558 --- [o-auto-1-exec-2] o.s.jdbc.core.JdbcTemplate               : Executing prepared SQL statement [INSERT INTO link_stats(link_id) VALUES (?)]
+2026-09-30T17:21:12.553-05:00 DEBUG 72558 --- [o-auto-1-exec-2] o.s.jdbc.core.JdbcTemplate               : Executing prepared SQL query
+2026-09-30T17:21:12.553-05:00 DEBUG 72558 --- [o-auto-1-exec-2] o.s.jdbc.core.JdbcTemplate               : Executing prepared SQL statement [SELECT id, code, target_url, created_at FROM links WHERE code = ?]
+2026-09-30T17:21:12.555-05:00 DEBUG 72558 --- [o-auto-1-exec-2] o.s.w.s.m.m.a.HttpEntityMethodProcessor  : Using 'application/json', given [*/*] and supported [application/json, application/*+json]
+2026-09-30T17:21:12.555-05:00 DEBUG 72558 --- [o-auto-1-exec-2] o.s.w.s.m.m.a.HttpEntityMethodProcessor  : Writing [CreateResponse[code=ncfcfu90, shortUrl=http://localhost:8080/ncfcfu90]]
+2026-09-30T17:21:12.555-05:00 DEBUG 72558 --- [o-auto-1-exec-2] o.s.web.servlet.DispatcherServlet        : Completed 201 CREATED
+2026-09-30T17:21:12.556-05:00 DEBUG 72558 --- [o-auto-1-exec-3] o.s.web.servlet.DispatcherServlet        : POST "/api/shorten", parameters={}
+2026-09-30T17:21:12.556-05:00 DEBUG 72558 --- [o-auto-1-exec-3] s.w.s.m.m.a.RequestMappingHandlerMapping : Mapped to dev.shortener.http.ShortenerController#create(CreateRequest, HttpServletRequest)
+2026-09-30T17:21:12.557-05:00 DEBUG 72558 --- [o-auto-1-exec-3] m.m.a.RequestResponseBodyMethodProcessor : Read "application/json;charset=UTF-8" to [CreateRequest[url=https://example.com/integration, alias=null]]
+2026-09-30T17:21:12.557-05:00 DEBUG 72558 --- [o-auto-1-exec-3] o.s.jdbc.core.JdbcTemplate               : Executing SQL update and returning generated keys
+2026-09-30T17:21:12.557-05:00 DEBUG 72558 --- [o-auto-1-exec-3] o.s.jdbc.core.JdbcTemplate               : Executing prepared SQL statement
+2026-09-30T17:21:12.558-05:00 DEBUG 72558 --- [o-auto-1-exec-3] o.s.jdbc.core.JdbcTemplate               : Executing prepared SQL update
+2026-09-30T17:21:12.558-05:00 DEBUG 72558 --- [o-auto-1-exec-3] o.s.jdbc.core.JdbcTemplate               : Executing prepared SQL statement [INSERT INTO link_stats(link_id) VALUES (?)]
+2026-09-30T17:21:12.559-05:00 DEBUG 72558 --- [o-auto-1-exec-3] o.s.jdbc.core.JdbcTemplate               : Executing prepared SQL query
+2026-09-30T17:21:12.559-05:00 DEBUG 72558 --- [o-auto-1-exec-3] o.s.jdbc.core.JdbcTemplate               : Executing prepared SQL statement [SELECT id, code, target_url, created_at FROM links WHERE code = ?]
+2026-09-30T17:21:12.561-05:00 DEBUG 72558 --- [o-auto-1-exec-3] o.s.w.s.m.m.a.HttpEntityMethodProcessor  : Using 'application/json', given [*/*] and supported [application/json, application/*+json]
+2026-09-30T17:21:12.561-05:00 DEBUG 72558 --- [o-auto-1-exec-3] o.s.w.s.m.m.a.HttpEntityMethodProcessor  : Writing [CreateResponse[code=70zfdknx, shortUrl=http://localhost:8080/70zfdknx]]
+2026-09-30T17:21:12.561-05:00 DEBUG 72558 --- [o-auto-1-exec-3] o.s.web.servlet.DispatcherServlet        : Completed 201 CREATED
+2026-09-30T17:21:12.562-05:00 DEBUG 72558 --- [o-auto-1-exec-4] o.s.web.servlet.DispatcherServlet        : POST "/api/shorten", parameters={}
+2026-09-30T17:21:12.563-05:00 DEBUG 72558 --- [o-auto-1-exec-4] s.w.s.m.m.a.RequestMappingHandlerMapping : Mapped to dev.shortener.http.ShortenerController#create(CreateRequest, HttpServletRequest)
+2026-09-30T17:21:12.563-05:00 DEBUG 72558 --- [o-auto-1-exec-4] m.m.a.RequestResponseBodyMethodProcessor : Read "application/json;charset=UTF-8" to [CreateRequest[url=https://example.com/integration, alias=null]]
+2026-09-30T17:21:12.563-05:00 DEBUG 72558 --- [o-auto-1-exec-4] o.s.jdbc.core.JdbcTemplate               : Executing SQL update and returning generated keys
+2026-09-30T17:21:12.563-05:00 DEBUG 72558 --- [o-auto-1-exec-4] o.s.jdbc.core.JdbcTemplate               : Executing prepared SQL statement
+2026-09-30T17:21:12.564-05:00 DEBUG 72558 --- [o-auto-1-exec-4] o.s.jdbc.core.JdbcTemplate               : Executing prepared SQL update
+2026-09-30T17:21:12.565-05:00 DEBUG 72558 --- [o-auto-1-exec-4] o.s.jdbc.core.JdbcTemplate               : Executing prepared SQL statement [INSERT INTO link_stats(link_id) VALUES (?)]
+2026-09-30T17:21:12.565-05:00 DEBUG 72558 --- [o-auto-1-exec-4] o.s.jdbc.core.JdbcTemplate               : Executing prepared SQL query
+2026-09-30T17:21:12.565-05:00 DEBUG 72558 --- [o-auto-1-exec-4] o.s.jdbc.core.JdbcTemplate               : Executing prepared SQL statement [SELECT id, code, target_url, created_at FROM links WHERE code = ?]
+2026-09-30T17:21:12.567-05:00 DEBUG 72558 --- [o-auto-1-exec-4] o.s.w.s.m.m.a.HttpEntityMethodProcessor  : Using 'application/json', given [*/*] and supported [application/json, application/*+json]
+2026-09-30T17:21:12.567-05:00 DEBUG 72558 --- [o-auto-1-exec-4] o.s.w.s.m.m.a.HttpEntityMethodProcessor  : Writing [CreateResponse[code=6tgrfri9, shortUrl=http://localhost:8080/6tgrfri9]]
+2026-09-30T17:21:12.567-05:00 DEBUG 72558 --- [o-auto-1-exec-4] o.s.web.servlet.DispatcherServlet        : Completed 201 CREATED
+2026-09-30T17:21:12.568-05:00 DEBUG 72558 --- [o-auto-1-exec-5] o.s.web.servlet.DispatcherServlet        : POST "/api/shorten", parameters={}
+2026-09-30T17:21:12.568-05:00 DEBUG 72558 --- [o-auto-1-exec-5] s.w.s.m.m.a.RequestMappingHandlerMapping : Mapped to dev.shortener.http.ShortenerController#create(CreateRequest, HttpServletRequest)
+2026-09-30T17:21:12.568-05:00 DEBUG 72558 --- [o-auto-1-exec-5] m.m.a.RequestResponseBodyMethodProcessor : Read "application/json;charset=UTF-8" to [CreateRequest[url=https://example.com/integration, alias=null]]
+2026-09-30T17:21:12.569-05:00 DEBUG 72558 --- [o-auto-1-exec-5] o.s.jdbc.core.JdbcTemplate               : Executing SQL update and returning generated keys
+2026-09-30T17:21:12.569-05:00 DEBUG 72558 --- [o-auto-1-exec-5] o.s.jdbc.core.JdbcTemplate               : Executing prepared SQL statement
+2026-09-30T17:21:12.570-05:00 DEBUG 72558 --- [o-auto-1-exec-5] o.s.jdbc.core.JdbcTemplate               : Executing prepared SQL update
+2026-09-30T17:21:12.570-05:00 DEBUG 72558 --- [o-auto-1-exec-5] o.s.jdbc.core.JdbcTemplate               : Executing prepared SQL statement [INSERT INTO link_stats(link_id) VALUES (?)]
+2026-09-30T17:21:12.570-05:00 DEBUG 72558 --- [o-auto-1-exec-5] o.s.jdbc.core.JdbcTemplate               : Executing prepared SQL query
+2026-09-30T17:21:12.570-05:00 DEBUG 72558 --- [o-auto-1-exec-5] o.s.jdbc.core.JdbcTemplate               : Executing prepared SQL statement [SELECT id, code, target_url, created_at FROM links WHERE code = ?]
+2026-09-30T17:21:12.572-05:00 DEBUG 72558 --- [o-auto-1-exec-5] o.s.w.s.m.m.a.HttpEntityMethodProcessor  : Using 'application/json', given [*/*] and supported [application/json, application/*+json]
+2026-09-30T17:21:12.572-05:00 DEBUG 72558 --- [o-auto-1-exec-5] o.s.w.s.m.m.a.HttpEntityMethodProcessor  : Writing [CreateResponse[code=py9zlshn, shortUrl=http://localhost:8080/py9zlshn]]
+2026-09-30T17:21:12.572-05:00 DEBUG 72558 --- [o-auto-1-exec-5] o.s.web.servlet.DispatcherServlet        : Completed 201 CREATED
+2026-09-30T17:21:12.573-05:00 DEBUG 72558 --- [o-auto-1-exec-6] o.s.web.servlet.DispatcherServlet        : POST "/api/shorten", parameters={}
+2026-09-30T17:21:12.573-05:00 DEBUG 72558 --- [o-auto-1-exec-6] s.w.s.m.m.a.RequestMappingHandlerMapping : Mapped to dev.shortener.http.ShortenerController#create(CreateRequest, HttpServletRequest)
+2026-09-30T17:21:12.574-05:00 DEBUG 72558 --- [o-auto-1-exec-6] m.m.a.RequestResponseBodyMethodProcessor : Read "application/json;charset=UTF-8" to [CreateRequest[url=https://example.com/integration, alias=null]]
+2026-09-30T17:21:12.574-05:00 DEBUG 72558 --- [o-auto-1-exec-6] o.s.jdbc.core.JdbcTemplate               : Executing SQL update and returning generated keys
+2026-09-30T17:21:12.574-05:00 DEBUG 72558 --- [o-auto-1-exec-6] o.s.jdbc.core.JdbcTemplate               : Executing prepared SQL statement
+2026-09-30T17:21:12.575-05:00 DEBUG 72558 --- [o-auto-1-exec-6] o.s.jdbc.core.JdbcTemplate               : Executing prepared SQL update
+2026-09-30T17:21:12.575-05:00 DEBUG 72558 --- [o-auto-1-exec-6] o.s.jdbc.core.JdbcTemplate               : Executing prepared SQL statement [INSERT INTO link_stats(link_id) VALUES (?)]
+2026-09-30T17:21:12.576-05:00 DEBUG 72558 --- [o-auto-1-exec-6] o.s.jdbc.core.JdbcTemplate               : Executing prepared SQL query
+2026-09-30T17:21:12.576-05:00 DEBUG 72558 --- [o-auto-1-exec-6] o.s.jdbc.core.JdbcTemplate               : Executing prepared SQL statement [SELECT id, code, target_url, created_at FROM links WHERE code = ?]
+2026-09-30T17:21:12.577-05:00 DEBUG 72558 --- [o-auto-1-exec-6] o.s.w.s.m.m.a.HttpEntityMethodProcessor  : Using 'application/json', given [*/*] and supported [application/json, application/*+json]
+2026-09-30T17:21:12.577-05:00 DEBUG 72558 --- [o-auto-1-exec-6] o.s.w.s.m.m.a.HttpEntityMethodProcessor  : Writing [CreateResponse[code=ql5r5mos, shortUrl=http://localhost:8080/ql5r5mos]]
+2026-09-30T17:21:12.578-05:00 DEBUG 72558 --- [o-auto-1-exec-6] o.s.web.servlet.DispatcherServlet        : Completed 201 CREATED
+2026-09-30T17:21:12.579-05:00 DEBUG 72558 --- [o-auto-1-exec-7] o.s.web.servlet.DispatcherServlet        : POST "/api/shorten", parameters={}
+2026-09-30T17:21:12.579-05:00 DEBUG 72558 --- [o-auto-1-exec-7] s.w.s.m.m.a.RequestMappingHandlerMapping : Mapped to dev.shortener.http.ShortenerController#create(CreateRequest, HttpServletRequest)
+2026-09-30T17:21:12.579-05:00 DEBUG 72558 --- [o-auto-1-exec-7] m.m.a.RequestResponseBodyMethodProcessor : Read "application/json;charset=UTF-8" to [CreateRequest[url=https://example.com/integration, alias=null]]
+2026-09-30T17:21:12.579-05:00 DEBUG 72558 --- [o-auto-1-exec-7] o.s.jdbc.core.JdbcTemplate               : Executing SQL update and returning generated keys
+2026-09-30T17:21:12.579-05:00 DEBUG 72558 --- [o-auto-1-exec-7] o.s.jdbc.core.JdbcTemplate               : Executing prepared SQL statement
+2026-09-30T17:21:12.580-05:00 DEBUG 72558 --- [o-auto-1-exec-7] o.s.jdbc.core.JdbcTemplate               : Executing prepared SQL update
+2026-09-30T17:21:12.580-05:00 DEBUG 72558 --- [o-auto-1-exec-7] o.s.jdbc.core.JdbcTemplate               : Executing prepared SQL statement [INSERT INTO link_stats(link_id) VALUES (?)]
+2026-09-30T17:21:12.581-05:00 DEBUG 72558 --- [o-auto-1-exec-7] o.s.jdbc.core.JdbcTemplate               : Executing prepared SQL query
+2026-09-30T17:21:12.581-05:00 DEBUG 72558 --- [o-auto-1-exec-7] o.s.jdbc.core.JdbcTemplate               : Executing prepared SQL statement [SELECT id, code, target_url, created_at FROM links WHERE code = ?]
+2026-09-30T17:21:12.583-05:00 DEBUG 72558 --- [o-auto-1-exec-7] o.s.w.s.m.m.a.HttpEntityMethodProcessor  : Using 'application/json', given [*/*] and supported [application/json, application/*+json]
+2026-09-30T17:21:12.583-05:00 DEBUG 72558 --- [o-auto-1-exec-7] o.s.w.s.m.m.a.HttpEntityMethodProcessor  : Writing [CreateResponse[code=exb429g9, shortUrl=http://localhost:8080/exb429g9]]
+2026-09-30T17:21:12.583-05:00 DEBUG 72558 --- [o-auto-1-exec-7] o.s.web.servlet.DispatcherServlet        : Completed 201 CREATED
+2026-09-30T17:21:12.585-05:00 DEBUG 72558 --- [o-auto-1-exec-8] o.s.web.servlet.DispatcherServlet        : POST "/api/shorten", parameters={}
+2026-09-30T17:21:12.585-05:00 DEBUG 72558 --- [o-auto-1-exec-8] s.w.s.m.m.a.RequestMappingHandlerMapping : Mapped to dev.shortener.http.ShortenerController#create(CreateRequest, HttpServletRequest)
+2026-09-30T17:21:12.585-05:00 DEBUG 72558 --- [o-auto-1-exec-8] m.m.a.RequestResponseBodyMethodProcessor : Read "application/json;charset=UTF-8" to [CreateRequest[url=https://example.com/integration, alias=null]]
+2026-09-30T17:21:12.585-05:00 DEBUG 72558 --- [o-auto-1-exec-8] o.s.jdbc.core.JdbcTemplate               : Executing SQL update and returning generated keys
+2026-09-30T17:21:12.585-05:00 DEBUG 72558 --- [o-auto-1-exec-8] o.s.jdbc.core.JdbcTemplate               : Executing prepared SQL statement
+2026-09-30T17:21:12.587-05:00 DEBUG 72558 --- [o-auto-1-exec-8] o.s.jdbc.core.JdbcTemplate               : Executing prepared SQL update
+2026-09-30T17:21:12.587-05:00 DEBUG 72558 --- [o-auto-1-exec-8] o.s.jdbc.core.JdbcTemplate               : Executing prepared SQL statement [INSERT INTO link_stats(link_id) VALUES (?)]
+2026-09-30T17:21:12.588-05:00 DEBUG 72558 --- [o-auto-1-exec-8] o.s.jdbc.core.JdbcTemplate               : Executing prepared SQL query
+2026-09-30T17:21:12.588-05:00 DEBUG 72558 --- [o-auto-1-exec-8] o.s.jdbc.core.JdbcTemplate               : Executing prepared SQL statement [SELECT id, code, target_url, created_at FROM links WHERE code = ?]
+2026-09-30T17:21:12.590-05:00 DEBUG 72558 --- [o-auto-1-exec-8] o.s.w.s.m.m.a.HttpEntityMethodProcessor  : Using 'application/json', given [*/*] and supported [application/json, application/*+json]
+2026-09-30T17:21:12.590-05:00 DEBUG 72558 --- [o-auto-1-exec-8] o.s.w.s.m.m.a.HttpEntityMethodProcessor  : Writing [CreateResponse[code=fc05c7eo, shortUrl=http://localhost:8080/fc05c7eo]]
+2026-09-30T17:21:12.590-05:00 DEBUG 72558 --- [o-auto-1-exec-8] o.s.web.servlet.DispatcherServlet        : Completed 201 CREATED
+2026-09-30T17:21:12.591-05:00 DEBUG 72558 --- [o-auto-1-exec-9] o.s.web.servlet.DispatcherServlet        : POST "/api/shorten", parameters={}
+2026-09-30T17:21:12.591-05:00 DEBUG 72558 --- [o-auto-1-exec-9] s.w.s.m.m.a.RequestMappingHandlerMapping : Mapped to dev.shortener.http.ShortenerController#create(CreateRequest, HttpServletRequest)
+2026-09-30T17:21:12.592-05:00 DEBUG 72558 --- [o-auto-1-exec-9] m.m.a.RequestResponseBodyMethodProcessor : Read "application/json;charset=UTF-8" to [CreateRequest[url=https://example.com/integration, alias=null]]
+2026-09-30T17:21:12.592-05:00 DEBUG 72558 --- [o-auto-1-exec-9] o.s.jdbc.core.JdbcTemplate               : Executing SQL update and returning generated keys
+2026-09-30T17:21:12.592-05:00 DEBUG 72558 --- [o-auto-1-exec-9] o.s.jdbc.core.JdbcTemplate               : Executing prepared SQL statement
+2026-09-30T17:21:12.594-05:00 DEBUG 72558 --- [o-auto-1-exec-9] o.s.jdbc.core.JdbcTemplate               : Executing prepared SQL update
+2026-09-30T17:21:12.594-05:00 DEBUG 72558 --- [o-auto-1-exec-9] o.s.jdbc.core.JdbcTemplate               : Executing prepared SQL statement [INSERT INTO link_stats(link_id) VALUES (?)]
+2026-09-30T17:21:12.595-05:00 DEBUG 72558 --- [o-auto-1-exec-9] o.s.jdbc.core.JdbcTemplate               : Executing prepared SQL query
+2026-09-30T17:21:12.595-05:00 DEBUG 72558 --- [o-auto-1-exec-9] o.s.jdbc.core.JdbcTemplate               : Executing prepared SQL statement [SELECT id, code, target_url, created_at FROM links WHERE code = ?]
+2026-09-30T17:21:12.596-05:00 DEBUG 72558 --- [o-auto-1-exec-9] o.s.w.s.m.m.a.HttpEntityMethodProcessor  : Using 'application/json', given [*/*] and supported [application/json, application/*+json]
+2026-09-30T17:21:12.596-05:00 DEBUG 72558 --- [o-auto-1-exec-9] o.s.w.s.m.m.a.HttpEntityMethodProcessor  : Writing [CreateResponse[code=c5vapjb0, shortUrl=http://localhost:8080/c5vapjb0]]
+2026-09-30T17:21:12.597-05:00 DEBUG 72558 --- [o-auto-1-exec-9] o.s.web.servlet.DispatcherServlet        : Completed 201 CREATED
+2026-09-30T17:21:12.598-05:00 DEBUG 72558 --- [-auto-1-exec-10] o.s.web.servlet.DispatcherServlet        : POST "/api/shorten", parameters={}
+2026-09-30T17:21:12.598-05:00 DEBUG 72558 --- [-auto-1-exec-10] s.w.s.m.m.a.RequestMappingHandlerMapping : Mapped to dev.shortener.http.ShortenerController#create(CreateRequest, HttpServletRequest)
+2026-09-30T17:21:12.598-05:00 DEBUG 72558 --- [-auto-1-exec-10] m.m.a.RequestResponseBodyMethodProcessor : Read "application/json;charset=UTF-8" to [CreateRequest[url=https://example.com/integration, alias=null]]
+2026-09-30T17:21:12.599-05:00 DEBUG 72558 --- [-auto-1-exec-10] o.s.jdbc.core.JdbcTemplate               : Executing SQL update and returning generated keys
+2026-09-30T17:21:12.599-05:00 DEBUG 72558 --- [-auto-1-exec-10] o.s.jdbc.core.JdbcTemplate               : Executing prepared SQL statement
+2026-09-30T17:21:12.600-05:00 DEBUG 72558 --- [-auto-1-exec-10] o.s.jdbc.core.JdbcTemplate               : Executing prepared SQL update
+2026-09-30T17:21:12.600-05:00 DEBUG 72558 --- [-auto-1-exec-10] o.s.jdbc.core.JdbcTemplate               : Executing prepared SQL statement [INSERT INTO link_stats(link_id) VALUES (?)]
+2026-09-30T17:21:12.601-05:00 DEBUG 72558 --- [-auto-1-exec-10] o.s.jdbc.core.JdbcTemplate               : Executing prepared SQL query
+2026-09-30T17:21:12.601-05:00 DEBUG 72558 --- [-auto-1-exec-10] o.s.jdbc.core.JdbcTemplate               : Executing prepared SQL statement [SELECT id, code, target_url, created_at FROM links WHERE code = ?]
+2026-09-30T17:21:12.604-05:00 DEBUG 72558 --- [-auto-1-exec-10] o.s.w.s.m.m.a.HttpEntityMethodProcessor  : Using 'application/json', given [*/*] and supported [application/json, application/*+json]
+2026-09-30T17:21:12.604-05:00 DEBUG 72558 --- [-auto-1-exec-10] o.s.w.s.m.m.a.HttpEntityMethodProcessor  : Writing [CreateResponse[code=gh2v1rox, shortUrl=http://localhost:8080/gh2v1rox]]
+2026-09-30T17:21:12.604-05:00 DEBUG 72558 --- [-auto-1-exec-10] o.s.web.servlet.DispatcherServlet        : Completed 201 CREATED
+2026-09-30T17:21:12.606-05:00 DEBUG 72558 --- [o-auto-1-exec-1] o.s.web.servlet.DispatcherServlet        : POST "/api/shorten", parameters={}
+2026-09-30T17:21:12.606-05:00 DEBUG 72558 --- [o-auto-1-exec-1] s.w.s.m.m.a.RequestMappingHandlerMapping : Mapped to dev.shortener.http.ShortenerController#create(CreateRequest, HttpServletRequest)
+2026-09-30T17:21:12.606-05:00 DEBUG 72558 --- [o-auto-1-exec-1] m.m.a.RequestResponseBodyMethodProcessor : Read "application/json;charset=UTF-8" to [CreateRequest[url=https://example.com/integration, alias=null]]
+2026-09-30T17:21:12.606-05:00 DEBUG 72558 --- [o-auto-1-exec-1] o.s.jdbc.core.JdbcTemplate               : Executing SQL update and returning generated keys
+2026-09-30T17:21:12.606-05:00 DEBUG 72558 --- [o-auto-1-exec-1] o.s.jdbc.core.JdbcTemplate               : Executing prepared SQL statement
+2026-09-30T17:21:12.608-05:00 DEBUG 72558 --- [o-auto-1-exec-1] o.s.jdbc.core.JdbcTemplate               : Executing prepared SQL update
+2026-09-30T17:21:12.608-05:00 DEBUG 72558 --- [o-auto-1-exec-1] o.s.jdbc.core.JdbcTemplate               : Executing prepared SQL statement [INSERT INTO link_stats(link_id) VALUES (?)]
+2026-09-30T17:21:12.608-05:00 DEBUG 72558 --- [o-auto-1-exec-1] o.s.jdbc.core.JdbcTemplate               : Executing prepared SQL query
+2026-09-30T17:21:12.608-05:00 DEBUG 72558 --- [o-auto-1-exec-1] o.s.jdbc.core.JdbcTemplate               : Executing prepared SQL statement [SELECT id, code, target_url, created_at FROM links WHERE code = ?]
+2026-09-30T17:21:12.611-05:00 DEBUG 72558 --- [o-auto-1-exec-1] o.s.w.s.m.m.a.HttpEntityMethodProcessor  : Using 'application/json', given [*/*] and supported [application/json, application/*+json]
+2026-09-30T17:21:12.611-05:00 DEBUG 72558 --- [o-auto-1-exec-1] o.s.w.s.m.m.a.HttpEntityMethodProcessor  : Writing [CreateResponse[code=5ky2jtls, shortUrl=http://localhost:8080/5ky2jtls]]
+2026-09-30T17:21:12.611-05:00 DEBUG 72558 --- [o-auto-1-exec-1] o.s.web.servlet.DispatcherServlet        : Completed 201 CREATED
+2026-09-30T17:21:12.612-05:00 DEBUG 72558 --- [o-auto-1-exec-2] o.s.web.servlet.DispatcherServlet        : POST "/api/shorten", parameters={}
+2026-09-30T17:21:12.612-05:00 DEBUG 72558 --- [o-auto-1-exec-2] s.w.s.m.m.a.RequestMappingHandlerMapping : Mapped to dev.shortener.http.ShortenerController#create(CreateRequest, HttpServletRequest)
+2026-09-30T17:21:12.612-05:00 DEBUG 72558 --- [o-auto-1-exec-2] m.m.a.RequestResponseBodyMethodProcessor : Read "application/json;charset=UTF-8" to [CreateRequest[url=https://example.com/integration, alias=null]]
+2026-09-30T17:21:12.612-05:00 DEBUG 72558 --- [o-auto-1-exec-2] o.s.jdbc.core.JdbcTemplate               : Executing SQL update and returning generated keys
+2026-09-30T17:21:12.612-05:00 DEBUG 72558 --- [o-auto-1-exec-2] o.s.jdbc.core.JdbcTemplate               : Executing prepared SQL statement
+2026-09-30T17:21:12.614-05:00 DEBUG 72558 --- [o-auto-1-exec-2] o.s.jdbc.core.JdbcTemplate               : Executing prepared SQL update
+2026-09-30T17:21:12.614-05:00 DEBUG 72558 --- [o-auto-1-exec-2] o.s.jdbc.core.JdbcTemplate               : Executing prepared SQL statement [INSERT INTO link_stats(link_id) VALUES (?)]
+2026-09-30T17:21:12.614-05:00 DEBUG 72558 --- [o-auto-1-exec-2] o.s.jdbc.core.JdbcTemplate               : Executing prepared SQL query
+2026-09-30T17:21:12.614-05:00 DEBUG 72558 --- [o-auto-1-exec-2] o.s.jdbc.core.JdbcTemplate               : Executing prepared SQL statement [SELECT id, code, target_url, created_at FROM links WHERE code = ?]
+2026-09-30T17:21:12.616-05:00 DEBUG 72558 --- [o-auto-1-exec-2] o.s.w.s.m.m.a.HttpEntityMethodProcessor  : Using 'application/json', given [*/*] and supported [application/json, application/*+json]
+2026-09-30T17:21:12.617-05:00 DEBUG 72558 --- [o-auto-1-exec-2] o.s.w.s.m.m.a.HttpEntityMethodProcessor  : Writing [CreateResponse[code=nixt9d5k, shortUrl=http://localhost:8080/nixt9d5k]]
+2026-09-30T17:21:12.617-05:00 DEBUG 72558 --- [o-auto-1-exec-2] o.s.web.servlet.DispatcherServlet        : Completed 201 CREATED
+2026-09-30T17:21:12.618-05:00 DEBUG 72558 --- [o-auto-1-exec-3] o.s.web.servlet.DispatcherServlet        : POST "/api/shorten", parameters={}
+2026-09-30T17:21:12.618-05:00 DEBUG 72558 --- [o-auto-1-exec-3] s.w.s.m.m.a.RequestMappingHandlerMapping : Mapped to dev.shortener.http.ShortenerController#create(CreateRequest, HttpServletRequest)
+2026-09-30T17:21:12.618-05:00 DEBUG 72558 --- [o-auto-1-exec-3] m.m.a.RequestResponseBodyMethodProcessor : Read "application/json;charset=UTF-8" to [CreateRequest[url=https://example.com/integration, alias=null]]
+2026-09-30T17:21:12.619-05:00 DEBUG 72558 --- [o-auto-1-exec-3] o.s.jdbc.core.JdbcTemplate               : Executing SQL update and returning generated keys
+2026-09-30T17:21:12.619-05:00 DEBUG 72558 --- [o-auto-1-exec-3] o.s.jdbc.core.JdbcTemplate               : Executing prepared SQL statement
+2026-09-30T17:21:12.620-05:00 DEBUG 72558 --- [o-auto-1-exec-3] o.s.jdbc.core.JdbcTemplate               : Executing prepared SQL update
+2026-09-30T17:21:12.620-05:00 DEBUG 72558 --- [o-auto-1-exec-3] o.s.jdbc.core.JdbcTemplate               : Executing prepared SQL statement [INSERT INTO link_stats(link_id) VALUES (?)]
+2026-09-30T17:21:12.621-05:00 DEBUG 72558 --- [o-auto-1-exec-3] o.s.jdbc.core.JdbcTemplate               : Executing prepared SQL query
+2026-09-30T17:21:12.621-05:00 DEBUG 72558 --- [o-auto-1-exec-3] o.s.jdbc.core.JdbcTemplate               : Executing prepared SQL statement [SELECT id, code, target_url, created_at FROM links WHERE code = ?]
+2026-09-30T17:21:12.622-05:00 DEBUG 72558 --- [o-auto-1-exec-3] o.s.w.s.m.m.a.HttpEntityMethodProcessor  : Using 'application/json', given [*/*] and supported [application/json, application/*+json]
+2026-09-30T17:21:12.622-05:00 DEBUG 72558 --- [o-auto-1-exec-3] o.s.w.s.m.m.a.HttpEntityMethodProcessor  : Writing [CreateResponse[code=2eb2e79d, shortUrl=http://localhost:8080/2eb2e79d]]
+2026-09-30T17:21:12.622-05:00 DEBUG 72558 --- [o-auto-1-exec-3] o.s.web.servlet.DispatcherServlet        : Completed 201 CREATED
+2026-09-30T17:21:12.624-05:00 DEBUG 72558 --- [o-auto-1-exec-4] o.s.web.servlet.DispatcherServlet        : POST "/api/shorten", parameters={}
+2026-09-30T17:21:12.624-05:00 DEBUG 72558 --- [o-auto-1-exec-4] s.w.s.m.m.a.RequestMappingHandlerMapping : Mapped to dev.shortener.http.ShortenerController#create(CreateRequest, HttpServletRequest)
+2026-09-30T17:21:12.624-05:00 DEBUG 72558 --- [o-auto-1-exec-4] m.m.a.RequestResponseBodyMethodProcessor : Read "application/json;charset=UTF-8" to [CreateRequest[url=https://example.com/integration, alias=null]]
+2026-09-30T17:21:12.624-05:00 DEBUG 72558 --- [o-auto-1-exec-4] o.s.jdbc.core.JdbcTemplate               : Executing SQL update and returning generated keys
+2026-09-30T17:21:12.624-05:00 DEBUG 72558 --- [o-auto-1-exec-4] o.s.jdbc.core.JdbcTemplate               : Executing prepared SQL statement
+2026-09-30T17:21:12.625-05:00 DEBUG 72558 --- [o-auto-1-exec-4] o.s.jdbc.core.JdbcTemplate               : Executing prepared SQL update
+2026-09-30T17:21:12.625-05:00 DEBUG 72558 --- [o-auto-1-exec-4] o.s.jdbc.core.JdbcTemplate               : Executing prepared SQL statement [INSERT INTO link_stats(link_id) VALUES (?)]
+2026-09-30T17:21:12.626-05:00 DEBUG 72558 --- [o-auto-1-exec-4] o.s.jdbc.core.JdbcTemplate               : Executing prepared SQL query
+2026-09-30T17:21:12.626-05:00 DEBUG 72558 --- [o-auto-1-exec-4] o.s.jdbc.core.JdbcTemplate               : Executing prepared SQL statement [SELECT id, code, target_url, created_at FROM links WHERE code = ?]
+2026-09-30T17:21:12.627-05:00 DEBUG 72558 --- [o-auto-1-exec-4] o.s.w.s.m.m.a.HttpEntityMethodProcessor  : Using 'application/json', given [*/*] and supported [application/json, application/*+json]
+2026-09-30T17:21:12.627-05:00 DEBUG 72558 --- [o-auto-1-exec-4] o.s.w.s.m.m.a.HttpEntityMethodProcessor  : Writing [CreateResponse[code=2xbw1vxy, shortUrl=http://localhost:8080/2xbw1vxy]]
+2026-09-30T17:21:12.628-05:00 DEBUG 72558 --- [o-auto-1-exec-4] o.s.web.servlet.DispatcherServlet        : Completed 201 CREATED
+2026-09-30T17:21:12.629-05:00 DEBUG 72558 --- [o-auto-1-exec-5] o.s.web.servlet.DispatcherServlet        : POST "/api/shorten", parameters={}
+2026-09-30T17:21:12.629-05:00 DEBUG 72558 --- [o-auto-1-exec-5] s.w.s.m.m.a.RequestMappingHandlerMapping : Mapped to dev.shortener.http.ShortenerController#create(CreateRequest, HttpServletRequest)
+2026-09-30T17:21:12.629-05:00 DEBUG 72558 --- [o-auto-1-exec-5] m.m.a.RequestResponseBodyMethodProcessor : Read "application/json;charset=UTF-8" to [CreateRequest[url=https://example.com/integration, alias=null]]
+2026-09-30T17:21:12.630-05:00 DEBUG 72558 --- [o-auto-1-exec-5] o.s.w.s.m.m.a.HttpEntityMethodProcessor  : Using 'application/json', given [*/*] and supported [application/json, application/*+json]
+2026-09-30T17:21:12.630-05:00 DEBUG 72558 --- [o-auto-1-exec-5] o.s.w.s.m.m.a.HttpEntityMethodProcessor  : Nothing to write: null body
+2026-09-30T17:21:12.630-05:00 DEBUG 72558 --- [o-auto-1-exec-5] o.s.web.servlet.DispatcherServlet        : Completed 429 TOO_MANY_REQUESTS
+2026-09-30T17:21:12.631-05:00 DEBUG 72558 --- [o-auto-1-exec-6] o.s.web.servlet.DispatcherServlet        : GET "/race-alias", parameters={}
+2026-09-30T17:21:12.631-05:00 DEBUG 72558 --- [o-auto-1-exec-6] s.w.s.m.m.a.RequestMappingHandlerMapping : Mapped to dev.shortener.http.ShortenerController#redirect(String)
+2026-09-30T17:21:12.631-05:00 DEBUG 72558 --- [nalytics-writer] o.s.jdbc.core.JdbcTemplate               : Executing prepared SQL update
+2026-09-30T17:21:12.631-05:00 DEBUG 72558 --- [nalytics-writer] o.s.jdbc.core.JdbcTemplate               : Executing prepared SQL statement [UPDATE link_stats SET redirect_count = redirect_count + 1, last_redirect_at = now() WHERE link_id = ?]
+2026-09-30T17:21:12.633-05:00 DEBUG 72558 --- [o-auto-1-exec-6] o.s.w.s.m.m.a.HttpEntityMethodProcessor  : Using 'application/json', given [*/*] and supported [application/json, application/*+json]
+2026-09-30T17:21:12.633-05:00 DEBUG 72558 --- [o-auto-1-exec-6] o.s.w.s.m.m.a.HttpEntityMethodProcessor  : Nothing to write: null body
+2026-09-30T17:21:12.633-05:00 DEBUG 72558 --- [o-auto-1-exec-6] o.s.web.servlet.DispatcherServlet        : Completed 302 FOUND
+2026-09-30T17:21:12.634-05:00 DEBUG 72558 --- [o-auto-1-exec-7] o.s.web.servlet.DispatcherServlet        : GET "/race-alias", parameters={}
+2026-09-30T17:21:12.634-05:00 DEBUG 72558 --- [o-auto-1-exec-7] s.w.s.m.m.a.RequestMappingHandlerMapping : Mapped to dev.shortener.http.ShortenerController#redirect(String)
+2026-09-30T17:21:12.634-05:00 DEBUG 72558 --- [nalytics-writer] o.s.jdbc.core.JdbcTemplate               : Executing prepared SQL update
+2026-09-30T17:21:12.634-05:00 DEBUG 72558 --- [nalytics-writer] o.s.jdbc.core.JdbcTemplate               : Executing prepared SQL statement [UPDATE link_stats SET redirect_count = redirect_count + 1, last_redirect_at = now() WHERE link_id = ?]
+2026-09-30T17:21:12.636-05:00 DEBUG 72558 --- [o-auto-1-exec-7] o.s.w.s.m.m.a.HttpEntityMethodProcessor  : Using 'application/json', given [*/*] and supported [application/json, application/*+json]
+2026-09-30T17:21:12.636-05:00 DEBUG 72558 --- [o-auto-1-exec-7] o.s.w.s.m.m.a.HttpEntityMethodProcessor  : Nothing to write: null body
+2026-09-30T17:21:12.636-05:00 DEBUG 72558 --- [o-auto-1-exec-7] o.s.web.servlet.DispatcherServlet        : Completed 302 FOUND
+2026-09-30T17:21:12.637-05:00 DEBUG 72558 --- [o-auto-1-exec-8] o.s.web.servlet.DispatcherServlet        : GET "/race-alias", parameters={}
+2026-09-30T17:21:12.637-05:00 DEBUG 72558 --- [o-auto-1-exec-8] s.w.s.m.m.a.RequestMappingHandlerMapping : Mapped to dev.shortener.http.ShortenerController#redirect(String)
+2026-09-30T17:21:12.637-05:00 DEBUG 72558 --- [nalytics-writer] o.s.jdbc.core.JdbcTemplate               : Executing prepared SQL update
+2026-09-30T17:21:12.637-05:00 DEBUG 72558 --- [nalytics-writer] o.s.jdbc.core.JdbcTemplate               : Executing prepared SQL statement [UPDATE link_stats SET redirect_count = redirect_count + 1, last_redirect_at = now() WHERE link_id = ?]
+2026-09-30T17:21:12.639-05:00 DEBUG 72558 --- [o-auto-1-exec-8] o.s.w.s.m.m.a.HttpEntityMethodProcessor  : Using 'application/json', given [*/*] and supported [application/json, application/*+json]
+2026-09-30T17:21:12.639-05:00 DEBUG 72558 --- [o-auto-1-exec-8] o.s.w.s.m.m.a.HttpEntityMethodProcessor  : Nothing to write: null body
+2026-09-30T17:21:12.639-05:00 DEBUG 72558 --- [o-auto-1-exec-8] o.s.web.servlet.DispatcherServlet        : Completed 302 FOUND
+2026-09-30T17:21:12.641-05:00 DEBUG 72558 --- [o-auto-1-exec-9] o.s.web.servlet.DispatcherServlet        : GET "/race-alias", parameters={}
+2026-09-30T17:21:12.641-05:00 DEBUG 72558 --- [o-auto-1-exec-9] s.w.s.m.m.a.RequestMappingHandlerMapping : Mapped to dev.shortener.http.ShortenerController#redirect(String)
+2026-09-30T17:21:12.641-05:00 DEBUG 72558 --- [nalytics-writer] o.s.jdbc.core.JdbcTemplate               : Executing prepared SQL update
+2026-09-30T17:21:12.641-05:00 DEBUG 72558 --- [nalytics-writer] o.s.jdbc.core.JdbcTemplate               : Executing prepared SQL statement [UPDATE link_stats SET redirect_count = redirect_count + 1, last_redirect_at = now() WHERE link_id = ?]
+2026-09-30T17:21:12.642-05:00 DEBUG 72558 --- [o-auto-1-exec-9] o.s.w.s.m.m.a.HttpEntityMethodProcessor  : Using 'application/json', given [*/*] and supported [application/json, application/*+json]
+2026-09-30T17:21:12.643-05:00 DEBUG 72558 --- [o-auto-1-exec-9] o.s.w.s.m.m.a.HttpEntityMethodProcessor  : Nothing to write: null body
+2026-09-30T17:21:12.643-05:00 DEBUG 72558 --- [o-auto-1-exec-9] o.s.web.servlet.DispatcherServlet        : Completed 302 FOUND
+2026-09-30T17:21:12.644-05:00 DEBUG 72558 --- [-auto-1-exec-10] o.s.web.servlet.DispatcherServlet        : GET "/race-alias", parameters={}
+2026-09-30T17:21:12.644-05:00 DEBUG 72558 --- [-auto-1-exec-10] s.w.s.m.m.a.RequestMappingHandlerMapping : Mapped to dev.shortener.http.ShortenerController#redirect(String)
+2026-09-30T17:21:12.644-05:00 DEBUG 72558 --- [nalytics-writer] o.s.jdbc.core.JdbcTemplate               : Executing prepared SQL update
+2026-09-30T17:21:12.644-05:00 DEBUG 72558 --- [nalytics-writer] o.s.jdbc.core.JdbcTemplate               : Executing prepared SQL statement [UPDATE link_stats SET redirect_count = redirect_count + 1, last_redirect_at = now() WHERE link_id = ?]
+2026-09-30T17:21:12.646-05:00 DEBUG 72558 --- [-auto-1-exec-10] o.s.w.s.m.m.a.HttpEntityMethodProcessor  : Using 'application/json', given [*/*] and supported [application/json, application/*+json]
+2026-09-30T17:21:12.646-05:00 DEBUG 72558 --- [-auto-1-exec-10] o.s.w.s.m.m.a.HttpEntityMethodProcessor  : Nothing to write: null body
+2026-09-30T17:21:12.646-05:00 DEBUG 72558 --- [-auto-1-exec-10] o.s.web.servlet.DispatcherServlet        : Completed 302 FOUND
+2026-09-30T17:21:12.647-05:00 DEBUG 72558 --- [o-auto-1-exec-1] o.s.web.servlet.DispatcherServlet        : GET "/race-alias", parameters={}
+2026-09-30T17:21:12.647-05:00 DEBUG 72558 --- [o-auto-1-exec-1] s.w.s.m.m.a.RequestMappingHandlerMapping : Mapped to dev.shortener.http.ShortenerController#redirect(String)
+2026-09-30T17:21:12.647-05:00 DEBUG 72558 --- [nalytics-writer] o.s.jdbc.core.JdbcTemplate               : Executing prepared SQL update
+2026-09-30T17:21:12.647-05:00 DEBUG 72558 --- [nalytics-writer] o.s.jdbc.core.JdbcTemplate               : Executing prepared SQL statement [UPDATE link_stats SET redirect_count = redirect_count + 1, last_redirect_at = now() WHERE link_id = ?]
+2026-09-30T17:21:12.649-05:00 DEBUG 72558 --- [o-auto-1-exec-1] o.s.w.s.m.m.a.HttpEntityMethodProcessor  : Using 'application/json', given [*/*] and supported [application/json, application/*+json]
+2026-09-30T17:21:12.649-05:00 DEBUG 72558 --- [o-auto-1-exec-1] o.s.w.s.m.m.a.HttpEntityMethodProcessor  : Nothing to write: null body
+2026-09-30T17:21:12.649-05:00 DEBUG 72558 --- [o-auto-1-exec-1] o.s.web.servlet.DispatcherServlet        : Completed 302 FOUND
+2026-09-30T17:21:12.650-05:00 DEBUG 72558 --- [o-auto-1-exec-2] o.s.web.servlet.DispatcherServlet        : GET "/race-alias", parameters={}
+2026-09-30T17:21:12.650-05:00 DEBUG 72558 --- [o-auto-1-exec-2] s.w.s.m.m.a.RequestMappingHandlerMapping : Mapped to dev.shortener.http.ShortenerController#redirect(String)
+2026-09-30T17:21:12.650-05:00 DEBUG 72558 --- [nalytics-writer] o.s.jdbc.core.JdbcTemplate               : Executing prepared SQL update
+2026-09-30T17:21:12.650-05:00 DEBUG 72558 --- [nalytics-writer] o.s.jdbc.core.JdbcTemplate               : Executing prepared SQL statement [UPDATE link_stats SET redirect_count = redirect_count + 1, last_redirect_at = now() WHERE link_id = ?]
+2026-09-30T17:21:12.652-05:00 DEBUG 72558 --- [o-auto-1-exec-2] o.s.w.s.m.m.a.HttpEntityMethodProcessor  : Using 'application/json', given [*/*] and supported [application/json, application/*+json]
+2026-09-30T17:21:12.653-05:00 DEBUG 72558 --- [o-auto-1-exec-2] o.s.w.s.m.m.a.HttpEntityMethodProcessor  : Nothing to write: null body
+2026-09-30T17:21:12.653-05:00 DEBUG 72558 --- [o-auto-1-exec-2] o.s.web.servlet.DispatcherServlet        : Completed 302 FOUND
+2026-09-30T17:21:12.654-05:00 DEBUG 72558 --- [o-auto-1-exec-3] o.s.web.servlet.DispatcherServlet        : GET "/race-alias", parameters={}
+2026-09-30T17:21:12.655-05:00 DEBUG 72558 --- [o-auto-1-exec-3] s.w.s.m.m.a.RequestMappingHandlerMapping : Mapped to dev.shortener.http.ShortenerController#redirect(String)
+2026-09-30T17:21:12.655-05:00 DEBUG 72558 --- [nalytics-writer] o.s.jdbc.core.JdbcTemplate               : Executing prepared SQL update
+2026-09-30T17:21:12.655-05:00 DEBUG 72558 --- [nalytics-writer] o.s.jdbc.core.JdbcTemplate               : Executing prepared SQL statement [UPDATE link_stats SET redirect_count = redirect_count + 1, last_redirect_at = now() WHERE link_id = ?]
+2026-09-30T17:21:12.657-05:00 DEBUG 72558 --- [o-auto-1-exec-3] o.s.w.s.m.m.a.HttpEntityMethodProcessor  : Using 'application/json', given [*/*] and supported [application/json, application/*+json]
+2026-09-30T17:21:12.657-05:00 DEBUG 72558 --- [o-auto-1-exec-3] o.s.w.s.m.m.a.HttpEntityMethodProcessor  : Nothing to write: null body
+2026-09-30T17:21:12.657-05:00 DEBUG 72558 --- [o-auto-1-exec-3] o.s.web.servlet.DispatcherServlet        : Completed 302 FOUND
+2026-09-30T17:21:12.658-05:00 DEBUG 72558 --- [o-auto-1-exec-4] o.s.web.servlet.DispatcherServlet        : GET "/race-alias", parameters={}
+2026-09-30T17:21:12.658-05:00 DEBUG 72558 --- [o-auto-1-exec-4] s.w.s.m.m.a.RequestMappingHandlerMapping : Mapped to dev.shortener.http.ShortenerController#redirect(String)
+2026-09-30T17:21:12.658-05:00 DEBUG 72558 --- [nalytics-writer] o.s.jdbc.core.JdbcTemplate               : Executing prepared SQL update
+2026-09-30T17:21:12.658-05:00 DEBUG 72558 --- [nalytics-writer] o.s.jdbc.core.JdbcTemplate               : Executing prepared SQL statement [UPDATE link_stats SET redirect_count = redirect_count + 1, last_redirect_at = now() WHERE link_id = ?]
+2026-09-30T17:21:12.660-05:00 DEBUG 72558 --- [o-auto-1-exec-4] o.s.w.s.m.m.a.HttpEntityMethodProcessor  : Using 'application/json', given [*/*] and supported [application/json, application/*+json]
+2026-09-30T17:21:12.660-05:00 DEBUG 72558 --- [o-auto-1-exec-4] o.s.w.s.m.m.a.HttpEntityMethodProcessor  : Nothing to write: null body
+2026-09-30T17:21:12.660-05:00 DEBUG 72558 --- [o-auto-1-exec-4] o.s.web.servlet.DispatcherServlet        : Completed 302 FOUND
+2026-09-30T17:21:12.661-05:00 DEBUG 72558 --- [o-auto-1-exec-5] o.s.web.servlet.DispatcherServlet        : GET "/race-alias", parameters={}
+2026-09-30T17:21:12.662-05:00 DEBUG 72558 --- [o-auto-1-exec-5] s.w.s.m.m.a.RequestMappingHandlerMapping : Mapped to dev.shortener.http.ShortenerController#redirect(String)
+2026-09-30T17:21:12.662-05:00 DEBUG 72558 --- [nalytics-writer] o.s.jdbc.core.JdbcTemplate               : Executing prepared SQL update
+2026-09-30T17:21:12.662-05:00 DEBUG 72558 --- [nalytics-writer] o.s.jdbc.core.JdbcTemplate               : Executing prepared SQL statement [UPDATE link_stats SET redirect_count = redirect_count + 1, last_redirect_at = now() WHERE link_id = ?]
+2026-09-30T17:21:12.663-05:00 DEBUG 72558 --- [o-auto-1-exec-5] o.s.w.s.m.m.a.HttpEntityMethodProcessor  : Using 'application/json', given [*/*] and supported [application/json, application/*+json]
+2026-09-30T17:21:12.663-05:00 DEBUG 72558 --- [o-auto-1-exec-5] o.s.w.s.m.m.a.HttpEntityMethodProcessor  : Nothing to write: null body
+2026-09-30T17:21:12.663-05:00 DEBUG 72558 --- [o-auto-1-exec-5] o.s.web.servlet.DispatcherServlet        : Completed 302 FOUND
+2026-09-30T17:21:12.664-05:00 DEBUG 72558 --- [o-auto-1-exec-6] o.s.web.servlet.DispatcherServlet        : GET "/race-alias", parameters={}
+2026-09-30T17:21:12.665-05:00 DEBUG 72558 --- [o-auto-1-exec-6] s.w.s.m.m.a.RequestMappingHandlerMapping : Mapped to dev.shortener.http.ShortenerController#redirect(String)
+2026-09-30T17:21:12.665-05:00 DEBUG 72558 --- [nalytics-writer] o.s.jdbc.core.JdbcTemplate               : Executing prepared SQL update
+2026-09-30T17:21:12.665-05:00 DEBUG 72558 --- [nalytics-writer] o.s.jdbc.core.JdbcTemplate               : Executing prepared SQL statement [UPDATE link_stats SET redirect_count = redirect_count + 1, last_redirect_at = now() WHERE link_id = ?]
+2026-09-30T17:21:12.666-05:00 DEBUG 72558 --- [o-auto-1-exec-6] o.s.w.s.m.m.a.HttpEntityMethodProcessor  : Using 'application/json', given [*/*] and supported [application/json, application/*+json]
+2026-09-30T17:21:12.666-05:00 DEBUG 72558 --- [o-auto-1-exec-6] o.s.w.s.m.m.a.HttpEntityMethodProcessor  : Nothing to write: null body
+2026-09-30T17:21:12.666-05:00 DEBUG 72558 --- [o-auto-1-exec-6] o.s.web.servlet.DispatcherServlet        : Completed 302 FOUND
+2026-09-30T17:21:12.667-05:00 DEBUG 72558 --- [o-auto-1-exec-7] o.s.web.servlet.DispatcherServlet        : GET "/race-alias", parameters={}
+2026-09-30T17:21:12.668-05:00 DEBUG 72558 --- [o-auto-1-exec-7] s.w.s.m.m.a.RequestMappingHandlerMapping : Mapped to dev.shortener.http.ShortenerController#redirect(String)
+2026-09-30T17:21:12.668-05:00 DEBUG 72558 --- [nalytics-writer] o.s.jdbc.core.JdbcTemplate               : Executing prepared SQL update
+2026-09-30T17:21:12.668-05:00 DEBUG 72558 --- [nalytics-writer] o.s.jdbc.core.JdbcTemplate               : Executing prepared SQL statement [UPDATE link_stats SET redirect_count = redirect_count + 1, last_redirect_at = now() WHERE link_id = ?]
+2026-09-30T17:21:12.669-05:00 DEBUG 72558 --- [o-auto-1-exec-7] o.s.w.s.m.m.a.HttpEntityMethodProcessor  : Using 'application/json', given [*/*] and supported [application/json, application/*+json]
+2026-09-30T17:21:12.669-05:00 DEBUG 72558 --- [o-auto-1-exec-7] o.s.w.s.m.m.a.HttpEntityMethodProcessor  : Nothing to write: null body
+2026-09-30T17:21:12.669-05:00 DEBUG 72558 --- [o-auto-1-exec-7] o.s.web.servlet.DispatcherServlet        : Completed 302 FOUND
+2026-09-30T17:21:12.671-05:00 DEBUG 72558 --- [o-auto-1-exec-8] o.s.web.servlet.DispatcherServlet        : GET "/race-alias", parameters={}
+2026-09-30T17:21:12.671-05:00 DEBUG 72558 --- [o-auto-1-exec-8] s.w.s.m.m.a.RequestMappingHandlerMapping : Mapped to dev.shortener.http.ShortenerController#redirect(String)
+2026-09-30T17:21:12.671-05:00 DEBUG 72558 --- [nalytics-writer] o.s.jdbc.core.JdbcTemplate               : Executing prepared SQL update
+2026-09-30T17:21:12.671-05:00 DEBUG 72558 --- [nalytics-writer] o.s.jdbc.core.JdbcTemplate               : Executing prepared SQL statement [UPDATE link_stats SET redirect_count = redirect_count + 1, last_redirect_at = now() WHERE link_id = ?]
+2026-09-30T17:21:12.673-05:00 DEBUG 72558 --- [o-auto-1-exec-8] o.s.w.s.m.m.a.HttpEntityMethodProcessor  : Using 'application/json', given [*/*] and supported [application/json, application/*+json]
+2026-09-30T17:21:12.673-05:00 DEBUG 72558 --- [o-auto-1-exec-8] o.s.w.s.m.m.a.HttpEntityMethodProcessor  : Nothing to write: null body
+2026-09-30T17:21:12.673-05:00 DEBUG 72558 --- [o-auto-1-exec-8] o.s.web.servlet.DispatcherServlet        : Completed 302 FOUND
+2026-09-30T17:21:12.674-05:00 DEBUG 72558 --- [o-auto-1-exec-9] o.s.web.servlet.DispatcherServlet        : GET "/race-alias", parameters={}
+2026-09-30T17:21:12.674-05:00 DEBUG 72558 --- [o-auto-1-exec-9] s.w.s.m.m.a.RequestMappingHandlerMapping : Mapped to dev.shortener.http.ShortenerController#redirect(String)
+2026-09-30T17:21:12.674-05:00 DEBUG 72558 --- [nalytics-writer] o.s.jdbc.core.JdbcTemplate               : Executing prepared SQL update
+2026-09-30T17:21:12.674-05:00 DEBUG 72558 --- [nalytics-writer] o.s.jdbc.core.JdbcTemplate               : Executing prepared SQL statement [UPDATE link_stats SET redirect_count = redirect_count + 1, last_redirect_at = now() WHERE link_id = ?]
+2026-09-30T17:21:12.676-05:00 DEBUG 72558 --- [o-auto-1-exec-9] o.s.w.s.m.m.a.HttpEntityMethodProcessor  : Using 'application/json', given [*/*] and supported [application/json, application/*+json]
+2026-09-30T17:21:12.676-05:00 DEBUG 72558 --- [o-auto-1-exec-9] o.s.w.s.m.m.a.HttpEntityMethodProcessor  : Nothing to write: null body
+2026-09-30T17:21:12.676-05:00 DEBUG 72558 --- [o-auto-1-exec-9] o.s.web.servlet.DispatcherServlet        : Completed 302 FOUND
+2026-09-30T17:21:12.677-05:00 DEBUG 72558 --- [-auto-1-exec-10] o.s.web.servlet.DispatcherServlet        : GET "/race-alias", parameters={}
+2026-09-30T17:21:12.677-05:00 DEBUG 72558 --- [-auto-1-exec-10] s.w.s.m.m.a.RequestMappingHandlerMapping : Mapped to dev.shortener.http.ShortenerController#redirect(String)
+2026-09-30T17:21:12.678-05:00 DEBUG 72558 --- [nalytics-writer] o.s.jdbc.core.JdbcTemplate               : Executing prepared SQL update
+2026-09-30T17:21:12.678-05:00 DEBUG 72558 --- [nalytics-writer] o.s.jdbc.core.JdbcTemplate               : Executing prepared SQL statement [UPDATE link_stats SET redirect_count = redirect_count + 1, last_redirect_at = now() WHERE link_id = ?]
+2026-09-30T17:21:12.679-05:00 DEBUG 72558 --- [-auto-1-exec-10] o.s.w.s.m.m.a.HttpEntityMethodProcessor  : Using 'application/json', given [*/*] and supported [application/json, application/*+json]
+2026-09-30T17:21:12.679-05:00 DEBUG 72558 --- [-auto-1-exec-10] o.s.w.s.m.m.a.HttpEntityMethodProcessor  : Nothing to write: null body
+2026-09-30T17:21:12.679-05:00 DEBUG 72558 --- [-auto-1-exec-10] o.s.web.servlet.DispatcherServlet        : Completed 302 FOUND
+2026-09-30T17:21:12.681-05:00 DEBUG 72558 --- [o-auto-1-exec-1] o.s.web.servlet.DispatcherServlet        : GET "/race-alias", parameters={}
+2026-09-30T17:21:12.681-05:00 DEBUG 72558 --- [o-auto-1-exec-1] s.w.s.m.m.a.RequestMappingHandlerMapping : Mapped to dev.shortener.http.ShortenerController#redirect(String)
+2026-09-30T17:21:12.681-05:00 DEBUG 72558 --- [nalytics-writer] o.s.jdbc.core.JdbcTemplate               : Executing prepared SQL update
+2026-09-30T17:21:12.681-05:00 DEBUG 72558 --- [nalytics-writer] o.s.jdbc.core.JdbcTemplate               : Executing prepared SQL statement [UPDATE link_stats SET redirect_count = redirect_count + 1, last_redirect_at = now() WHERE link_id = ?]
+2026-09-30T17:21:12.682-05:00 DEBUG 72558 --- [o-auto-1-exec-1] o.s.w.s.m.m.a.HttpEntityMethodProcessor  : Using 'application/json', given [*/*] and supported [application/json, application/*+json]
+2026-09-30T17:21:12.682-05:00 DEBUG 72558 --- [o-auto-1-exec-1] o.s.w.s.m.m.a.HttpEntityMethodProcessor  : Nothing to write: null body
+2026-09-30T17:21:12.682-05:00 DEBUG 72558 --- [o-auto-1-exec-1] o.s.web.servlet.DispatcherServlet        : Completed 302 FOUND
+2026-09-30T17:21:12.684-05:00 DEBUG 72558 --- [o-auto-1-exec-2] o.s.web.servlet.DispatcherServlet        : GET "/race-alias", parameters={}
+2026-09-30T17:21:12.684-05:00 DEBUG 72558 --- [o-auto-1-exec-2] s.w.s.m.m.a.RequestMappingHandlerMapping : Mapped to dev.shortener.http.ShortenerController#redirect(String)
+2026-09-30T17:21:12.684-05:00 DEBUG 72558 --- [nalytics-writer] o.s.jdbc.core.JdbcTemplate               : Executing prepared SQL update
+2026-09-30T17:21:12.684-05:00 DEBUG 72558 --- [nalytics-writer] o.s.jdbc.core.JdbcTemplate               : Executing prepared SQL statement [UPDATE link_stats SET redirect_count = redirect_count + 1, last_redirect_at = now() WHERE link_id = ?]
+2026-09-30T17:21:12.687-05:00 DEBUG 72558 --- [o-auto-1-exec-2] o.s.w.s.m.m.a.HttpEntityMethodProcessor  : Using 'application/json', given [*/*] and supported [application/json, application/*+json]
+2026-09-30T17:21:12.687-05:00 DEBUG 72558 --- [o-auto-1-exec-2] o.s.w.s.m.m.a.HttpEntityMethodProcessor  : Nothing to write: null body
+2026-09-30T17:21:12.687-05:00 DEBUG 72558 --- [o-auto-1-exec-2] o.s.web.servlet.DispatcherServlet        : Completed 302 FOUND
+2026-09-30T17:21:12.688-05:00 DEBUG 72558 --- [o-auto-1-exec-3] o.s.web.servlet.DispatcherServlet        : GET "/race-alias", parameters={}
+2026-09-30T17:21:12.688-05:00 DEBUG 72558 --- [o-auto-1-exec-3] s.w.s.m.m.a.RequestMappingHandlerMapping : Mapped to dev.shortener.http.ShortenerController#redirect(String)
+2026-09-30T17:21:12.689-05:00 DEBUG 72558 --- [nalytics-writer] o.s.jdbc.core.JdbcTemplate               : Executing prepared SQL update
+2026-09-30T17:21:12.689-05:00 DEBUG 72558 --- [nalytics-writer] o.s.jdbc.core.JdbcTemplate               : Executing prepared SQL statement [UPDATE link_stats SET redirect_count = redirect_count + 1, last_redirect_at = now() WHERE link_id = ?]
+2026-09-30T17:21:12.690-05:00 DEBUG 72558 --- [o-auto-1-exec-3] o.s.w.s.m.m.a.HttpEntityMethodProcessor  : Using 'application/json', given [*/*] and supported [application/json, application/*+json]
+2026-09-30T17:21:12.690-05:00 DEBUG 72558 --- [o-auto-1-exec-3] o.s.w.s.m.m.a.HttpEntityMethodProcessor  : Nothing to write: null body
+2026-09-30T17:21:12.690-05:00 DEBUG 72558 --- [o-auto-1-exec-3] o.s.web.servlet.DispatcherServlet        : Completed 302 FOUND
+2026-09-30T17:21:12.691-05:00 DEBUG 72558 --- [o-auto-1-exec-4] o.s.web.servlet.DispatcherServlet        : GET "/race-alias", parameters={}
+2026-09-30T17:21:12.691-05:00 DEBUG 72558 --- [o-auto-1-exec-4] s.w.s.m.m.a.RequestMappingHandlerMapping : Mapped to dev.shortener.http.ShortenerController#redirect(String)
+2026-09-30T17:21:12.691-05:00 DEBUG 72558 --- [nalytics-writer] o.s.jdbc.core.JdbcTemplate               : Executing prepared SQL update
+2026-09-30T17:21:12.691-05:00 DEBUG 72558 --- [nalytics-writer] o.s.jdbc.core.JdbcTemplate               : Executing prepared SQL statement [UPDATE link_stats SET redirect_count = redirect_count + 1, last_redirect_at = now() WHERE link_id = ?]
+2026-09-30T17:21:12.693-05:00 DEBUG 72558 --- [o-auto-1-exec-4] o.s.w.s.m.m.a.HttpEntityMethodProcessor  : Using 'application/json', given [*/*] and supported [application/json, application/*+json]
+2026-09-30T17:21:12.693-05:00 DEBUG 72558 --- [o-auto-1-exec-4] o.s.w.s.m.m.a.HttpEntityMethodProcessor  : Nothing to write: null body
+2026-09-30T17:21:12.693-05:00 DEBUG 72558 --- [o-auto-1-exec-4] o.s.web.servlet.DispatcherServlet        : Completed 302 FOUND
+2026-09-30T17:21:12.694-05:00 DEBUG 72558 --- [o-auto-1-exec-5] o.s.web.servlet.DispatcherServlet        : GET "/race-alias", parameters={}
+2026-09-30T17:21:12.695-05:00 DEBUG 72558 --- [o-auto-1-exec-5] s.w.s.m.m.a.RequestMappingHandlerMapping : Mapped to dev.shortener.http.ShortenerController#redirect(String)
+2026-09-30T17:21:12.695-05:00 DEBUG 72558 --- [nalytics-writer] o.s.jdbc.core.JdbcTemplate               : Executing prepared SQL update
+2026-09-30T17:21:12.695-05:00 DEBUG 72558 --- [nalytics-writer] o.s.jdbc.core.JdbcTemplate               : Executing prepared SQL statement [UPDATE link_stats SET redirect_count = redirect_count + 1, last_redirect_at = now() WHERE link_id = ?]
+2026-09-30T17:21:12.696-05:00 DEBUG 72558 --- [o-auto-1-exec-5] o.s.w.s.m.m.a.HttpEntityMethodProcessor  : Using 'application/json', given [*/*] and supported [application/json, application/*+json]
+2026-09-30T17:21:12.696-05:00 DEBUG 72558 --- [o-auto-1-exec-5] o.s.w.s.m.m.a.HttpEntityMethodProcessor  : Nothing to write: null body
+2026-09-30T17:21:12.696-05:00 DEBUG 72558 --- [o-auto-1-exec-5] o.s.web.servlet.DispatcherServlet        : Completed 302 FOUND
+2026-09-30T17:21:12.697-05:00 DEBUG 72558 --- [o-auto-1-exec-6] o.s.web.servlet.DispatcherServlet        : GET "/race-alias", parameters={}
+2026-09-30T17:21:12.697-05:00 DEBUG 72558 --- [o-auto-1-exec-6] s.w.s.m.m.a.RequestMappingHandlerMapping : Mapped to dev.shortener.http.ShortenerController#redirect(String)
+2026-09-30T17:21:12.698-05:00 DEBUG 72558 --- [nalytics-writer] o.s.jdbc.core.JdbcTemplate               : Executing prepared SQL update
+2026-09-30T17:21:12.698-05:00 DEBUG 72558 --- [nalytics-writer] o.s.jdbc.core.JdbcTemplate               : Executing prepared SQL statement [UPDATE link_stats SET redirect_count = redirect_count + 1, last_redirect_at = now() WHERE link_id = ?]
+2026-09-30T17:21:12.699-05:00 DEBUG 72558 --- [o-auto-1-exec-6] o.s.w.s.m.m.a.HttpEntityMethodProcessor  : Using 'application/json', given [*/*] and supported [application/json, application/*+json]
+2026-09-30T17:21:12.699-05:00 DEBUG 72558 --- [o-auto-1-exec-6] o.s.w.s.m.m.a.HttpEntityMethodProcessor  : Nothing to write: null body
+2026-09-30T17:21:12.699-05:00 DEBUG 72558 --- [o-auto-1-exec-6] o.s.web.servlet.DispatcherServlet        : Completed 302 FOUND
+2026-09-30T17:21:12.700-05:00 DEBUG 72558 --- [o-auto-1-exec-7] o.s.web.servlet.DispatcherServlet        : GET "/race-alias", parameters={}
+2026-09-30T17:21:12.700-05:00 DEBUG 72558 --- [o-auto-1-exec-7] s.w.s.m.m.a.RequestMappingHandlerMapping : Mapped to dev.shortener.http.ShortenerController#redirect(String)
+2026-09-30T17:21:12.700-05:00 DEBUG 72558 --- [nalytics-writer] o.s.jdbc.core.JdbcTemplate               : Executing prepared SQL update
+2026-09-30T17:21:12.700-05:00 DEBUG 72558 --- [nalytics-writer] o.s.jdbc.core.JdbcTemplate               : Executing prepared SQL statement [UPDATE link_stats SET redirect_count = redirect_count + 1, last_redirect_at = now() WHERE link_id = ?]
+2026-09-30T17:21:12.702-05:00 DEBUG 72558 --- [o-auto-1-exec-7] o.s.w.s.m.m.a.HttpEntityMethodProcessor  : Using 'application/json', given [*/*] and supported [application/json, application/*+json]
+2026-09-30T17:21:12.702-05:00 DEBUG 72558 --- [o-auto-1-exec-7] o.s.w.s.m.m.a.HttpEntityMethodProcessor  : Nothing to write: null body
+2026-09-30T17:21:12.702-05:00 DEBUG 72558 --- [o-auto-1-exec-7] o.s.web.servlet.DispatcherServlet        : Completed 302 FOUND
+2026-09-30T17:21:12.704-05:00 DEBUG 72558 --- [o-auto-1-exec-8] o.s.web.servlet.DispatcherServlet        : GET "/race-alias", parameters={}
+2026-09-30T17:21:12.704-05:00 DEBUG 72558 --- [o-auto-1-exec-8] s.w.s.m.m.a.RequestMappingHandlerMapping : Mapped to dev.shortener.http.ShortenerController#redirect(String)
+2026-09-30T17:21:12.704-05:00 DEBUG 72558 --- [nalytics-writer] o.s.jdbc.core.JdbcTemplate               : Executing prepared SQL update
+2026-09-30T17:21:12.704-05:00 DEBUG 72558 --- [nalytics-writer] o.s.jdbc.core.JdbcTemplate               : Executing prepared SQL statement [UPDATE link_stats SET redirect_count = redirect_count + 1, last_redirect_at = now() WHERE link_id = ?]
+2026-09-30T17:21:12.706-05:00 DEBUG 72558 --- [o-auto-1-exec-8] o.s.w.s.m.m.a.HttpEntityMethodProcessor  : Using 'application/json', given [*/*] and supported [application/json, application/*+json]
+2026-09-30T17:21:12.706-05:00 DEBUG 72558 --- [o-auto-1-exec-8] o.s.w.s.m.m.a.HttpEntityMethodProcessor  : Nothing to write: null body
+2026-09-30T17:21:12.706-05:00 DEBUG 72558 --- [o-auto-1-exec-8] o.s.web.servlet.DispatcherServlet        : Completed 302 FOUND
+2026-09-30T17:21:12.707-05:00 DEBUG 72558 --- [o-auto-1-exec-9] o.s.web.servlet.DispatcherServlet        : GET "/race-alias", parameters={}
+2026-09-30T17:21:12.707-05:00 DEBUG 72558 --- [o-auto-1-exec-9] s.w.s.m.m.a.RequestMappingHandlerMapping : Mapped to dev.shortener.http.ShortenerController#redirect(String)
+2026-09-30T17:21:12.708-05:00 DEBUG 72558 --- [nalytics-writer] o.s.jdbc.core.JdbcTemplate               : Executing prepared SQL update
+2026-09-30T17:21:12.708-05:00 DEBUG 72558 --- [nalytics-writer] o.s.jdbc.core.JdbcTemplate               : Executing prepared SQL statement [UPDATE link_stats SET redirect_count = redirect_count + 1, last_redirect_at = now() WHERE link_id = ?]
+2026-09-30T17:21:12.710-05:00 DEBUG 72558 --- [o-auto-1-exec-9] o.s.w.s.m.m.a.HttpEntityMethodProcessor  : Using 'application/json', given [*/*] and supported [application/json, application/*+json]
+2026-09-30T17:21:12.710-05:00 DEBUG 72558 --- [o-auto-1-exec-9] o.s.w.s.m.m.a.HttpEntityMethodProcessor  : Nothing to write: null body
+2026-09-30T17:21:12.710-05:00 DEBUG 72558 --- [o-auto-1-exec-9] o.s.web.servlet.DispatcherServlet        : Completed 302 FOUND
+2026-09-30T17:21:12.711-05:00 DEBUG 72558 --- [-auto-1-exec-10] o.s.web.servlet.DispatcherServlet        : GET "/race-alias", parameters={}
+2026-09-30T17:21:12.712-05:00 DEBUG 72558 --- [-auto-1-exec-10] s.w.s.m.m.a.RequestMappingHandlerMapping : Mapped to dev.shortener.http.ShortenerController#redirect(String)
+2026-09-30T17:21:12.712-05:00 DEBUG 72558 --- [nalytics-writer] o.s.jdbc.core.JdbcTemplate               : Executing prepared SQL update
+2026-09-30T17:21:12.712-05:00 DEBUG 72558 --- [nalytics-writer] o.s.jdbc.core.JdbcTemplate               : Executing prepared SQL statement [UPDATE link_stats SET redirect_count = redirect_count + 1, last_redirect_at = now() WHERE link_id = ?]
+2026-09-30T17:21:12.713-05:00 DEBUG 72558 --- [-auto-1-exec-10] o.s.w.s.m.m.a.HttpEntityMethodProcessor  : Using 'application/json', given [*/*] and supported [application/json, application/*+json]
+2026-09-30T17:21:12.713-05:00 DEBUG 72558 --- [-auto-1-exec-10] o.s.w.s.m.m.a.HttpEntityMethodProcessor  : Nothing to write: null body
+2026-09-30T17:21:12.713-05:00 DEBUG 72558 --- [-auto-1-exec-10] o.s.web.servlet.DispatcherServlet        : Completed 302 FOUND
+2026-09-30T17:21:12.714-05:00 DEBUG 72558 --- [o-auto-1-exec-1] o.s.web.servlet.DispatcherServlet        : GET "/race-alias", parameters={}
+2026-09-30T17:21:12.715-05:00 DEBUG 72558 --- [o-auto-1-exec-1] s.w.s.m.m.a.RequestMappingHandlerMapping : Mapped to dev.shortener.http.ShortenerController#redirect(String)
+2026-09-30T17:21:12.715-05:00 DEBUG 72558 --- [nalytics-writer] o.s.jdbc.core.JdbcTemplate               : Executing prepared SQL update
+2026-09-30T17:21:12.715-05:00 DEBUG 72558 --- [nalytics-writer] o.s.jdbc.core.JdbcTemplate               : Executing prepared SQL statement [UPDATE link_stats SET redirect_count = redirect_count + 1, last_redirect_at = now() WHERE link_id = ?]
+2026-09-30T17:21:12.716-05:00 DEBUG 72558 --- [o-auto-1-exec-1] o.s.w.s.m.m.a.HttpEntityMethodProcessor  : Using 'application/json', given [*/*] and supported [application/json, application/*+json]
+2026-09-30T17:21:12.716-05:00 DEBUG 72558 --- [o-auto-1-exec-1] o.s.w.s.m.m.a.HttpEntityMethodProcessor  : Nothing to write: null body
+2026-09-30T17:21:12.716-05:00 DEBUG 72558 --- [o-auto-1-exec-1] o.s.web.servlet.DispatcherServlet        : Completed 302 FOUND
+2026-09-30T17:21:12.718-05:00 DEBUG 72558 --- [o-auto-1-exec-2] o.s.web.servlet.DispatcherServlet        : GET "/race-alias", parameters={}
+2026-09-30T17:21:12.718-05:00 DEBUG 72558 --- [o-auto-1-exec-2] s.w.s.m.m.a.RequestMappingHandlerMapping : Mapped to dev.shortener.http.ShortenerController#redirect(String)
+2026-09-30T17:21:12.718-05:00 DEBUG 72558 --- [nalytics-writer] o.s.jdbc.core.JdbcTemplate               : Executing prepared SQL update
+2026-09-30T17:21:12.718-05:00 DEBUG 72558 --- [nalytics-writer] o.s.jdbc.core.JdbcTemplate               : Executing prepared SQL statement [UPDATE link_stats SET redirect_count = redirect_count + 1, last_redirect_at = now() WHERE link_id = ?]
+2026-09-30T17:21:12.720-05:00 DEBUG 72558 --- [o-auto-1-exec-2] o.s.w.s.m.m.a.HttpEntityMethodProcessor  : Using 'application/json', given [*/*] and supported [application/json, application/*+json]
+2026-09-30T17:21:12.720-05:00 DEBUG 72558 --- [o-auto-1-exec-2] o.s.w.s.m.m.a.HttpEntityMethodProcessor  : Nothing to write: null body
+2026-09-30T17:21:12.720-05:00 DEBUG 72558 --- [o-auto-1-exec-2] o.s.web.servlet.DispatcherServlet        : Completed 302 FOUND
+2026-09-30T17:21:12.721-05:00 DEBUG 72558 --- [o-auto-1-exec-3] o.s.web.servlet.DispatcherServlet        : GET "/race-alias", parameters={}
+2026-09-30T17:21:12.721-05:00 DEBUG 72558 --- [o-auto-1-exec-3] s.w.s.m.m.a.RequestMappingHandlerMapping : Mapped to dev.shortener.http.ShortenerController#redirect(String)
+2026-09-30T17:21:12.721-05:00 DEBUG 72558 --- [nalytics-writer] o.s.jdbc.core.JdbcTemplate               : Executing prepared SQL update
+2026-09-30T17:21:12.721-05:00 DEBUG 72558 --- [nalytics-writer] o.s.jdbc.core.JdbcTemplate               : Executing prepared SQL statement [UPDATE link_stats SET redirect_count = redirect_count + 1, last_redirect_at = now() WHERE link_id = ?]
+2026-09-30T17:21:12.726-05:00 DEBUG 72558 --- [o-auto-1-exec-3] o.s.w.s.m.m.a.HttpEntityMethodProcessor  : Using 'application/json', given [*/*] and supported [application/json, application/*+json]
+2026-09-30T17:21:12.726-05:00 DEBUG 72558 --- [o-auto-1-exec-3] o.s.w.s.m.m.a.HttpEntityMethodProcessor  : Nothing to write: null body
+2026-09-30T17:21:12.726-05:00 DEBUG 72558 --- [o-auto-1-exec-3] o.s.web.servlet.DispatcherServlet        : Completed 302 FOUND
+2026-09-30T17:21:12.728-05:00 DEBUG 72558 --- [o-auto-1-exec-4] o.s.web.servlet.DispatcherServlet        : GET "/race-alias", parameters={}
+2026-09-30T17:21:12.728-05:00 DEBUG 72558 --- [o-auto-1-exec-4] s.w.s.m.m.a.RequestMappingHandlerMapping : Mapped to dev.shortener.http.ShortenerController#redirect(String)
+2026-09-30T17:21:12.728-05:00 DEBUG 72558 --- [nalytics-writer] o.s.jdbc.core.JdbcTemplate               : Executing prepared SQL update
+2026-09-30T17:21:12.728-05:00 DEBUG 72558 --- [nalytics-writer] o.s.jdbc.core.JdbcTemplate               : Executing prepared SQL statement [UPDATE link_stats SET redirect_count = redirect_count + 1, last_redirect_at = now() WHERE link_id = ?]
+2026-09-30T17:21:12.730-05:00 DEBUG 72558 --- [o-auto-1-exec-4] o.s.w.s.m.m.a.HttpEntityMethodProcessor  : Using 'application/json', given [*/*] and supported [application/json, application/*+json]
+2026-09-30T17:21:12.730-05:00 DEBUG 72558 --- [o-auto-1-exec-4] o.s.w.s.m.m.a.HttpEntityMethodProcessor  : Nothing to write: null body
+2026-09-30T17:21:12.730-05:00 DEBUG 72558 --- [o-auto-1-exec-4] o.s.web.servlet.DispatcherServlet        : Completed 302 FOUND
+2026-09-30T17:21:12.731-05:00 DEBUG 72558 --- [o-auto-1-exec-5] o.s.web.servlet.DispatcherServlet        : GET "/race-alias", parameters={}
+2026-09-30T17:21:12.731-05:00 DEBUG 72558 --- [o-auto-1-exec-5] s.w.s.m.m.a.RequestMappingHandlerMapping : Mapped to dev.shortener.http.ShortenerController#redirect(String)
+2026-09-30T17:21:12.731-05:00 DEBUG 72558 --- [nalytics-writer] o.s.jdbc.core.JdbcTemplate               : Executing prepared SQL update
+2026-09-30T17:21:12.731-05:00 DEBUG 72558 --- [nalytics-writer] o.s.jdbc.core.JdbcTemplate               : Executing prepared SQL statement [UPDATE link_stats SET redirect_count = redirect_count + 1, last_redirect_at = now() WHERE link_id = ?]
+2026-09-30T17:21:12.733-05:00 DEBUG 72558 --- [o-auto-1-exec-5] o.s.w.s.m.m.a.HttpEntityMethodProcessor  : Using 'application/json', given [*/*] and supported [application/json, application/*+json]
+2026-09-30T17:21:12.733-05:00 DEBUG 72558 --- [o-auto-1-exec-5] o.s.w.s.m.m.a.HttpEntityMethodProcessor  : Nothing to write: null body
+2026-09-30T17:21:12.733-05:00 DEBUG 72558 --- [o-auto-1-exec-5] o.s.web.servlet.DispatcherServlet        : Completed 302 FOUND
+2026-09-30T17:21:12.734-05:00 DEBUG 72558 --- [o-auto-1-exec-6] o.s.web.servlet.DispatcherServlet        : GET "/race-alias", parameters={}
+2026-09-30T17:21:12.734-05:00 DEBUG 72558 --- [o-auto-1-exec-6] s.w.s.m.m.a.RequestMappingHandlerMapping : Mapped to dev.shortener.http.ShortenerController#redirect(String)
+2026-09-30T17:21:12.734-05:00 DEBUG 72558 --- [nalytics-writer] o.s.jdbc.core.JdbcTemplate               : Executing prepared SQL update
+2026-09-30T17:21:12.734-05:00 DEBUG 72558 --- [nalytics-writer] o.s.jdbc.core.JdbcTemplate               : Executing prepared SQL statement [UPDATE link_stats SET redirect_count = redirect_count + 1, last_redirect_at = now() WHERE link_id = ?]
+2026-09-30T17:21:12.736-05:00 DEBUG 72558 --- [o-auto-1-exec-6] o.s.w.s.m.m.a.HttpEntityMethodProcessor  : Using 'application/json', given [*/*] and supported [application/json, application/*+json]
+2026-09-30T17:21:12.736-05:00 DEBUG 72558 --- [o-auto-1-exec-6] o.s.w.s.m.m.a.HttpEntityMethodProcessor  : Nothing to write: null body
+2026-09-30T17:21:12.736-05:00 DEBUG 72558 --- [o-auto-1-exec-6] o.s.web.servlet.DispatcherServlet        : Completed 302 FOUND
+2026-09-30T17:21:12.737-05:00 DEBUG 72558 --- [o-auto-1-exec-7] o.s.web.servlet.DispatcherServlet        : GET "/race-alias", parameters={}
+2026-09-30T17:21:12.737-05:00 DEBUG 72558 --- [o-auto-1-exec-7] s.w.s.m.m.a.RequestMappingHandlerMapping : Mapped to dev.shortener.http.ShortenerController#redirect(String)
+2026-09-30T17:21:12.737-05:00 DEBUG 72558 --- [nalytics-writer] o.s.jdbc.core.JdbcTemplate               : Executing prepared SQL update
+2026-09-30T17:21:12.737-05:00 DEBUG 72558 --- [nalytics-writer] o.s.jdbc.core.JdbcTemplate               : Executing prepared SQL statement [UPDATE link_stats SET redirect_count = redirect_count + 1, last_redirect_at = now() WHERE link_id = ?]
+2026-09-30T17:21:12.738-05:00 DEBUG 72558 --- [o-auto-1-exec-7] o.s.w.s.m.m.a.HttpEntityMethodProcessor  : Using 'application/json', given [*/*] and supported [application/json, application/*+json]
+2026-09-30T17:21:12.739-05:00 DEBUG 72558 --- [o-auto-1-exec-7] o.s.w.s.m.m.a.HttpEntityMethodProcessor  : Nothing to write: null body
+2026-09-30T17:21:12.739-05:00 DEBUG 72558 --- [o-auto-1-exec-7] o.s.web.servlet.DispatcherServlet        : Completed 302 FOUND
+2026-09-30T17:21:12.740-05:00 DEBUG 72558 --- [o-auto-1-exec-8] o.s.web.servlet.DispatcherServlet        : GET "/race-alias", parameters={}
+2026-09-30T17:21:12.740-05:00 DEBUG 72558 --- [o-auto-1-exec-8] s.w.s.m.m.a.RequestMappingHandlerMapping : Mapped to dev.shortener.http.ShortenerController#redirect(String)
+2026-09-30T17:21:12.740-05:00 DEBUG 72558 --- [nalytics-writer] o.s.jdbc.core.JdbcTemplate               : Executing prepared SQL update
+2026-09-30T17:21:12.740-05:00 DEBUG 72558 --- [nalytics-writer] o.s.jdbc.core.JdbcTemplate               : Executing prepared SQL statement [UPDATE link_stats SET redirect_count = redirect_count + 1, last_redirect_at = now() WHERE link_id = ?]
+2026-09-30T17:21:12.742-05:00 DEBUG 72558 --- [o-auto-1-exec-8] o.s.w.s.m.m.a.HttpEntityMethodProcessor  : Using 'application/json', given [*/*] and supported [application/json, application/*+json]
+2026-09-30T17:21:12.742-05:00 DEBUG 72558 --- [o-auto-1-exec-8] o.s.w.s.m.m.a.HttpEntityMethodProcessor  : Nothing to write: null body
+2026-09-30T17:21:12.742-05:00 DEBUG 72558 --- [o-auto-1-exec-8] o.s.web.servlet.DispatcherServlet        : Completed 302 FOUND
+2026-09-30T17:21:12.743-05:00 DEBUG 72558 --- [o-auto-1-exec-9] o.s.web.servlet.DispatcherServlet        : GET "/race-alias", parameters={}
+2026-09-30T17:21:12.743-05:00 DEBUG 72558 --- [o-auto-1-exec-9] s.w.s.m.m.a.RequestMappingHandlerMapping : Mapped to dev.shortener.http.ShortenerController#redirect(String)
+2026-09-30T17:21:12.743-05:00 DEBUG 72558 --- [nalytics-writer] o.s.jdbc.core.JdbcTemplate               : Executing prepared SQL update
+2026-09-30T17:21:12.743-05:00 DEBUG 72558 --- [nalytics-writer] o.s.jdbc.core.JdbcTemplate               : Executing prepared SQL statement [UPDATE link_stats SET redirect_count = redirect_count + 1, last_redirect_at = now() WHERE link_id = ?]
+2026-09-30T17:21:12.744-05:00 DEBUG 72558 --- [o-auto-1-exec-9] o.s.w.s.m.m.a.HttpEntityMethodProcessor  : Using 'application/json', given [*/*] and supported [application/json, application/*+json]
+2026-09-30T17:21:12.744-05:00 DEBUG 72558 --- [o-auto-1-exec-9] o.s.w.s.m.m.a.HttpEntityMethodProcessor  : Nothing to write: null body
+2026-09-30T17:21:12.745-05:00 DEBUG 72558 --- [o-auto-1-exec-9] o.s.web.servlet.DispatcherServlet        : Completed 302 FOUND
+2026-09-30T17:21:12.745-05:00 DEBUG 72558 --- [-auto-1-exec-10] o.s.web.servlet.DispatcherServlet        : GET "/race-alias", parameters={}
+2026-09-30T17:21:12.746-05:00 DEBUG 72558 --- [-auto-1-exec-10] s.w.s.m.m.a.RequestMappingHandlerMapping : Mapped to dev.shortener.http.ShortenerController#redirect(String)
+2026-09-30T17:21:12.746-05:00 DEBUG 72558 --- [nalytics-writer] o.s.jdbc.core.JdbcTemplate               : Executing prepared SQL update
+2026-09-30T17:21:12.746-05:00 DEBUG 72558 --- [nalytics-writer] o.s.jdbc.core.JdbcTemplate               : Executing prepared SQL statement [UPDATE link_stats SET redirect_count = redirect_count + 1, last_redirect_at = now() WHERE link_id = ?]
+2026-09-30T17:21:12.747-05:00 DEBUG 72558 --- [-auto-1-exec-10] o.s.w.s.m.m.a.HttpEntityMethodProcessor  : Using 'application/json', given [*/*] and supported [application/json, application/*+json]
+2026-09-30T17:21:12.747-05:00 DEBUG 72558 --- [-auto-1-exec-10] o.s.w.s.m.m.a.HttpEntityMethodProcessor  : Nothing to write: null body
+2026-09-30T17:21:12.747-05:00 DEBUG 72558 --- [-auto-1-exec-10] o.s.web.servlet.DispatcherServlet        : Completed 302 FOUND
+2026-09-30T17:21:12.779-05:00 DEBUG 72558 --- [           main] o.s.b.a.ApplicationAvailabilityBean      : Application availability state ReadinessState changed from ACCEPTING_TRAFFIC to REFUSING_TRAFFIC
+2026-09-30T17:21:12.779-05:00 DEBUG 72558 --- [           main] ConfigServletWebServerApplicationContext : Closing org.springframework.boot.web.server.servlet.context.AnnotationConfigServletWebServerApplicationContext@1f884bd6, started on Wed Sep 30 17:21:10 CDT 2026
+2026-09-30T17:21:12.781-05:00  INFO 72558 --- [           main] o.s.boot.tomcat.GracefulShutdown         : Commencing graceful shutdown. Waiting for active requests to complete
+2026-09-30T17:21:12.785-05:00  INFO 72558 --- [tomcat-shutdown] o.s.boot.tomcat.GracefulShutdown         : Graceful shutdown complete
+2026-09-30T17:21:12.787-05:00  INFO 72558 --- [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Shutdown initiated...
+2026-09-30T17:21:12.788-05:00  INFO 72558 --- [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Shutdown completed.
+2026-09-30T17:21:12.788-05:00  INFO 72558 --- [           main] com.zaxxer.hikari.HikariDataSource       : analytics-pool - Shutdown initiated...
+2026-09-30T17:21:12.789-05:00  INFO 72558 --- [           main] com.zaxxer.hikari.HikariDataSource       : analytics-pool - Shutdown completed.

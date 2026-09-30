@@ -10,7 +10,7 @@ import java.sql.SQLException;
 import java.time.Instant;
 
 /** Separate PostgreSQL authority for state and a chained audit log. */
-public final class ControlRepository {
+public final class ControlRepository implements RunStore {
     private final String url;
     private final String user;
     private final String password;
@@ -28,7 +28,7 @@ public final class ControlRepository {
         }
     }
 
-    public RunState load(String id) throws Exception {
+    @Override public RunState load(String id) throws Exception {
         try (Connection connection = connect(); var query = connection.prepareStatement("SELECT state_json FROM runs WHERE id = ?")) {
             query.setObject(1, java.util.UUID.fromString(id));
             try (var rows = query.executeQuery()) {
@@ -73,7 +73,7 @@ public final class ControlRepository {
     }
 
     /** Holds an exclusive PostgreSQL advisory lock for one operator transition. */
-    public RunLease lease(String id) throws Exception {
+    @Override public RunLease lease(String id) throws Exception {
         java.util.UUID run = java.util.UUID.fromString(id);
         Connection connection = connect();
         long key = run.getMostSignificantBits() ^ run.getLeastSignificantBits();
@@ -94,7 +94,7 @@ public final class ControlRepository {
         @Override public void close() throws SQLException { connection.close(); }
     }
 
-    public void record(RunState state, String type, String detail) throws Exception {
+    @Override public void record(RunState state, String type, String detail) throws Exception {
         try (Connection connection = connect()) {
             connection.setAutoCommit(false);
             try {
@@ -145,7 +145,7 @@ public final class ControlRepository {
         }
     }
 
-    public boolean auditValid(String id) throws Exception {
+    @Override public boolean auditValid(String id) throws Exception {
         try (Connection connection = connect(); var query = connection.prepareStatement("SELECT seq, at, type, detail, previous_hash, event_hash FROM audit_events WHERE run_id = ? ORDER BY seq")) {
             query.setObject(1, java.util.UUID.fromString(id));
             try (var rows = query.executeQuery()) {

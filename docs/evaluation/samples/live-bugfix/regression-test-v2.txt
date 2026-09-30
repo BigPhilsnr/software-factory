@@ -1,0 +1,53 @@
+```diff
+diff --git a/shortener/src/test/java/com/example/shortener/api/ShortenerControllerRedirectThrottlingTest.java b/shortener/src/test/java/com/example/shortener/api/ShortenerControllerRedirectThrottlingTest.java
+new file mode 100644
+index 0000000..1a2b3c4
+--- /dev/null
++++ b/shortener/src/test/java/com/example/shortener/api/ShortenerControllerRedirectThrottlingTest.java
+@@ -0,0 +1,45 @@
++package com.example.shortener.api;
++
++import com.example.shortener.domain.AnalyticsRecorder;
++import com.example.shortener.domain.CreationRateLimiter;
++import com.example.shortener.domain.Link;
++import com.example.shortener.domain.ShortenerService;
++import org.junit.jupiter.api.Test;
++import org.springframework.http.HttpStatus;
++import org.springframework.http.ResponseEntity;
++
++import java.time.Clock;
++import java.time.Instant;
++import java.time.ZoneOffset;
++import java.util.Optional;
++
++import static org.junit.jupiter.api.Assertions.assertEquals;
++import static org.mockito.Mockito.mock;
++import static org.mockito.Mockito.when;
++
++/**
++ * Independent regression test: a short link must continue to redirect beyond
++ * 30 visits within a single rolling window. The creation-rate limiter must
++ * not be applied to the redirect path.
++ */
++class ShortenerControllerRedirectThrottlingTest {
++
++    @Test
++    void redirectContinuesPastThirtyVisitsInSameWindow() {
++        ShortenerService service = mock(ShortenerService.class);
++        Link link = new Link(1L, "zz99zz99", "https://example.org", Instant.now());
++        when(service.find("zz99zz99")).thenReturn(Optional.of(link));
++
++        AnalyticsRecorder recorder = mock(AnalyticsRecorder.class);
++        CreationRateLimiter limiter = new CreationRateLimiter(
++            Clock.fixed(Instant.parse("2026-10-01T09:15:00Z"), ZoneOffset.UTC), 30);
++        ShortenerController controller =
++            new ShortenerController(service, limiter, recorder, "http://localhost:8080");
++
++        for (int visit = 1; visit <= 35; visit++) {
++            ResponseEntity<Void> response = controller.redirect("zz99zz99");
++            assertEquals(HttpStatus.FOUND, response.getStatusCode(),
++                "visit " + visit + " must redirect; redirects must not be throttled by the creation-rate limiter");
++        }
++    }
++}
+```

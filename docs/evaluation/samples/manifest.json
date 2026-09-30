@@ -1,0 +1,81 @@
+{
+  "schemaVersion": 1,
+  "redactions": [
+    "absolute project path",
+    "absolute user home path"
+  ],
+  "files": {
+    "live-bugfix/diagnose-v1.txt": {
+      "exportSha256": "1894f4c0e71ec8ebc08e28237b152e7de4a6d095fcc744e1a87e83e87f800d37",
+      "source": "evidence/d44416f4-8d94-4d6a-9671-1c54ffd9f15f/diagnose-v1.txt",
+      "originalSha256": "1894f4c0e71ec8ebc08e28237b152e7de4a6d095fcc744e1a87e83e87f800d37"
+    },
+    "live-bugfix/regression-test-v2.txt": {
+      "exportSha256": "54d35ad295a2a568d9df24731327ff18e4858eb918051ac6c9189342381da31a",
+      "source": "evidence/d44416f4-8d94-4d6a-9671-1c54ffd9f15f/regression-test-v2.txt",
+      "originalSha256": "54d35ad295a2a568d9df24731327ff18e4858eb918051ac6c9189342381da31a"
+    },
+    "live-bugfix/red-v1.txt": {
+      "exportSha256": "d4fe12e0d0b272dec660a53355b6c4cd0cf9c6c15db9ef6758603a5f8bb84380",
+      "source": "evidence/d44416f4-8d94-4d6a-9671-1c54ffd9f15f/red-v1.txt",
+      "originalSha256": "d4fe12e0d0b272dec660a53355b6c4cd0cf9c6c15db9ef6758603a5f8bb84380"
+    },
+    "live-bugfix/fix-v2.txt": {
+      "exportSha256": "689e0ba2bf29717558e4c758e660e77ed8d15726872f330aa1a5829e7b24609e",
+      "source": "evidence/d44416f4-8d94-4d6a-9671-1c54ffd9f15f/fix-v2.txt",
+      "originalSha256": "689e0ba2bf29717558e4c758e660e77ed8d15726872f330aa1a5829e7b24609e"
+    },
+    "live-bugfix/green-v1.txt": {
+      "exportSha256": "10a6ac5860ad3b2c64c2c28baff7beaf7929ee0351c99cbdd2a4643b6937459f",
+      "source": "evidence/d44416f4-8d94-4d6a-9671-1c54ffd9f15f/green-v1.txt",
+      "originalSha256": "10a6ac5860ad3b2c64c2c28baff7beaf7929ee0351c99cbdd2a4643b6937459f"
+    },
+    "live-bugfix/runbook-v1.txt": {
+      "exportSha256": "72d34d2a97f89f54222448bb2a48c4a3c6ff782de83c5e74b3666fc12cb083c4",
+      "source": "evidence/d44416f4-8d94-4d6a-9671-1c54ffd9f15f/runbook-v1.txt",
+      "originalSha256": "72d34d2a97f89f54222448bb2a48c4a3c6ff782de83c5e74b3666fc12cb083c4"
+    },
+    "live-bugfix/release-v1.txt": {
+      "exportSha256": "795bf640ff30d392d196fd4b5f3e00c314884dce76638430e1dbdb0bbfcd69f4",
+      "source": "evidence/d44416f4-8d94-4d6a-9671-1c54ffd9f15f/release-v1.txt",
+      "originalSha256": "795bf640ff30d392d196fd4b5f3e00c314884dce76638430e1dbdb0bbfcd69f4"
+    },
+    "live-bugfix/run.json": {
+      "exportSha256": "c423cefc299594755b3d0eb02a376afc716b8fdcb389e595414e0af0ae41b6b4",
+      "source": "local control database and operator API"
+    },
+    "live-failures/outcomes.json": {
+      "exportSha256": "dabc3bdc7799769657c168133b46c3096712631eb4e284ec8782be18adbc8734",
+      "source": "local control database and operator API"
+    },
+    "historical-evaluation/operator-controls.txt": {
+      "exportSha256": "17ab7a0aaeb3ea5ca5d4eab08461b3b6f3c72fe988a5a2fd931e6af3295d92bd",
+      "source": ".runs/evaluation/20260930T222107Z/operator-controls.log",
+      "originalSha256": "17ab7a0aaeb3ea5ca5d4eab08461b3b6f3c72fe988a5a2fd931e6af3295d92bd"
+    },
+    "historical-evaluation/product-http.txt": {
+      "exportSha256": "e383314e8826bf9692cbef7c91f68f60f7942ac8f5c6ac313dcbe496dc158a90",
+      "source": ".runs/evaluation/20260930T222107Z/product-http.log",
+      "originalSha256": "e383314e8826bf9692cbef7c91f68f60f7942ac8f5c6ac313dcbe496dc158a90"
+    },
+    "historical-evaluation/results.json": {
+      "exportSha256": "79f43c436e01b9fdcb86ede693ce0e5a9a34e3de65bfc56496c5b692b3e83c9f",
+      "source": ".runs/evaluation/20260930T222107Z/results.json",
+      "originalSha256": "aa73c80d59a4874e07eb621ef2b0e8d6b2f72632e9fd585b1ae5a008d5840b75"
+    },
+    "historical-evaluation/scenario-replay.txt": {
+      "exportSha256": "ae9a2fb16e0fd6e43d2349d05bd1bfdec91d424ac973d0bd6811fd94a1eef50f",
+      "source": ".runs/evaluation/20260930T222107Z/scenario-replay.log",
+      "originalSha256": "ae9a2fb16e0fd6e43d2349d05bd1bfdec91d424ac973d0bd6811fd94a1eef50f"
+    },
+    "historical-evaluation/unit-and-integration.txt": {
+      "exportSha256": "6dcbfe95b73e4a67c8ba59d94b78f612b3579f91522fe5801026af6314c58075",
+      "source": ".runs/evaluation/20260930T222107Z/unit-and-integration.log",
+      "originalSha256": "5359d572e653ef6ca4991d232b07d0dcc6c91e8554b53b310726f845768727bc"
+    },
+    "README.md": {
+      "exportSha256": "9d897d9283aea410b4ec141d5f856d5f0090d40bb2710c2d16cdafc7916ae264",
+      "source": "curation notes"
+    }
+  }
+}

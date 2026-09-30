@@ -1,0 +1,14 @@
+```diff
+diff --git a/shortener/src/main/java/com/example/shortener/api/ShortenerController.java b/shortener/src/main/java/com/example/shortener/api/ShortenerController.java
+index e69de29..b6d1234 100644
+--- a/shortener/src/main/java/com/example/shortener/api/ShortenerController.java
++++ b/shortener/src/main/java/com/example/shortener/api/ShortenerController.java
+@@ -37,7 +37,6 @@ public class ShortenerController {
+     @GetMapping("/{code}")
+     public ResponseEntity<Void> redirect(@PathVariable String code) {
+         Link link = service.find(code).orElseThrow(NotFoundException::new);
+-        if (!limiter.admit("redirect:" + code).allowed()) return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS).build();
+         recorder.record(link.id());
+         return ResponseEntity.status(HttpStatus.FOUND).location(URI.create(link.targetUrl())).build();
+     }
+```

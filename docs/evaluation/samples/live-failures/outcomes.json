@@ -1,0 +1,64 @@
+[
+  {
+    "id": "7656696a-59ca-4bb9-83c0-b25273fdde5b",
+    "scenario": "greenfield",
+    "mode": "live",
+    "status": "RUNNING",
+    "modelCalls": 8,
+    "attempts": {
+      "implementation": 1
+    },
+    "baselineTag": "project-start",
+    "createdAt": null,
+    "finishedAt": null,
+    "failureEvents": [
+      {
+        "detail": "implementation:implementation-error-v1",
+        "at": "2026-09-30 14:27:28.549638-05",
+        "type": "RETRY_AVAILABLE",
+        "sequence": 18
+      }
+    ]
+  },
+  {
+    "id": "a5e9f971-13fd-46b6-8efc-4f62dcf1ff44",
+    "scenario": "brownfield",
+    "mode": "live",
+    "status": "FAILED",
+    "modelCalls": 12,
+    "attempts": {
+      "implementation": 1,
+      "independent-tests": 1,
+      "apply": 2
+    },
+    "baselineTag": "url-v1",
+    "createdAt": null,
+    "finishedAt": 1790800308.426958,
+    "failureEvents": [
+      {
+        "detail": "implementation:implementation-error-v1",
+        "at": "2026-09-30 14:55:49.896836-05",
+        "type": "RETRY_AVAILABLE",
+        "sequence": 20
+      },
+      {
+        "detail": "independent-tests:independent-tests-error-v1",
+        "at": "2026-09-30 14:56:06.182431-05",
+        "type": "RETRY_AVAILABLE",
+        "sequence": 21
+      },
+      {
+        "detail": "apply:apply-error-v1",
+        "at": "2026-09-30 14:59:51.610469-05",
+        "type": "RETRY_AVAILABLE",
+        "sequence": 32
+      },
+      {
+        "detail": "apply:apply-error-v2",
+        "at": "2026-09-30 15:31:48.485746-05",
+        "type": "TASK_FAILED",
+        "sequence": 41
+      }
+    ]
+  }
+]
