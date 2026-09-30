@@ -1,5 +1,6 @@
 # Project documentation
 
+- **Evaluate the prototype:** [rubric evidence and reproduction](evaluation/scorecard.md), [risk register](evaluation/risks.md).
 - **Understand the design:** [agent system](architecture/agent-system.md) and [decisions](architecture/decisions.md).
 - **Run and operate it:** [local runbook](operations/local-runbook.md) and [chat/UI guide](operations/operator-guide.md).
 - **Understand the assignment scope:** [implementation plan](delivery/implementation-plan.md). This describes targets, including work not yet complete.

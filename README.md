@@ -91,6 +91,10 @@ For a live ADK run, copy `.env.example` to the ignored `.env` file, replace `ANT
 
 A live Claude Sonnet 5 bug-fix run completed after exact-hash release approval, with a verified red regression and five passing candidate tests. Its repair remains in an isolated candidate worktree for review or integration. Live greenfield generation remains less constrained: one trial chose a different stack and did not produce an acceptable patch. See [the agent-system notes](docs/architecture/agent-system.md) for the run evidence and limits.
 
+## Evaluation evidence
+
+See the [rubric scorecard](docs/evaluation/scorecard.md) for implemented evidence, reproducible checks, metric definitions and remaining gaps, and the [risk register](docs/evaluation/risks.md) for residual risks. With both local applications running and JDK 21 configured, `python3 scripts/checks/evaluate.py` checks unit/integration behavior, fault recovery, scenarios and operator controls and saves a machine-readable evidence bundle. It does not make live provider calls or certify an interview score.
+
 ## Product contract
 
 `POST /api/shorten` accepts `{"url":"https://example.com","alias":"optional-alias"}` and returns a code and short URL. `GET /{code}` returns a `302` to the target. `GET /api/urls/{code}/analytics` returns aggregate redirect count. Creation is limited to 30 requests per source IP per 60-second fixed window; redirects are never creation-throttled. Links are immutable, with a bounded 60-second in-process lookup cache. Analytics uses a bounded background recorder and may lag or drop writes under failure; redirect availability takes priority.

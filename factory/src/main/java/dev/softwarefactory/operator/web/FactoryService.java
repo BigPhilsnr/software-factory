@@ -1,6 +1,7 @@
 package dev.softwarefactory.operator.web;
 
 import dev.softwarefactory.workflow.scenario.ScenarioFiles;
+import dev.softwarefactory.observability.RunMetrics;
 
 import dev.softwarefactory.agents.AdkClaudeRuntime;
 import dev.softwarefactory.persistence.ControlRepository;
@@ -36,6 +37,33 @@ public final class FactoryService implements AutoCloseable {
     }
 
     public List<RunState> runs() throws Exception { return repository.recentRuns(); }
+    public Map<String, Object> metrics() throws Exception {
+        List<RunState> runs = runs();
+        Map<String, Object> summary = new LinkedHashMap<>();
+        summary.put("sample", "Latest 100 updated runs; fixture and live outcomes are separate");
+        for (String mode : List.of("fixture", "live")) {
+            List<RunState> sample = runs.stream().filter(r -> mode.equals(r.mode)).toList();
+            long ended = sample.stream().filter(r -> r.finishedAt != null).count();
+            long completed = sample.stream().filter(r -> r.status == RunStatus.COMPLETED).count();
+            Map<String, Object> values = new LinkedHashMap<>();
+            values.put("runs", sample.size()); values.put("terminalRuns", ended); values.put("completedRuns", completed);
+            values.put("completionRate", ended == 0 ? null : (double) completed / ended);
+            values.put("outcomes", sample.stream().collect(java.util.stream.Collectors.groupingBy(r -> r.status.toString(), java.util.stream.Collectors.counting())));
+            List<RunMetrics> measurements = new ArrayList<>();
+            for (RunState run : sample) measurements.add(RunMetrics.from(run, repository.timeline(run.id), java.time.Instant.now()));
+            values.put("retryExecutions", measurements.stream().mapToInt(RunMetrics::retryExecutions).sum());
+            values.put("rollbacks", measurements.stream().mapToInt(RunMetrics::rollbacks).sum());
+            values.put("retryRunRate", sample.isEmpty() ? null : (double) measurements.stream().filter(m -> m.retryExecutions() > 0).count() / sample.size());
+            values.put("rollbackRunRate", sample.isEmpty() ? null : (double) measurements.stream().filter(m -> m.rollbacks() > 0).count() / sample.size());
+            values.put("meanTerminalLatencyMillis", ended == 0 ? null : measurements.stream().filter(RunMetrics::terminal).mapToLong(RunMetrics::elapsedMillis).average().orElseThrow());
+            int recovered = measurements.stream().mapToInt(RunMetrics::recoveredTasks).sum();
+            values.put("recoveredTasks", recovered);
+            values.put("meanRecoveryMillis", recovered == 0 ? null : measurements.stream().filter(m -> m.meanRecoveryMillis() != null).mapToLong(m -> m.meanRecoveryMillis() * m.recoveredTasks()).sum() / recovered);
+            summary.put(mode, values);
+        }
+        return summary;
+    }
+
     public RunState state(String id) throws Exception { return repository.load(id); }
     public boolean busy(String id) { return active.contains(id); }
 
@@ -61,6 +89,7 @@ public final class FactoryService implements AutoCloseable {
         if (Set.of(RunStatus.COMPLETED, RunStatus.FAILED, RunStatus.SAFE_STOPPED, RunStatus.NOT_APPROVED).contains(state.status)) {
             throw new IllegalStateException("This run has ended; start a new run");
         }
+        if (active.size() >= 2) throw new IllegalStateException("Two runs are active; wait for capacity before starting another");
         if (!active.add(id)) throw new IllegalStateException("This run is already active");
         errors.remove(id);
         workers.submit(() -> {
@@ -99,6 +128,7 @@ public final class FactoryService implements AutoCloseable {
         result.put("busy", busy(id));
         result.put("error", errors.getOrDefault(id, ""));
         result.put("events", repository.events(id));
+        result.put("metrics", RunMetrics.from(state, repository.timeline(id), java.time.Instant.now()));
         result.put("auditValid", repository.auditValid(id));
         List<String> artifacts = new ArrayList<>();
         Path folder = root.resolve("evidence").resolve(state.id);

@@ -10,6 +10,10 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 class GitWorkspaceTest {
+    @Test void refusesSymlinksEvenInsideApprovedScope() {
+        assertThrows(SecurityException.class, () -> new GitWorkspace(repository).validateScope(
+            "diff --git a/shortener/Secret.java b/shortener/Secret.java\nnew file mode 120000\n", List.of("shortener")));
+    }
     @TempDir Path repository;
 
     @Test

@@ -18,6 +18,7 @@ public final class FactoryController {
         return json(Map.of("token", token, "liveReady", System.getenv("ANTHROPIC_API_KEY") != null && !System.getenv("ANTHROPIC_API_KEY").isBlank(),
             "model", System.getenv().getOrDefault("CLAUDE_MODEL", "claude-sonnet-4-5")));
     }
+    @GetMapping("/metrics") public ResponseEntity<com.fasterxml.jackson.databind.JsonNode> metrics() throws Exception { return json(factory.metrics()); }
     @GetMapping("/runs") public ResponseEntity<com.fasterxml.jackson.databind.JsonNode> runs() throws Exception { return json(factory.runs()); }
     @GetMapping("/runs/{id}") public ResponseEntity<com.fasterxml.jackson.databind.JsonNode> run(@PathVariable("id") String id) throws Exception { return json(factory.detail(id)); }
     @GetMapping("/runs/{id}/artifacts/{name}") public ResponseEntity<com.fasterxml.jackson.databind.JsonNode> artifact(@PathVariable("id") String id, @PathVariable("name") String name) throws Exception {

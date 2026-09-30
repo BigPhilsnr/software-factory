@@ -40,6 +40,28 @@ public final class TaskGraph {
         Set<String> complete = new HashSet<>();
         Set<String> visiting = new HashSet<>();
         for (TaskSpec task : tasks) visit(task.id(), visiting, complete);
+        for (TaskSpec release : tasks.stream().filter(t -> t.kind() == TaskKind.RELEASE).toList()) {
+            Set<String> upstream = ancestors(release.id());
+            if (tasks.stream().anyMatch(t -> !t.id().equals(release.id()) && !upstream.contains(t.id()))) {
+                throw new IllegalArgumentException("Release must join all required work: " + release.id());
+            }
+            List<TaskSpec> validations = tasks.stream().filter(t -> t.kind() == TaskKind.VALIDATE && upstream.contains(t.id())).toList();
+            if (validations.isEmpty()) throw new IllegalArgumentException("Release requires passing validation");
+            for (TaskSpec patch : tasks.stream().filter(t -> t.kind() == TaskKind.PATCH).toList()) {
+                if (validations.stream().noneMatch(t -> ancestors(t.id()).contains(patch.id()))) {
+                    throw new IllegalArgumentException("Patch lacks downstream validation: " + patch.id());
+                }
+            }
+        }
+    }
+
+    private Set<String> ancestors(String id) {
+        Set<String> result = new HashSet<>();
+        for (String dependency : byId.get(id).dependsOn()) {
+            result.add(dependency);
+            result.addAll(ancestors(dependency));
+        }
+        return result;
     }
 
     private void visit(String id, Set<String> visiting, Set<String> complete) {

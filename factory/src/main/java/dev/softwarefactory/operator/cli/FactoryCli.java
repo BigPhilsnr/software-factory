@@ -75,6 +75,12 @@ public final class FactoryCli {
                     "validatedCandidateHash", state.validatedCandidateHash == null ? "not yet validated" : state.validatedCandidateHash)));
                 return;
             }
+            case "metrics" -> {
+                if (args.length != 2) { usage(); return; }
+                System.out.println(Json.MAPPER.writerWithDefaultPrettyPrinter().writeValueAsString(
+                    dev.softwarefactory.observability.RunMetrics.from(repo.load(args[1]), repo.timeline(args[1]), java.time.Instant.now())));
+                return;
+            }
             case "verify-audit" -> {
                 if (args.length != 2) { usage(); return; }
                 System.out.println(repo.auditValid(args[1]) ? "AUDIT_VALID" : "AUDIT_INVALID");
@@ -86,6 +92,6 @@ public final class FactoryCli {
     }
 
     private static void usage() {
-        System.err.println("Usage: start <scenario.json> <fixture|live> | advance <run-id> | review <run-id> | approve <run-id> <reviewed-hash> | reject <run-id> | clarify <run-id> <answer> | revise <run-id> <task-id> [feedback-file] | status <run-id> | verify-audit <run-id>");
+        System.err.println("Usage: start <scenario.json> <fixture|live> | advance <run-id> | review <run-id> | approve <run-id> <reviewed-hash> | reject <run-id> | clarify <run-id> <answer> | revise <run-id> <task-id> [feedback-file] | status <run-id> | metrics <run-id> | verify-audit <run-id>");
     }
 }

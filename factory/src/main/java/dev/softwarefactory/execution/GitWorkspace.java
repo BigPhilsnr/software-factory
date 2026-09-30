@@ -72,6 +72,9 @@ public final class GitWorkspace {
     }
 
     public List<String> validateScope(String patch, List<String> allowed) {
+        if (patch.lines().anyMatch(line -> line.matches("(?:new file mode|old mode|new mode|deleted file mode) (?:120000|160000)"))) {
+            throw new SecurityException("Symlinks and submodules are outside worker authority");
+        }
         List<String> changed = new ArrayList<>();
         for (String line : patch.lines().toList()) {
             var match = DIFF.matcher(line);

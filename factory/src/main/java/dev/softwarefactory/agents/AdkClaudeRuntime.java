@@ -21,7 +21,8 @@ public final class AdkClaudeRuntime implements AgentRuntime {
 
     @Override
     public String generate(String role, String prompt) {
-        var client = AnthropicOkHttpClient.fromEnv();
+        var client = AnthropicOkHttpClient.builder().fromEnv()
+            .timeout(java.time.Duration.ofMinutes(5)).maxRetries(0).build();
         var agent = LlmAgent.builder()
             .name(role.replace('-', '_'))
             .model(new ThinkingAwareClaude(model, client))

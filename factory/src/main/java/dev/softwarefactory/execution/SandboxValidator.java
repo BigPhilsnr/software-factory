@@ -86,8 +86,9 @@ public final class SandboxValidator {
     }
 
     private String run(Path candidate, List<String> goals) throws Exception {
+        String container = "factory-validator-" + java.util.UUID.randomUUID();
         List<String> args = new ArrayList<>(List.of(
-            "docker", "run", "--rm", "--network", "none", "--cpus", "2", "--memory", "1g",
+            "docker", "run", "--rm", "--name", container, "--network", "none", "--cpus", "2", "--memory", "1g",
             "--pids-limit", "128", "--cap-drop", "ALL", "--security-opt", "no-new-privileges",
             "--read-only", "--user", currentUser(), "--tmpfs", "/tmp:rw,nosuid,size=128m",
             "--env", "HOME=/tmp", "--env", "MAVEN_CONFIG=/tmp/.m2",
@@ -96,7 +97,14 @@ public final class SandboxValidator {
             "--workdir", "/workspace", "maven:3.9-eclipse-temurin-21",
             "mvn", "-o", "-q", "-Dmaven.repo.local=/m2", "-f", "shortener/pom.xml"));
         args.addAll(goals);
-        return GitWorkspace.command(candidate, args, Duration.ofMinutes(10));
+        try {
+            return GitWorkspace.command(candidate, args, Duration.ofMinutes(10));
+        } finally {
+            // Killing the Docker CLI on timeout does not itself stop the container.
+            // Remove only the uniquely named container owned by this invocation.
+            try { GitWorkspace.command(candidate, List.of("docker", "rm", "-f", container), Duration.ofSeconds(20)); }
+            catch (Exception alreadyRemovedOrUnavailable) { /* --rm normally removed it already. */ }
+        }
     }
 
     private static String currentUser() {

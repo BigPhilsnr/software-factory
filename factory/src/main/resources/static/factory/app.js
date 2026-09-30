@@ -49,7 +49,9 @@ function render(data) {
   $('advance').disabled = ended || data.busy || !!s.pendingApprovalTask || !!s.pendingClarificationTask;
   $('action-hint').textContent = ended ? 'Run ended. Evidence remains available.' : s.pendingApprovalTask ? 'Review the exact proposal below.' : s.pendingClarificationTask ? 'Answer the question below.' : data.busy ? 'Generation and validation continue in the background.' : 'Live runs make paid model calls. Fixture runs use recorded artifacts.';
   if(data.error) notice(data.error);
-  $('tasks').innerHTML = data.tasks.map(t=>`<div class="task"><strong>${esc(t.id)}</strong><span class="badge ${esc(s.tasks[t.id].toLowerCase())}">${esc(s.tasks[t.id])}</span></div>`).join('');
+  const m=data.metrics;
+  $('reliability').textContent = m ? `Elapsed ${(m.elapsedMillis/1000).toFixed(1)}s · Retries ${m.retryExecutions} (${m.retryOffers} offered) · Rollbacks ${m.rollbacks} · Replans ${m.replans} · Parallel joins ${m.parallelJoins} · Mean recovery ${m.meanRecoveryMillis===null?'no samples':(m.meanRecoveryMillis/1000).toFixed(1)+'s'}` : '';
+  $('tasks').innerHTML = data.tasks.map(t=>`<div class="task"><div><strong>${esc(t.id)}</strong><small>${esc(t.stage)} · after ${esc(t.dependsOn.join(", ") || "run start")}</small></div><span class="badge ${esc(s.tasks[t.id].toLowerCase())}">${esc(s.tasks[t.id])}</span></div>`).join('');
   $('clarification').hidden = !s.pendingClarificationTask;
   $('question').textContent = data.tasks.find(t=>t.id===s.pendingClarificationTask)?.prompt || '';
   $('review').hidden = !data.review;

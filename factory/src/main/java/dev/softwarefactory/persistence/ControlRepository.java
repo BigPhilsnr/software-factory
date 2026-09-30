@@ -57,6 +57,21 @@ public final class ControlRepository {
         return result;
     }
 
+    public record AuditEvent(long sequence, Instant at, String type, String detail) {}
+
+    public java.util.List<AuditEvent> timeline(String id) throws Exception {
+        java.util.List<AuditEvent> result = new java.util.ArrayList<>();
+        try (Connection connection = connect(); var query = connection.prepareStatement(
+                "SELECT seq, at, type, detail FROM audit_events WHERE run_id = ? ORDER BY seq")) {
+            query.setObject(1, java.util.UUID.fromString(id));
+            try (var rows = query.executeQuery()) {
+                while (rows.next()) result.add(new AuditEvent(rows.getLong(1),
+                    rows.getObject(2, java.time.OffsetDateTime.class).toInstant(), rows.getString(3), rows.getString(4)));
+            }
+        }
+        return result;
+    }
+
     /** Holds an exclusive PostgreSQL advisory lock for one operator transition. */
     public RunLease lease(String id) throws Exception {
         java.util.UUID run = java.util.UUID.fromString(id);

@@ -15,6 +15,7 @@ Start with `src/main/java/dev/softwarefactory/`:
 | `execution/` | Detached Git workspaces, patch scope enforcement and container validation. |
 | `persistence/` | PostgreSQL run storage, transition leases and audit events. |
 | `evidence/` | Immutable, versioned engineering outputs. |
+| `observability/` | Reliability measurements derived from the complete audit timeline. |
 | `serialization/` | Shared JSON configuration. |
 
 The browser files live together in `src/main/resources/static/factory/`. Tests mirror the Java packages under `src/test/java/dev/softwarefactory/`.
