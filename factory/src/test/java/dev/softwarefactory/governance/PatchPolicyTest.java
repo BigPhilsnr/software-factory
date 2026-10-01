@@ -22,6 +22,9 @@ class PatchPolicyTest {
                 "shortener/src/main/resources/db/migration/V2.sql",
                 "shortener/src/main/java/com/example/bootstrap/Startup.java",
                 "bootstrap/init.sh",
+                "shortener/src/main/java/dev/shortener/platform/security/PublicApiSecurity.java",
+                "shortener/src/main/java/dev/shortener/platform/http/ApiErrors.java",
+                "shortener/src/test/java/dev/shortener/platform/PlatformTest.java",
                 "shortener/src/main/java/com/example/config/SecurityConfig.java",
                 "shortener/src/main/java/com/example/api/WebSecurityRules.java",
                 "shortener/src/main/resources/application.yml",
@@ -47,6 +50,10 @@ class PatchPolicyTest {
     @ValueSource(
             strings = {
                 "shortener/src/main/java/com/example/shortener/api/ShortenerController.java",
+                "shortener/src/main/java/dev/shortener/shorten/ShortenController.java",
+                "shortener/src/main/java/dev/shortener/redirect/RedirectController.java",
+                "shortener/src/main/java/dev/shortener/link/Link.java",
+                "shortener/src/main/java/dev/shortener/analytics/ClickRecorder.java",
                 "shortener/src/test/java/com/example/shortener/api/RedirectRateLimitRegressionTest.java",
                 "shortener/openapi.yaml",
                 "docs/PLAN.md"

@@ -17,7 +17,7 @@ env:
   # SpotBugs and PMD findings are reported but do not fail the build until the existing backlog is
   # cleared; formatting (Spotless), the coverage floor (JaCoCo) and the enforcer always gate.
   # Flip to 'true' (the POM default) once `mvn verify` is clean locally.
-  QUALITY_FAIL_ON_VIOLATION: 'false'
+  QUALITY_FAIL_ON_VIOLATION: 'true'
 
 jobs:
   # Quality gate: unit tests + Spotless check + PMD + SpotBugs/FindSecBugs + JaCoCo coverage floor.

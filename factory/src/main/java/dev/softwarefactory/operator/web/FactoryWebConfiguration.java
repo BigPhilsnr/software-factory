@@ -1,5 +1,12 @@
 package dev.softwarefactory.operator.web;
 
+import dev.softwarefactory.operator.api.FactoryController;
+import dev.softwarefactory.operator.api.FactoryService;
+import dev.softwarefactory.operator.chat.OperatorCommands;
+import dev.softwarefactory.operator.security.LocalOperatorFilter;
+import dev.softwarefactory.operator.security.OperatorToken;
+import dev.softwarefactory.operator.security.RequestBodyLimit;
+import dev.softwarefactory.platform.FactorySettings;
 import java.util.UUID;
 import org.springframework.boot.security.autoconfigure.web.servlet.SecurityFilterProperties;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
@@ -75,12 +82,12 @@ public class FactoryWebConfiguration implements WebMvcConfigurer {
     }
 
     @Bean
-    FactoryController factoryController(FactoryService factory, OperatorToken factoryToken) {
-        return new FactoryController(factory, factoryToken);
+    FactoryController factoryController(FactoryService factory, OperatorToken factoryToken, FactorySettings settings) {
+        return new FactoryController(factory, factoryToken, settings);
     }
 
     @Bean
     LocalOperatorFilter localOperatorFilter(OperatorToken factoryToken) {
-        return new LocalOperatorFilter(factoryToken);
+        return new LocalOperatorFilter(factoryToken, OperatorCommands::changesWorkflowState);
     }
 }

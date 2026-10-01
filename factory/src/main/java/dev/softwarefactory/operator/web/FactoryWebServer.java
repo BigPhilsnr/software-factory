@@ -2,10 +2,19 @@ package dev.softwarefactory.operator.web;
 
 import com.google.adk.web.AdkWebServer;
 import com.google.adk.web.AgentStaticLoader;
-import dev.softwarefactory.agents.ModelClients;
-import dev.softwarefactory.configuration.FactorySettings;
-import dev.softwarefactory.persistence.AuditKey;
-import dev.softwarefactory.persistence.ControlRepository;
+import dev.softwarefactory.audit.AuditKey;
+import dev.softwarefactory.audit.AuditTrail;
+import dev.softwarefactory.audit.ChatLedger;
+import dev.softwarefactory.audit.ControlDatabase;
+import dev.softwarefactory.audit.RunJournal;
+import dev.softwarefactory.audit.RunLeases;
+import dev.softwarefactory.generation.ModelClients;
+import dev.softwarefactory.operator.api.ControlRecords;
+import dev.softwarefactory.operator.api.FactoryService;
+import dev.softwarefactory.operator.chat.FactoryAgent;
+import dev.softwarefactory.platform.FactorySettings;
+import dev.softwarefactory.platform.WorkspaceRoot;
+import dev.softwarefactory.run.DurableRunStore;
 import java.io.IOException;
 import java.nio.file.Path;
 import javax.sql.DataSource;
@@ -34,10 +43,8 @@ public class FactoryWebServer {
 
     /** The repository checkout that owns scenarios, candidates ({@code .runs/}) and evidence. */
     static Path workspaceRoot(Environment environment) {
-        Path root = Path.of(environment.getProperty("factory.workspace", System.getProperty("user.dir")))
-                .toAbsolutePath()
-                .normalize();
-        return root.getFileName().toString().equals("factory") ? root.getParent() : root;
+        return WorkspaceRoot.from(
+                Path.of(environment.getProperty("factory.workspace", System.getProperty("user.dir"))));
     }
 
     @Bean
@@ -59,14 +66,23 @@ public class FactoryWebServer {
 
     @Bean
     @DependsOnDatabaseInitialization
-    ControlRepository controlRepository(DataSource dataSource, AuditKey auditKey) {
-        return new ControlRepository(dataSource, auditKey);
+    ControlDatabase controlDatabase(DataSource dataSource) {
+        return ControlDatabase.using(dataSource);
+    }
+
+    @Bean
+    ControlRecords factoryRecords(ControlDatabase database, AuditKey auditKey) {
+        AuditTrail trail = new AuditTrail(database, auditKey);
+        return new ControlRecords(
+                new DurableRunStore(new RunJournal(database, auditKey), trail, new RunLeases(database)),
+                trail,
+                new ChatLedger(database));
     }
 
     @Bean(destroyMethod = "close")
     FactoryService factoryService(
-            ControlRepository repository, FactorySettings settings, ModelClients clients, Environment environment) {
-        return new FactoryService(workspaceRoot(environment), repository, settings, clients);
+            ControlRecords records, FactorySettings settings, ModelClients clients, Environment environment) {
+        return new FactoryService(workspaceRoot(environment), records, settings, clients);
     }
 
     @Bean
@@ -76,13 +92,13 @@ public class FactoryWebServer {
 
     /** Reports where to open the UI and whether validation can run, and clears containers left by crashes. */
     @Bean
-    ApplicationListener<ApplicationReadyEvent> startupReport(FactoryService factory, Environment environment) {
+    ApplicationListener<ApplicationReadyEvent> startupReport(
+            FactoryService factory, FactorySettings settings, Environment environment) {
         return event -> {
-            factory.removeOrphanedValidatorContainers(false);
+            factory.sweepOrphanedValidatorContainers(false);
             var validator = factory.validatorStatus();
             if (!validator.ready()) LOG.warn("Sandbox validation unavailable: {}", validator.detail());
-            if (!factory.settings().liveReady())
-                LOG.info("Live generation disabled: {}", factory.settings().liveBlocker());
+            if (!settings.liveReady()) LOG.info("Live generation disabled: {}", settings.liveBlocker());
             String base = "http://localhost:"
                     + environment.getProperty("local.server.port", environment.getProperty("server.port", "8000"));
             LOG.info(

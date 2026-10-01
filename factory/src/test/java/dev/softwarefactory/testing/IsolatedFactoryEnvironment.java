@@ -1,7 +1,7 @@
 package dev.softwarefactory.testing;
 
-import dev.softwarefactory.execution.CommandRunner;
-import dev.softwarefactory.persistence.AuditKey;
+import dev.softwarefactory.audit.AuditKey;
+import dev.softwarefactory.candidate.CommandRunner;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;

@@ -10,8 +10,9 @@ public final class PatchPolicy {
     private static final Pattern DIFF_HEADER = Pattern.compile("^diff --git a/(\\S+) b/(\\S+)$");
     private static final String ANY_DIRECTORY = "(?:.*/)?";
     /**
-     * Changes to build, dependency, container, security, bootstrap, runtime configuration,
-     * schema, test-platform and Git metadata files always need an explicit operator decision.
+     * Changes to build, dependency, container, security, platform wiring (called {@code bootstrap} in
+     * baselines before the shortener was reorganized), runtime configuration, schema, test-platform and
+     * Git metadata files always need an explicit operator decision.
      */
     private static final List<Pattern> APPROVAL_PATHS = Stream.of(
                     ANY_DIRECTORY + "pom\\.xml",
@@ -21,7 +22,7 @@ public final class PatchPolicy {
                     ANY_DIRECTORY + "\\.git[^/]*",
                     "\\.github/.*",
                     "(?:factory|orchestrator)/.*",
-                    ANY_DIRECTORY + "bootstrap/.*",
+                    ANY_DIRECTORY + "(?:platform|bootstrap)/.*",
                     ANY_DIRECTORY + "[^/]*Security[^/]*\\.java",
                     ANY_DIRECTORY + "db/migration/.*",
                     ANY_DIRECTORY + "src/main/resources/.*",
@@ -33,16 +34,17 @@ public final class PatchPolicy {
     private PatchPolicy() {}
 
     public static boolean requiresApproval(boolean requested, String patch) {
-        if (requested) return true;
-        return patch.lines().filter(line -> line.startsWith("diff --git ")).anyMatch(line -> {
-            Matcher header = DIFF_HEADER.matcher(line);
-            // An unparseable header cannot be classified, so it is never auto-applied.
-            if (!header.matches()) return true;
-            return requiresApproval(header.group(1)) || requiresApproval(header.group(2));
-        });
+        return requested
+                || patch.lines().filter(line -> line.startsWith("diff --git ")).anyMatch(PatchPolicy::touchesGatedPath);
     }
 
     static boolean requiresApproval(String path) {
         return APPROVAL_PATHS.stream().anyMatch(pattern -> pattern.matcher(path).matches());
+    }
+
+    private static boolean touchesGatedPath(String headerLine) {
+        Matcher header = DIFF_HEADER.matcher(headerLine);
+        // An unparseable header cannot be classified, so it is never auto-applied.
+        return !header.matches() || requiresApproval(header.group(1)) || requiresApproval(header.group(2));
     }
 }

@@ -26,7 +26,7 @@ def main():
     session = str(uuid.uuid4())
     request(f"/apps/software_factory/users/tools-smoke/sessions/{session}", {})
     cases = [
-        ("Use list_files for factory/src/main/java/dev/softwarefactory/agents/tools, read_file for the first 30 lines of factory/README.md, "
+        ("Use list_files for factory/src/main/java/dev/softwarefactory/generation/tools, read_file for the first 30 lines of factory/README.md, "
          "search_repository for MAX_MODEL_REQUESTS, inspect_git for status, and current_time. Summarize the observed facts in under 80 words.",
          ["list_files OK", "read_file OK", "search_repository OK", "inspect_git OK", "current_time OK"]),
         ("Use fetch_page to read https://example.com and summarize its visible text in one sentence with the source URL.", ["fetch_page OK", "https://example.com"]),

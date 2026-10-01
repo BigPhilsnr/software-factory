@@ -21,17 +21,20 @@
     <okhttp.version>5.3.2</okhttp.version>
     <jsoup.version>1.23.2</jsoup.version>
     <rest-assured.version>6.0.1</rest-assured.version>
+    <archunit.version>1.4.1</archunit.version>
 
     <!-- Quality gate (documented in the root README). Shared rule files live in ../build-config
          because the root POM is an aggregator, not this module's parent. -->
     <quality.config.dir>${project.basedir}/../build-config</quality.config.dir>
     <!-- false collects SpotBugs/PMD findings without failing the build; formatting and coverage always gate. -->
     <quality.failOnViolation>true</quality.failOnViolation>
-    <!-- Target is 0.70. Measured 0.617 on the default (non-integration) profile; floor set just below it. Raise as tests land. -->
-    <jacoco.line.minimum>0.61</jacoco.line.minimum>
+    <!-- Unit-test (default profile) line coverage floor. Measured 0.83; database and Spring wiring classes are
+         covered by the integration profile only. -->
+    <jacoco.line.minimum>0.70</jacoco.line.minimum>
     <spotless-maven-plugin.version>3.10.3</spotless-maven-plugin.version>
     <palantir-java-format.version>2.100.0</palantir-java-format.version>
     <spotbugs-maven-plugin.version>4.10.4.1</spotbugs-maven-plugin.version>
+    <spotbugs-annotations.version>4.10.4</spotbugs-annotations.version>
     <findsecbugs-plugin.version>1.14.0</findsecbugs-plugin.version>
     <maven-pmd-plugin.version>3.28.0</maven-pmd-plugin.version>
     <jacoco-maven-plugin.version>0.8.15</jacoco-maven-plugin.version>
@@ -130,6 +133,14 @@
       <version>${jsoup.version}</version>
     </dependency>
 
+    <!-- Compile-time only: @SuppressFBWarnings for the few justified SpotBugs suppressions (class retention). -->
+    <dependency>
+      <groupId>com.github.spotbugs</groupId>
+      <artifactId>spotbugs-annotations</artifactId>
+      <version>${spotbugs-annotations.version}</version>
+      <scope>provided</scope>
+    </dependency>
+
     <dependency>
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter-test</artifactId>
@@ -139,6 +150,12 @@
       <groupId>io.rest-assured</groupId>
       <artifactId>rest-assured</artifactId>
       <version>${rest-assured.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.tngtech.archunit</groupId>
+      <artifactId>archunit-junit5</artifactId>
+      <version>${archunit.version}</version>
       <scope>test</scope>
     </dependency>
   </dependencies>
