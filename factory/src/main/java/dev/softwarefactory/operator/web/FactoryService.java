@@ -214,5 +214,16 @@ public final class FactoryService implements AutoCloseable {
         return Files.readString(file);
     }
 
-    @Override public synchronized void close() { workers.shutdown(); }
+    @Override public synchronized void close() {
+        workers.shutdown();
+        try {
+            if (!workers.awaitTermination(30, java.util.concurrent.TimeUnit.SECONDS)) {
+                workers.shutdownNow();
+                workers.awaitTermination(5, java.util.concurrent.TimeUnit.SECONDS);
+            }
+        } catch (InterruptedException interrupted) {
+            workers.shutdownNow();
+            Thread.currentThread().interrupt();
+        }
+    }
 }

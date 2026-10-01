@@ -1,6 +1,8 @@
 server:
   port: ${SHORTENER_PORT:8080}
 spring:
+  autoconfigure:
+    exclude: org.springframework.boot.security.autoconfigure.UserDetailsServiceAutoConfiguration
   datasource:
     url: ${SHORTENER_DB_URL:jdbc:postgresql://localhost:5433/shortener}
     username: ${SHORTENER_DB_USER:shortener}

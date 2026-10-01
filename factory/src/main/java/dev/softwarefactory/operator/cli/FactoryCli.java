@@ -16,6 +16,8 @@ public final class FactoryCli {
     private FactoryCli() {}
 
     public static void main(String[] args) throws Exception {
+        // CLI stdout is a machine-readable JSON protocol; diagnostics belong on stderr.
+        System.setProperty("logback.configurationFile", FactoryCli.class.getResource("/factory-logback.xml").toExternalForm());
         if (args.length < 1) {
             usage();
             System.exit(2);

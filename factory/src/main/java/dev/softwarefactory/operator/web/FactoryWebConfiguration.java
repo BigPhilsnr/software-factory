@@ -18,6 +18,25 @@ public class FactoryWebConfiguration implements org.springframework.web.servlet.
         registry.addViewController("/factory/").setViewName("forward:/factory/index.html");
         registry.addRedirectViewController("/factory", "/factory/").setKeepQueryParams(true);
     }
+    @Bean
+    org.springframework.security.web.SecurityFilterChain operatorSecurity(
+            org.springframework.security.config.annotation.web.builders.HttpSecurity http,
+            @org.springframework.beans.factory.annotation.Qualifier("localOperatorFilter") OncePerRequestFilter boundary) throws Exception {
+        return http.csrf(csrf -> csrf.disable())
+            .sessionManagement(session -> session.sessionCreationPolicy(org.springframework.security.config.http.SessionCreationPolicy.STATELESS))
+            .authorizeHttpRequests(authorize -> authorize.anyRequest().permitAll())
+            .addFilterBefore(boundary, org.springframework.security.web.access.intercept.AuthorizationFilter.class)
+            .build();
+    }
+
+    @Bean
+    org.springframework.boot.web.servlet.FilterRegistrationBean<OncePerRequestFilter> operatorBoundaryRegistration(
+            @org.springframework.beans.factory.annotation.Qualifier("localOperatorFilter") OncePerRequestFilter boundary) {
+        var registration = new org.springframework.boot.web.servlet.FilterRegistrationBean<>(boundary);
+        registration.setEnabled(false); // Executed exactly once, inside the security chain.
+        return registration;
+    }
+
     @Bean RequestBodyLimit requestBodyLimit() { return new RequestBodyLimit(); }
     @Bean OperatorToken factoryToken() { return new OperatorToken(UUID.randomUUID().toString()); }
     @Bean FactoryController factoryController(FactoryService factory, OperatorToken factoryToken) { return new FactoryController(factory, factoryToken); }

@@ -32,7 +32,7 @@ public class ShortenerController {
     }
 
     @PostMapping("/api/shorten")
-    public ResponseEntity<CreateResponse> create(@RequestBody CreateRequest request, HttpServletRequest http) {
+    public ResponseEntity<CreateResponse> create(@jakarta.validation.Valid @RequestBody CreateRequest request, HttpServletRequest http) {
         CreationRateLimiter.Result rate = limiter.admit(http.getRemoteAddr());
         if (!rate.allowed()) {
             return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
@@ -64,7 +64,9 @@ public class ShortenerController {
     }
 
     public record AnalyticsResponse(String code, long redirectCount, java.time.Instant lastRedirectAt) {}
-    public record CreateRequest(String url, String alias) {}
+    public record CreateRequest(
+        @jakarta.validation.constraints.NotBlank @jakarta.validation.constraints.Size(max = 2048) String url,
+        @jakarta.validation.constraints.Pattern(regexp = "[A-Za-z0-9-]{4,32}") String alias) {}
     public record CreateResponse(String code, String shortUrl) {}
     static final class NotFoundException extends RuntimeException {}
 }

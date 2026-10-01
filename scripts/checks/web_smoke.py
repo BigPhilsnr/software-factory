@@ -36,6 +36,8 @@ def main():
     TOKEN = request('/factory/api/config')['token']
     request('/factory/api/runs', {'kind':'scenario','scenario':'bugfix'}, status=403, include_token=False)
     request('/factory/api/runs', {'kind':'scenario','scenario':'bugfix'}, status=403, origin='https://example.org')
+    request('/factory/api/runs', {'kind':'unknown'}, status=400)
+    request('/factory/api/runs', {'kind':'scenario','scenario':'bugfix','mode':'invalid'}, status=400)
     request('/factory/api/runs/not-a-uuid', status=400)
     request('/factory/api/runs/00000000-0000-0000-0000-000000000000', status=404)
     request('/factory/api/runs', {'kind':'feature','requirement':'x'*70000}, status=413)

@@ -1,5 +1,6 @@
 <configuration>
   <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+    <target>System.err</target>
     <encoder><pattern>%d{HH:mm:ss} %-5level %logger{35} - %msg%n</pattern></encoder>
   </appender>
   <root level="WARN"><appender-ref ref="CONSOLE"/></root>

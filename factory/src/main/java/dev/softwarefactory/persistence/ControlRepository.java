@@ -5,31 +5,33 @@ import dev.softwarefactory.serialization.Json;
 import dev.softwarefactory.workflow.RunState;
 
 import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.time.Instant;
 
 /** Separate PostgreSQL authority for state and a chained audit log. */
 public final class ControlRepository implements RunStore {
-    private final String url;
-    private final String user;
-    private final String password;
+    private final javax.sql.DataSource dataSource;
 
     public ControlRepository(String url, String user, String password) {
-        this.url = url;
-        this.user = user;
-        this.password = password;
+        var source = new org.springframework.jdbc.datasource.DriverManagerDataSource(url, user, password);
+        var properties = new java.util.Properties();
+        properties.setProperty("connectTimeout", "5");
+        properties.setProperty("socketTimeout", "30");
+        properties.setProperty("options", "-c statement_timeout=15000 -c lock_timeout=5000");
+        source.setConnectionProperties(properties);
+        this.dataSource = source;
     }
 
-    public void initialize() throws SQLException {
-        try (Connection connection = connect(); var statement = connection.createStatement()) {
-            statement.execute("CREATE TABLE IF NOT EXISTS runs (id UUID PRIMARY KEY, state_json TEXT NOT NULL, updated_at TIMESTAMPTZ NOT NULL)");
-            statement.execute("ALTER TABLE runs ADD COLUMN IF NOT EXISTS revision BIGINT NOT NULL DEFAULT 0");
-            statement.execute("CREATE TABLE IF NOT EXISTS audit_events (run_id UUID NOT NULL REFERENCES runs(id), seq BIGINT NOT NULL, at TIMESTAMPTZ NOT NULL, type TEXT NOT NULL, detail TEXT NOT NULL, previous_hash CHAR(64) NOT NULL, event_hash CHAR(64) NOT NULL, PRIMARY KEY(run_id, seq))");
-            statement.execute("ALTER TABLE audit_events ADD COLUMN IF NOT EXISTS state_json TEXT");
-            statement.execute("CREATE TABLE IF NOT EXISTS chat_budget (day DATE PRIMARY KEY, requests INTEGER NOT NULL)");
-            statement.execute("CREATE TABLE IF NOT EXISTS chat_audit (id UUID PRIMARY KEY, at TIMESTAMPTZ NOT NULL, type TEXT NOT NULL, detail TEXT NOT NULL)");
-        }
+    public ControlRepository(javax.sql.DataSource dataSource) {
+        this.dataSource = java.util.Objects.requireNonNull(dataSource);
+    }
+
+    /** CLI and isolated integration fixtures use the same versioned schema as Boot. */
+    public void initialize() {
+        var configuration = org.flywaydb.core.Flyway.configure()
+            .locations("classpath:db/migration").baselineOnMigrate(true).baselineVersion("0");
+        configuration.dataSource(dataSource);
+        configuration.load().migrate();
     }
 
     public static final class RunNotFound extends RunStore.MissingRunException {
@@ -93,15 +95,28 @@ public final class ControlRepository implements RunStore {
                 row.next();
                 if (!row.getBoolean(1)) throw new IllegalStateException("Run is already being advanced: " + id);
             }
-            return new RunLease(connection);
+            return new RunLease(connection, key);
         } catch (Exception failure) {
-            connection.close();
+            // A transport/statement failure may happen after PostgreSQL acquired the lock.
+            // Discard that session rather than returning an uncertain lease to the pool.
+            try { connection.abort(Runnable::run); }
+            catch (SQLException abort) { failure.addSuppressed(abort); }
+            finally { connection.close(); }
             throw failure;
         }
     }
 
-    public record RunLease(Connection connection) implements AutoCloseable {
-        @Override public void close() throws SQLException { connection.close(); }
+    public record RunLease(Connection connection, long key) implements AutoCloseable {
+        @Override public void close() throws SQLException {
+            try (var unlock = connection.prepareStatement("SELECT pg_advisory_unlock(?)")) {
+                unlock.setLong(1, key);
+                unlock.execute();
+            } catch (SQLException failure) {
+                // A session with an uncertain lock must never return to the pool.
+                try { connection.abort(Runnable::run); } catch (SQLException abort) { failure.addSuppressed(abort); }
+                throw failure;
+            } finally { connection.close(); }
+        }
     }
 
     @Override public void record(RunState state, String type, String detail) throws Exception {
@@ -219,11 +234,5 @@ public final class ControlRepository implements RunStore {
         }
     }
 
-    private Connection connect() throws SQLException { var properties = new java.util.Properties();
-        properties.setProperty("user", user);
-        properties.setProperty("password", password);
-        properties.setProperty("connectTimeout", "5");
-        properties.setProperty("socketTimeout", "30");
-        properties.setProperty("options", "-c statement_timeout=15000 -c lock_timeout=5000");
-        return DriverManager.getConnection(url, properties); }
+    private Connection connect() throws SQLException { return dataSource.getConnection(); }
 }

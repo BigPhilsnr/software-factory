@@ -11,7 +11,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 @RestControllerAdvice
 public class ApiErrors {
-    @ExceptionHandler({InvalidLinkException.class, HttpMessageNotReadableException.class})
+    @ExceptionHandler({InvalidLinkException.class, HttpMessageNotReadableException.class, org.springframework.web.bind.MethodArgumentNotValidException.class})
     ResponseEntity<Map<String, String>> invalid(Exception ignored) {
         return ResponseEntity.badRequest().body(Map.of("error", "invalid_request"));
     }

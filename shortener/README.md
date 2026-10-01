@@ -19,3 +19,15 @@ The controller and HTTP integration tests also live in `links/`. Historical scen
 Schema migrations are in `src/main/resources/db/migration/`; runtime configuration is in `src/main/resources/application.yml`. Tests mirror production packages under `src/test/java/dev/shortener/`.
 
 From the repository root, start the database with `docker-compose up -d shortener-db`, then run `python3 scripts/shortener.py` (loads local database settings from `.env`) with JDK 21. Validate the running service with `python3 scripts/checks/acceptance.py`.
+
+## REST Assured integration tests
+
+`links/PostgresHttpIntegrationTest` starts the real Boot application on a random port and exercises HTTP against PostgreSQL and Flyway. It covers canonical aliases, concurrent alias conflicts, HEAD versus GET analytics, invalid/private targets, body limits, throttling, redirect availability and readiness. Redirect following is disabled so tests never visit target URLs. Awaitility waits for asynchronous analytics with a bounded deadline.
+
+From the repository root, with JDK 21 and the shortener database running:
+
+```sh
+mvn -pl shortener -Pintegration -Dtest=PostgresHttpIntegrationTest test
+```
+
+Each test gets a fresh application context so cache and rate-limiter state cannot leak between cases. The suite creates a unique PostgreSQL schema and drops it afterward. Configure `SHORTENER_TEST_DB_URL`, `SHORTENER_TEST_DB_USER`, and `SHORTENER_TEST_DB_PASSWORD` if needed; these fall back to `SHORTENER_DB_*` and then the local Compose defaults. Maven does not load `.env` automatically. No server on port 8080 is required.

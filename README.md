@@ -2,6 +2,8 @@
 
 This repository contains a runnable URL shortener and a Java control plane that plans and replays four engineering scenarios against isolated Git candidates. The control plane uses Google ADK for **live** Claude calls and recorded fixtures for deterministic local replay. The fixture runs exercise real patch application, sandboxed tests, approvals, recovery, and audit transitions; they are not evidence of live AI generation.
 
+Both applications explicitly use **Spring Boot 4.1.1**, Spring MVC, Spring Security, Flyway, HikariCP, Micrometer and Actuator. See [Spring platform decisions](docs/architecture/spring-platform.md) for lifecycle ownership, local security boundaries, and why optional infrastructure libraries are deferred.
+
 Read the [Final Engineering Summary](docs/SUMMARY.md) for the plan, rationale, artifacts, validation, assumptions and remaining limitations. The [review response](docs/reviews/external-review-response.md) distinguishes verified fixes from open gaps.
 
 ## Repository map
@@ -53,6 +55,20 @@ curl -s http://localhost:8080/actuator/health/readiness
 
 The acceptance check creates a link, verifies its `302` redirect and analytics, tests aliases and conflicts, rejects an invalid URL, and checks an unknown code. The service runs with PostgreSQL on port 5433 and the control plane uses a separate PostgreSQL database on port 5434. Stop the service with Ctrl-C; stop the databases with `docker-compose down` (omit `-v` to retain local data).
 
+## REST Assured integration tests
+
+The [shortener suite](shortener/README.md#rest-assured-integration-tests) tests real HTTP, PostgreSQL, redirects, analytics and rate limiting. The [factory suite](factory/README.md#http-integration-tests) tests real HTTP, approval gates, clarification/revision, audit integrity, Git candidates and Docker validation using recorded fixtures. Both launch their own random-port servers and isolated database schemas; existing apps on ports 8000/8080 can stay running.
+
+```sh
+# JDK 21, both Compose databases, Git and Docker are required.
+docker-compose up -d shortener-db control-db
+mvn -q test  # also populate the local Maven cache for offline candidate validation
+docker pull maven@sha256:99e61abcff91a9b1333463bd8451fb18495d6eba9250ac66a338b518f8278320
+mvn -Pintegration test
+```
+
+The last command runs unit tests and all integration tests, including existing recovery/persistence fault tests. Plain `mvn test` excludes the `integration` tag. The test JVM removes the Anthropic key; these tests never intentionally call a paid provider. Connection settings and focused suite commands are in each module's guide. Maven does not automatically load `.env`.
+
 ## Replay and inspect the agent system
 
 To use the browser interface, start the control database, then run:
@@ -72,7 +88,7 @@ Warm Maven's local dependency cache and pull the validator image once, then run 
 export JAVA_HOME=/opt/homebrew/opt/openjdk@21
 docker-compose up -d control-db
 mvn -q -f pom.xml test
-docker pull maven:3.9-eclipse-temurin-21
+docker pull maven@sha256:99e61abcff91a9b1333463bd8451fb18495d6eba9250ac66a338b518f8278320
 python3 scripts/checks/agent_smoke.py
 ```
 

@@ -2,13 +2,25 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
   <parent>
-    <groupId>dev.softwarefactory</groupId>
-    <artifactId>agentic-url-shortener</artifactId>
-    <version>0.1.0-SNAPSHOT</version>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-parent</artifactId>
+    <version>4.1.1</version>
+    <relativePath/>
   </parent>
+  <groupId>dev.softwarefactory</groupId>
   <artifactId>factory</artifactId>
-  <properties><test.excludedGroups>integration</test.excludedGroups></properties>
+  <version>0.1.0-SNAPSHOT</version>
+  <properties><java.version>21</java.version><test.excludedGroups>integration</test.excludedGroups></properties>
   <dependencies>
+    <dependency><groupId>io.rest-assured</groupId><artifactId>rest-assured</artifactId><version>6.0.1</version><scope>test</scope></dependency>
+    <dependency><groupId>org.springframework.boot</groupId><artifactId>spring-boot-starter-security</artifactId></dependency>
+    <dependency><groupId>org.springframework.boot</groupId><artifactId>spring-boot-starter-webmvc</artifactId></dependency>
+    <dependency><groupId>org.springframework.boot</groupId><artifactId>spring-boot-starter-jdbc</artifactId></dependency>
+    <dependency><groupId>org.springframework.boot</groupId><artifactId>spring-boot-starter-validation</artifactId></dependency>
+    <dependency><groupId>org.springframework.boot</groupId><artifactId>spring-boot-starter-actuator</artifactId></dependency>
+    <dependency><groupId>org.springframework.boot</groupId><artifactId>spring-boot-starter-flyway</artifactId></dependency>
+    <dependency><groupId>org.flywaydb</groupId><artifactId>flyway-database-postgresql</artifactId></dependency>
+    <dependency><groupId>org.springframework.boot</groupId><artifactId>spring-boot-starter-test</artifactId><scope>test</scope></dependency>
     <dependency><groupId>com.squareup.okhttp3</groupId><artifactId>okhttp-jvm</artifactId><version>5.3.2</version></dependency>
     <dependency><groupId>com.google.adk</groupId><artifactId>google-adk</artifactId><version>1.10.1</version></dependency>
     <dependency><groupId>com.google.adk</groupId><artifactId>google-adk-dev</artifactId><version>1.10.1</version></dependency>
@@ -18,8 +30,9 @@
     <dependency><groupId>org.junit.jupiter</groupId><artifactId>junit-jupiter</artifactId><version>5.13.4</version><scope>test</scope></dependency>
   </dependencies>
   <build><plugins>
+    <plugin><groupId>org.springframework.boot</groupId><artifactId>spring-boot-maven-plugin</artifactId><configuration><mainClass>dev.softwarefactory.operator.web.FactoryWebServer</mainClass></configuration></plugin>
     <plugin><groupId>org.apache.maven.plugins</groupId><artifactId>maven-compiler-plugin</artifactId><version>3.14.1</version><configuration><release>21</release></configuration></plugin>
-    <plugin><groupId>org.apache.maven.plugins</groupId><artifactId>maven-surefire-plugin</artifactId><version>3.5.4</version><configuration><excludedGroups>${test.excludedGroups}</excludedGroups></configuration></plugin>
+    <plugin><groupId>org.apache.maven.plugins</groupId><artifactId>maven-surefire-plugin</artifactId><version>3.5.4</version><configuration><excludedGroups>${test.excludedGroups}</excludedGroups><environmentVariables><ANTHROPIC_API_KEY></ANTHROPIC_API_KEY></environmentVariables></configuration></plugin>
     <plugin><groupId>org.codehaus.mojo</groupId><artifactId>exec-maven-plugin</artifactId><version>3.5.1</version><configuration><mainClass>dev.softwarefactory.operator.cli.FactoryCli</mainClass></configuration></plugin>
   </plugins></build>
   <profiles><profile><id>integration</id><properties><test.excludedGroups></test.excludedGroups></properties></profile></profiles>

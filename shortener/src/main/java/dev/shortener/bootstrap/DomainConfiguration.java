@@ -13,13 +13,20 @@ import java.time.Clock;
 
 @Configuration
 public class DomainConfiguration {
-    @Bean
-    ShortenerService shortenerService(LinkRepository links, @org.springframework.beans.factory.annotation.Value("${shortener.base-url}") String baseUrl) {
-        return new ShortenerService(links, new CodeGenerator(), new UrlPolicy(baseUrl), new LinkCache(Clock.systemUTC()));
+    @Bean Clock clock() { return Clock.systemUTC(); }
+    @Bean CodeGenerator codeGenerator() { return new CodeGenerator(); }
+    @Bean LinkCache linkCache(Clock clock) { return new LinkCache(clock); }
+    @Bean UrlPolicy urlPolicy(@org.springframework.beans.factory.annotation.Value("${shortener.base-url}") String baseUrl) {
+        return new UrlPolicy(baseUrl);
     }
 
     @Bean
-    CreationRateLimiter creationRateLimiter() {
-        return new CreationRateLimiter(Clock.systemUTC(), 30);
+    ShortenerService shortenerService(LinkRepository links, CodeGenerator codes, UrlPolicy policy, LinkCache cache) {
+        return new ShortenerService(links, codes, policy, cache);
+    }
+
+    @Bean
+    CreationRateLimiter creationRateLimiter(Clock clock) {
+        return new CreationRateLimiter(clock, 30);
     }
 }

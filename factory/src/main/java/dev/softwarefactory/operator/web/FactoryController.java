@@ -24,23 +24,36 @@ public final class FactoryController {
     @GetMapping("/runs/{id}/artifacts/{name}") public ResponseEntity<com.fasterxml.jackson.databind.JsonNode> artifact(@PathVariable("id") String id, @PathVariable("name") String name) throws Exception {
         return json(Map.of("name", name, "text", factory.artifact(id, name)));
     }
-    @PostMapping("/runs") public ResponseEntity<com.fasterxml.jackson.databind.JsonNode> create(@RequestBody Map<String, String> body) throws Exception {
-        RunState state = "feature".equals(body.get("kind")) ? factory.feature(body.get("requirement"))
-            : factory.scenario(body.get("scenario"), body.getOrDefault("mode", "fixture"));
+    @PostMapping("/runs") public ResponseEntity<com.fasterxml.jackson.databind.JsonNode> create(@jakarta.validation.Valid @RequestBody CreateRunRequest body) throws Exception {
+        RunState state = "feature".equals(body.kind()) ? factory.feature(body.requirement())
+            : factory.scenario(body.scenario(), body.mode() == null ? "fixture" : body.mode());
         return json(state);
     }
-    @PostMapping("/runs/{id}/actions") public ResponseEntity<com.fasterxml.jackson.databind.JsonNode> action(@PathVariable("id") String id, @RequestBody Map<String, String> body) throws Exception {
-        String action = body.getOrDefault("action", "");
+    @PostMapping("/runs/{id}/actions") public ResponseEntity<com.fasterxml.jackson.databind.JsonNode> action(@PathVariable("id") String id, @jakarta.validation.Valid @RequestBody ActionRequest body) throws Exception {
+        String action = body.action();
         switch (action) {
             case "advance" -> factory.advance(id);
-            case "approve" -> factory.approve(id, body.get("hash"));
-            case "reject" -> factory.reject(id, body.get("hash"));
-            case "clarify" -> factory.clarify(id, body.get("answer"));
-            case "revise" -> factory.revise(id, body.get("task"), body.get("feedback"));
+            case "approve" -> factory.approve(id, body.hash());
+            case "reject" -> factory.reject(id, body.hash());
+            case "clarify" -> factory.clarify(id, body.answer());
+            case "revise" -> factory.revise(id, body.task(), body.feedback());
             default -> throw new IllegalArgumentException("Unknown action");
         }
         return json(Map.of("accepted", true));
     }
+    public record CreateRunRequest(
+        @jakarta.validation.constraints.NotBlank @jakarta.validation.constraints.Pattern(regexp = "feature|scenario") String kind,
+        String requirement, String scenario,
+        @jakarta.validation.constraints.Pattern(regexp = "fixture|live") String mode) {}
+    public record ActionRequest(
+        @jakarta.validation.constraints.NotBlank @jakarta.validation.constraints.Pattern(regexp = "advance|approve|reject|clarify|revise") String action,
+        String hash, String answer, String task, String feedback) {}
+
+    @ExceptionHandler(org.springframework.web.bind.MethodArgumentNotValidException.class)
+    public ResponseEntity<com.fasterxml.jackson.databind.JsonNode> invalidRequest() {
+        return ResponseEntity.badRequest().body(Json.MAPPER.valueToTree(Map.of("error", "Invalid request fields")));
+    }
+
     @ExceptionHandler({IllegalArgumentException.class, IllegalStateException.class, org.springframework.http.converter.HttpMessageNotReadableException.class})
     public ResponseEntity<com.fasterxml.jackson.databind.JsonNode> invalid(Exception failure) throws Exception {
         return ResponseEntity.status(failure instanceof dev.softwarefactory.persistence.ControlRepository.RunNotFound ? 404 : failure instanceof IllegalStateException ? 409 : 400).contentType(org.springframework.http.MediaType.APPLICATION_JSON)

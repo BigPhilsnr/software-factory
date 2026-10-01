@@ -16,6 +16,10 @@ ALLOWED = {"ANTHROPIC_API_KEY", "CLAUDE_MODEL", "FACTORY_MAX_MODEL_CALLS", "FACT
 
 def environment():
     values = dict(os.environ)
+    # Some shells export DEBUG=release; Boot treats a non-false value as debug enabled.
+    # Preserve intentional Boot boolean settings, not unrelated tool mode strings.
+    if values.get("DEBUG", "false").lower() not in {"true", "false"}:
+        values.pop("DEBUG", None)
     path = ROOT / ".env"
     if path.is_file():
         for number, raw in enumerate(path.read_text().splitlines(), start=1):
