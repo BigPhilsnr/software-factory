@@ -1,8 +1,11 @@
 # Agentic URL Shortener
 
+> **Historical document.** The original delivery plan and assignment interpretation. It describes targets, including work that was never built; it is not a description of the current system. For what exists today read the [overview](../01-overview/README.md).
+
+
 A Java URL shortener built and evolved through a governed, AI-assisted engineering workflow over a 2–3 day interview assignment.
 
-**Status: design target and assignment interpretation.** The runnable implementation and verified local commands are in the root [README](../../README.md); agent-system evidence and remaining limits are in [agent-system evidence](../architecture/agent-system.md). This document preserves the full target design, including stretch gates that the local prototype does not yet satisfy. Its checklist is a submission gate, not a statement that every item has been completed.
+**Status: design target and assignment interpretation.** The runnable implementation and verified local commands are in the root [README](../../README.md); agent-system evidence and remaining limits are in [agent-system evidence](../02-architecture/factory.md). This document preserves the full target design, including stretch gates that the local prototype does not yet satisfy. Its checklist is a submission gate, not a statement that every item has been completed.
 
 ## Assignment interpretation
 

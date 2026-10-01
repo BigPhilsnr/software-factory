@@ -1,18 +1,48 @@
-# Reproducible engineering scenarios
+# Scenarios
 
-Each folder is a self-contained replay: `scenario.json` defines its task graph and the adjacent text/patch files supply recorded agent outputs. Fixture mode still applies patches and executes real sandbox tests.
+**In one paragraph.** A scenario is a folder with a `scenario.json` (a requirement, a baseline Git tag and a task graph) and the recorded output of every task. In fixture mode the factory replays those recordings: it still creates a candidate worktree, applies the recorded patches, runs the tests in the sandbox and waits for approvals. Four scenarios run to completion and two exist to prove that the factory stops when it should.
 
-| Folder | What it demonstrates |
+## The six scenarios
+
+| Folder | Baseline tag | Tasks | What it demonstrates | Expected end state |
+| --- | --- | --- | --- | --- |
+| `greenfield/` | `project-start` | 10 | Building the shortener from an empty project | `COMPLETED` |
+| `brownfield/` | `url-v1` | 11 | Adding aliases and creation rate limiting to an existing product | `COMPLETED` |
+| `ambiguous/` | `url-v2` | 11 | A vague requirement: the run stops for a clarification before planning | `COMPLETED` |
+| `bugfix/` | `url-v2-buggy` | 7 | A regression test that must fail on the buggy baseline (`VALIDATE_RED`), then a fix that makes the suite pass | `COMPLETED` |
+| `policy-violation/` | `url-v2` | 1 | A patch that reaches outside its write scope | `SAFE_STOPPED` |
+| `retry-exhaustion/` | `url-v2` | 1 | A patch that cannot be applied: one retry, then failure | `FAILED` |
+
+The operator page and the chat command `/demo` offer the first four. The last two are run by the checks.
+
+## What is in a folder
+
+| File | Purpose |
 | --- | --- |
-| `greenfield/` | Building a shortener from the empty project baseline. |
-| `brownfield/` | Extending an existing product. |
-| `ambiguous/` | Clarification before planning and implementation. |
-| `bugfix/` | A failing regression on a deliberately buggy baseline, then a repair. |
-| `policy-violation/` | Refusing an out-of-scope patch. |
-| `retry-exhaustion/` | Bounded retries and terminal failure. |
+| `scenario.json` | `id`, `requirement`, `baselineTag` and `tasks`. Each task has an `id`, `stage`, `kind`, `role`, `dependsOn`, a `prompt`, the `fixture` file to replay, and for patches a `writeScope` and `requiresApproval`. |
+| `*.txt` | Recorded output of an `ARTIFACT` task |
+| `*.patch` | Recorded output of a `PATCH` task |
 
-These are historical, reproducible bundles. Their specs, patches and baselines retain their original bytes and package paths, including `com.example`, so they still apply to their pinned Git commits. Current application code uses `dev.softwarefactory` and `dev.shortener`. New feature runs use the reorganized `url-v4` baseline.
+A fixture file must be inside its scenario folder; a path that escapes it safe-stops the run.
 
-Persisted runs that reference the former `scenarios/NAME.json` path resolve to `scenarios/NAME/scenario.json` without changing their stored hashes. No historical Git tag is rewritten. Live feature-request specifications and candidate worktrees remain in ignored `.runs/`; immutable outputs remain in ignored `evidence/`.
+## Run them
 
-Run all bundles from the repository root with `python3 scripts/checks/agent_smoke.py`. See the root README for Docker and Maven-cache prerequisites.
+```sh
+# All six, with synthetic approvals and audit verification (needs control-db, Docker, a warm ~/.m2)
+python3 scripts/checks/agent_smoke.py
+
+# One, by hand
+python3 scripts/factory_cli.py start scenarios/bugfix/scenario.json fixture
+python3 scripts/factory_cli.py advance <run-id>
+```
+
+Prerequisites and the full CLI are in the [runbook](../docs/03-operations/runbook.md#start) and the [operator guide](../docs/03-operations/operator-guide.md#cli).
+
+## These are recorded history
+
+- The patches and baselines keep their original bytes and package names (`com.example`, later `dev.shortener.links` and so on), because they must apply to the commits their tags point at. The current code uses different packages. Do not "fix" them.
+- A run pins the SHA-256 of its `scenario.json` when it starts. Editing the file afterwards pauses existing runs of it until they are revised.
+- Runs created before the folders were introduced refer to `scenarios/NAME.json`. `ScenarioFiles` resolves that to `scenarios/NAME/scenario.json` without changing the stored hash.
+- In the ambiguous scenario the operator's answer is recorded and changes the approval hashes, but the replayed patch is the same whatever the answer says. Fixtures prove the control flow, not the model.
+
+Feature requests made through the operator page do not use these folders. They use the fixed workflow in `FeatureScenario`, start from the tag `url-v4`, and store their generated scenario under `.runs/requests/`.

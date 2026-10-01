@@ -14,13 +14,15 @@ concurrency:
 
 env:
   MAVEN_ARGS: --batch-mode --no-transfer-progress
-  # SpotBugs and PMD findings are reported but do not fail the build until the existing backlog is
-  # cleared; formatting (Spotless), the coverage floor (JaCoCo) and the enforcer always gate.
-  # Flip to 'true' (the POM default) once `mvn verify` is clean locally.
+  # The gate is strict: PMD and SpotBugs/FindSecBugs findings fail the build, like formatting
+  # (Spotless), the coverage floor (JaCoCo) and the enforcer rules. 'true' is also the POM default.
+  # Setting this to 'false' only reports PMD and SpotBugs findings; the other checks still gate.
+  # See docs/04-quality/quality-gate.md and docs/04-quality/ci.md.
   QUALITY_FAIL_ON_VIOLATION: 'true'
 
 jobs:
-  # Quality gate: unit tests + Spotless check + PMD + SpotBugs/FindSecBugs + JaCoCo coverage floor.
+  # Quality gate without external services: unit tests, Spotless, PMD, SpotBugs/FindSecBugs,
+  # JaCoCo coverage floor and enforcer rules for each module, then the recorded-evidence checksums.
   verify:
     runs-on: ubuntu-latest
     timeout-minutes: 20
@@ -83,7 +85,8 @@ jobs:
       CONTROL_DB_URL: jdbc:postgresql://localhost:5434/control
       CONTROL_DB_USER: control
       CONTROL_DB_PASSWORD: control
-      # Must match the IMAGE constant in the factory's SandboxValidator (checked below).
+      # Must equal SandboxValidator.IMAGE in factory/src/main/java/dev/softwarefactory/validation
+      # (a step of this job checks it before the image is pulled).
       VALIDATOR_IMAGE: maven@sha256:99e61abcff91a9b1333463bd8451fb18495d6eba9250ac66a338b518f8278320
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7

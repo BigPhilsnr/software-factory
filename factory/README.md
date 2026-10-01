@@ -1,6 +1,6 @@
 # Software factory
 
-This module takes an engineering request through planning, generated patches, review, sandbox tests and release approval. It operates on isolated candidates; it does not apply generated changes to this checkout.
+**In one paragraph.** This module takes an engineering request through planning, generated patches, review, sandbox tests and release approval. It operates on isolated candidates; it does not apply generated changes to this checkout. This page maps the code: the full run flowchart, the state diagrams and the package table. The design reasoning, sequence diagrams and trust boundaries are in [factory architecture](../docs/02-architecture/factory.md); the terms are defined in the [glossary](../docs/01-overview/glossary.md).
 
 ## The story of a run
 
@@ -124,19 +124,19 @@ Dependencies point down this table only (`operator → run → {generation, vali
 
 The browser files live together in `src/main/resources/static/factory/`. Tests mirror the Java packages under `src/test/java/dev/softwarefactory/`. `RunEngine` takes its collaborators (run store, evidence store, workspace, validator, agent runtimes, clock) through its constructor, so the `run` tests exercise the whole workflow with real Git and evidence files but without Docker, a database or a provider.
 
-From the repository root, run `python3 scripts/factory_web.py`. See the [operator guide](../docs/operations/operator-guide.md) and [agent architecture](../docs/architecture/agent-system.md).
+From the repository root, run `python3 scripts/factory_web.py`. See the [operator guide](../docs/03-operations/operator-guide.md) and the [runbook](../docs/03-operations/runbook.md).
 
 ## Quality gate
 
-`mvn -f factory/pom.xml verify` runs Spotless, PMD, SpotBugs/FindSecBugs, the enforcer rules and a JaCoCo line-coverage floor of 0.70 over the unit tests; any finding fails the build. `mvn -f factory/pom.xml -Pintegration verify` adds the tests that need the control database and Docker.
+`mvn -f factory/pom.xml verify` runs Spotless, PMD, SpotBugs/FindSecBugs, the enforcer rules and a JaCoCo line-coverage floor of 0.70 over the unit tests; any finding fails the build. `mvn -f factory/pom.xml -Pintegration verify` adds the tests that need the control database and Docker. Use JDK 21 to 25. Details are in the [quality gate](../docs/04-quality/quality-gate.md).
 
 ## Spring runtime
 
-The web application has an explicit Spring Boot composition root in `operator/web/FactoryWebServer.java`. Spring owns the service lifecycle, ADK loader, control connection pool, migrations, security chain and health endpoints. See [platform decisions](../docs/architecture/spring-platform.md) for library choices and the local-only operator boundary.
+The web application has an explicit Spring Boot composition root in `operator/web/FactoryWebServer.java`. Spring owns the service lifecycle, ADK loader, control connection pool, migrations, security chain and health endpoints. See [ADR 0014](../docs/02-architecture/decisions/0014-spring-boot-platform-and-deferred-libraries.md) for library choices and the [security model](../docs/04-quality/security.md) for the local-only operator boundary.
 
 ## Configuration and maintenance
 
-All environment settings are read once by `platform/FactorySettings`. Live runs need `ANTHROPIC_API_KEY` and `FACTORY_AUDIT_KEY` (at least 32 characters); the audit key signs the audit chain (HMAC-SHA256) and is kept outside the control database. Without it, fixture runs use a development key generated in `.runs/audit.key`. Rows written before this scheme keep verifying with their recorded `hash_scheme`.
+All environment settings are read once by `platform/FactorySettings`; the full table is in the [runbook](../docs/03-operations/runbook.md#settings). Live runs need `ANTHROPIC_API_KEY` and `FACTORY_AUDIT_KEY` (at least 32 characters); the audit key signs the audit chain (HMAC-SHA256) and is kept outside the control database. Without it, fixture runs use a development key generated in `.runs/audit.key`. Rows written before this scheme keep verifying with their recorded `hash_scheme`.
 
 Workflow commands in ADK chat (`/feature`, `/demo`, `/advance`, `/approve`, `/reject`, `/answer`, `/changes`) require the operator token; use the operator page for decisions.
 
@@ -148,7 +148,7 @@ Workflow commands in ADK chat (`/feature`, `/demo`, `/advance`, `/approve`, `/re
 
 The suite checks operator-token/origin restrictions, request validation, ADK agent registration, clarification, stale approval hashes, revision and rejection, evidence tampering, and separate patch/release approvals. The happy path reaches completion only after candidate tests pass. Every run asserts zero model calls and a valid audit chain. Surefire clears `ANTHROPIC_API_KEY` in its test JVM, and the suite verifies that live mode is unavailable.
 
-From the repository root, with JDK 21, Git, Docker/Colima and the control database running:
+From the repository root, with JDK 21 or newer, Git, Docker (Docker Desktop or Colima) and the control database running:
 
 ```sh
 mvn -pl factory -Pintegration -Dtest=FactoryHttpIntegrationTest test
@@ -156,4 +156,4 @@ mvn -pl factory -Pintegration -Dtest=FactoryHttpIntegrationTest test
 
 The test owns a unique database schema and a disposable Git clone under `.runs/http-integration-*`; it copies current scenario files into that clone. Background workers drain before cleanup removes these resources. Existing operator runs and source files are not modified. `CONTROL_DB_URL`, `CONTROL_DB_USER`, and `CONTROL_DB_PASSWORD` override local Compose defaults; Maven does not load `.env`. Port 8000 need not be running.
 
-The Docker validator requires the pinned Maven image and populated local Maven cache described in the [root test instructions](../README.md#rest-assured-integration-tests). These tests exercise orchestration and boundaries, not live model reasoning quality. `RunEngineResilienceTest` and `ControlRecordIntegrationTest` additionally cover recovery, concurrent leases, migration compatibility and persisted budgets.
+The Docker validator requires the pinned Maven image and populated local Maven cache described in the [testing strategy](../docs/04-quality/testing.md#how-to-run). These tests exercise orchestration and boundaries, not live model reasoning quality. `RunEngineResilienceTest` and `ControlRecordIntegrationTest` additionally cover recovery, concurrent leases, migration compatibility and persisted budgets.

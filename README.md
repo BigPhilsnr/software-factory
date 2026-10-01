@@ -1,145 +1,109 @@
-# Agentic URL shortener
+# Software factory and URL shortener
 
-This repository contains a runnable URL shortener and a Java control plane that plans and replays four engineering scenarios against isolated Git candidates. The control plane uses Google ADK for **live** Claude calls and recorded fixtures for deterministic local replay. The fixture runs exercise real patch application, sandboxed tests, approvals, recovery, and audit transitions; they are not evidence of live AI generation.
+**In one paragraph.** This repository holds two Spring Boot applications. The **shortener** is a small product: it creates short links, redirects visitors and counts visits. The **factory** is a control plane that changes that product under supervision: it takes an engineering request, lets Claude agents write documents and propose patches, applies the patches to an isolated copy of the code, runs the tests in a locked-down container, and stops for a human decision before anything is accepted. Recorded scenarios replay the whole workflow without calling a model, so everything except model quality can be checked locally and in CI.
 
-Both applications explicitly use **Spring Boot 4.1.1**, Spring MVC, Spring Security, Flyway, HikariCP, Micrometer and Actuator. See [Spring platform decisions](docs/architecture/spring-platform.md) for lifecycle ownership, local security boundaries, and why optional infrastructure libraries are deferred.
+## How the pieces fit
 
-Read the [Final Engineering Summary](docs/SUMMARY.md) for the plan, rationale, artifacts, validation, assumptions and remaining limitations. The [review response](docs/reviews/external-review-response.md) distinguishes verified fixes from open gaps.
+```mermaid
+flowchart LR
+    operator(["Operator"])
+    visitor(["Client or visitor"])
 
-## Repository map
+    subgraph repo ["This repository"]
+        factory["factory/<br/>control plane, port 8000"]
+        shortener["shortener/<br/>product, port 8080"]
+        scenarios["scenarios/<br/>recorded task graphs"]
+    end
 
-Read the repository as two applications, their engineering scenarios, and the tools needed to operate them:
+    controlDb[("control DB<br/>port 5434")]
+    productDb[("shortener DB<br/>port 5433")]
+    claude["Claude API"]
+    sandbox["Docker sandbox<br/>offline Maven"]
 
-```text
-factory/       software factory: request → plan → patch → review → validate
-shortener/     Spring Boot product: links, redirects, analytics, rate limits
-scenarios/     one replay folder per engineering scenario
-scripts/       local launchers, with automated checks in checks/
-docs/          architecture/, operations/, delivery/, reviews/
-.runs/         generated candidate worktrees and feature specs (ignored)
-evidence/      generated run artifacts (ignored)
+    operator -->|"web UI, chat, CLI"| factory
+    factory -->|"runs, audit"| controlDb
+    factory -->|"live mode only"| claude
+    factory -->|"tests a candidate copy"| sandbox
+    scenarios -->|"fixture mode"| factory
+    visitor -->|"HTTP"| shortener
+    shortener --> productDb
 ```
 
-The [factory guide](factory/README.md) and [shortener guide](shortener/README.md) map packages to responsibilities. Tests mirror their production packages. The [scenario guide](scenarios/README.md) explains historical baselines; the [documentation index](docs/README.md) separates design, operation, and evaluation material.
+*The factory never touches the running shortener or its database: it works on a Git worktree of the shortener's source.*
 
-ADK chat and live workers have [web browsing and engineering tools](docs/operations/agent-tools.md): web search, public-page reading, source lookup, code search, Git inspection and time. Send `/tools` in chat; ordinary questions can use these tools automatically.
-
-| Path | Purpose |
+| Path | What it is |
 | --- | --- |
-| `factory/` | Task DAG, durable run state, ADK chat, browser operator page, policy, approvals, sandbox validator, CLI |
-| `shortener/` | Spring Boot API, OpenAPI contract, domain rules, PostgreSQL persistence, Flyway schema, unit tests |
-| `scenarios/` | Greenfield, brownfield, ambiguous, seeded bug-fix, and negative-control fixtures |
-| `scripts/` | Reproducible agent replay and independent HTTP acceptance check |
-| `docs/delivery/implementation-plan.md` | Assignment interpretation and target engineering gates |
-| `docs/architecture/agent-system.md` | Agent architecture, tested behavior, and remaining limits |
-| `docs/architecture/decisions.md` | Rationale and trade-offs for the control plane, sandbox, and product |
-| `docs/operations/local-runbook.md` | Local operational and regression guidance |
+| [`shortener/`](shortener/README.md) | The product. `POST /api/shorten`, `GET /{code}`, `GET /api/urls/{code}/analytics`. Contract in [`openapi.yaml`](shortener/openapi.yaml). |
+| [`factory/`](factory/README.md) | The control plane: task graph, run engine, agents, sandbox validation, approvals, audit record, operator UI, chat and CLI. |
+| [`scenarios/`](scenarios/README.md) | Six recorded scenarios (four that complete, two that must stop). |
+| [`scripts/`](scripts/README.md) | Launchers and local checks. |
+| [`docs/`](docs/README.md) | Overview, architecture, operations, quality and history, in reading order. |
+| `build-config/` | PMD and SpotBugs rule files shared by both modules. |
+| `.runs/`, `evidence/` | Created at run time and ignored by Git: candidate worktrees and immutable run outputs. |
 
-## Run locally
+## Quickstart (about five minutes)
 
-Prerequisites: JDK 21, Maven 3.9+, Python 3, Docker with a running daemon, and `docker-compose` (the standalone command). On this Mac, JDK 21 is at `/opt/homebrew/opt/openjdk@21`; set `JAVA_HOME` to your JDK 21 path. Ports 8080, 5433, and 5434 must be free. The Compose credentials are local demo credentials.
+You need JDK 21 or newer, Maven 3.9+, Python 3, Git and Docker with `docker-compose`. Ports 8000, 8080, 5433 and 5434 must be free.
 
 ```sh
-export JAVA_HOME=/opt/homebrew/opt/openjdk@21
+# 1. Databases (both bind to 127.0.0.1 only)
 docker-compose up -d shortener-db control-db
-mvn -q -f pom.xml test
+
+# 2. Build and unit-test both modules. This also fills ~/.m2, which the sandbox mounts read-only.
+mvn -q test
+
+# 3. Start the product (terminal 1)
 python3 scripts/shortener.py
-```
 
-In another terminal:
-
-```sh
+# 4. Check it over HTTP (terminal 2)
 python3 scripts/checks/acceptance.py
 curl -s http://localhost:8080/actuator/health/readiness
 ```
 
-The acceptance check creates a link, verifies its `302` redirect and analytics, tests aliases and conflicts, rejects an invalid URL, and checks an unknown code. The service runs with PostgreSQL on port 5433 and the control plane uses a separate PostgreSQL database on port 5434. Stop the service with Ctrl-C; stop the databases with `docker-compose down` (omit `-v` to retain local data).
-
-## REST Assured integration tests
-
-The [shortener suite](shortener/README.md#rest-assured-integration-tests) tests real HTTP, PostgreSQL, redirects, analytics and rate limiting. The [factory suite](factory/README.md#http-integration-tests) tests real HTTP, approval gates, clarification/revision, audit integrity, Git candidates and Docker validation using recorded fixtures. Both launch their own random-port servers and isolated database schemas; existing apps on ports 8000/8080 can stay running.
+Then start the factory and replay a recorded scenario. No model key is needed for this.
 
 ```sh
-# JDK 21, both Compose databases, Git and Docker are required.
-docker-compose up -d shortener-db control-db
-mvn -q test  # also populate the local Maven cache for offline candidate validation
+# 5. Pull the pinned sandbox image once
 docker pull maven@sha256:99e61abcff91a9b1333463bd8451fb18495d6eba9250ac66a338b518f8278320
-mvn -Pintegration test
-```
 
-The last command runs unit tests and all integration tests, including existing recovery/persistence fault tests. Plain `mvn test` excludes the `integration` tag. The test JVM removes the Anthropic key; these tests never intentionally call a paid provider. Connection settings and focused suite commands are in each module's guide. Maven does not automatically load `.env`.
-
-## Quality gate
-
-`mvn test` stays fast (compile, unit tests, JaCoCo report). `mvn verify` adds the local, Sonar-equivalent gate; no external service is involved:
-
-| Check | Tool | Configuration |
-| --- | --- | --- |
-| Formatting (Java and POMs) | Spotless: palantir-java-format, import order, sortPom | module POMs, `.editorconfig` |
-| Bugs and security | SpotBugs + FindSecBugs, effort Max, threshold Medium | `build-config/spotbugs-exclude.xml` |
-| Maintainability | PMD, curated "Sonar way"-like rules, fails on priority 1-3 | `build-config/pmd-ruleset.xml` |
-| Coverage | JaCoCo line coverage floor (`jacoco.line.minimum` in each POM) | `target/site/jacoco/index.html` |
-| Platform | Enforcer: Java 21+, Maven 3.9+, upper-bound dependencies | module POMs |
-
-```sh
-mvn spotless:apply                                   # format Java sources and POMs
-mvn -f shortener/pom.xml verify                      # full gate for one module
-mvn -f factory/pom.xml verify
-mvn verify -Dquality.failOnViolation=false           # report SpotBugs/PMD findings without failing
-mvn -Pintegration verify                             # gate plus integration tests (databases and Docker required)
-```
-
-Reports land in each module's `target/` (`pmd.xml`, `spotbugsXml.xml`, `site/jacoco/`). Run the gate on JDK 21-25: the PMD release bundled with the Maven plugin cannot read JDK 26 class files. The two modules do not inherit from the root POM, so each declares the same plugins and shares the rule files in `build-config/`.
-
-## Replay and inspect the agent system
-
-To use the browser interface, start the control database, then run:
-
-```sh
-docker-compose up -d control-db
+# 6. Start the factory (terminal 3), then open http://localhost:8000/factory/
 python3 scripts/factory_web.py
 ```
 
-Open **[the factory operator page](http://localhost:8000/factory/)** for feature requests, run progress, artifacts, clarification forms and approval buttons. **[ADK chat](http://localhost:8000/dev-ui/?app=software_factory)** connects to the same factory; ask questions about the shortener directly, or send `/help` to see its commands. Chat retains recent follow-ups and uses paid model calls. Use `/feature REQUIREMENT` to explicitly create a run; ordinary conversation never creates one. The launcher loads the ignored `.env` file and uses JDK 21. Keep the process running while using the browser.
-
-New feature requests create a live workflow against `url-v4`; generation begins when you select **Start / resume**. Each implementation/test patch pauses for review, followed by sandbox validation and final release review. **Try a scenario → Fixture demo** exercises the controls without paid model calls. The dependency cache and validator image below are also required for browser-triggered validation. See [UI usage and limits](docs/operations/operator-guide.md).
-
-Warm Maven's local dependency cache and pull the validator image once, then run the full fixture smoke test:
+In the operator page open **Try a scenario**, keep the execution mode on **Fixture demo**, select **Create scenario run** and then **Start / resume**. Approve each proposal when the page asks for a decision. To replay all six scenarios from the command line instead:
 
 ```sh
-export JAVA_HOME=/opt/homebrew/opt/openjdk@21
-docker-compose up -d control-db
-mvn -q -f pom.xml test
-docker pull maven@sha256:99e61abcff91a9b1333463bd8451fb18495d6eba9250ac66a338b518f8278320
 python3 scripts/checks/agent_smoke.py
 ```
 
-`agent_smoke.py` labels every approval `synthetic-fixture-test`. It runs greenfield, brownfield, ambiguous, and seeded bug-fix scenarios to completion, then checks policy safe-stop and retry exhaustion. It executes candidate Maven tests in a network-disabled, resource-limited container and verifies each audit chain. Each run creates an ignored `.runs/<run-id>/` candidate and `evidence/<run-id>/` artifacts.
+For live generation with Claude, copy `.env.example` to `.env`, set `ANTHROPIC_API_KEY` and `FACTORY_AUDIT_KEY`, and restart the factory. Live runs make paid API calls. See the [runbook](docs/03-operations/runbook.md) for every setting.
 
-For a manual replay, use the operator CLI. It prints JSON run state, including any pending approval hash:
+Stop the applications with Ctrl-C and the databases with `docker-compose down` (add `-v` only if you want to delete the data).
+
+## What you can rely on, and what you cannot
+
+- **Fixture mode is deterministic.** It replays recorded agent output but really applies patches, really runs the tests in Docker, and really enforces approvals, recovery and the audit record. It says nothing about model quality.
+- **Live mode has been proven once.** One recorded live bug-fix run completed. Live greenfield and brownfield attempts failed. The evidence for both is in [`docs/evaluation/samples/`](docs/evaluation/samples/README.md).
+- **Completing a run does not merge or deploy anything.** The result stays in an isolated worktree under `.runs/`.
+- **This is a single-host, single-operator system.** The operator API listens on loopback and uses a page-issued token, not user accounts. See the [security model](docs/04-quality/security.md).
+
+## Verify the code
 
 ```sh
-mvn -q -f factory/pom.xml exec:java -Dexec.args='start scenarios/greenfield/scenario.json fixture'
-mvn -q -f factory/pom.xml exec:java -Dexec.args='advance <run-id>'
-mvn -q -f factory/pom.xml exec:java -Dexec.args='review <run-id>'
-mvn -q -f factory/pom.xml exec:java -Dexec.args='approve <run-id> <reviewed-hash>'
-mvn -q -f factory/pom.xml exec:java -Dexec.args='advance <run-id>'
-mvn -q -f factory/pom.xml exec:java -Dexec.args='verify-audit <run-id>'
+mvn -f shortener/pom.xml verify     # unit tests + Spotless, PMD, SpotBugs, JaCoCo, enforcer
+mvn -f factory/pom.xml verify
+mvn -Pintegration verify            # adds the tests that need both databases and Docker
 ```
 
-The ambiguous scenario pauses for `clarify <run-id> <answer>` before planning. `revise <run-id> <task-id> [feedback-file]` invalidates affected descendants and optionally records review feedback for the next model attempt. Patch proposals must pass a read-only Git applicability check before approval. `reject <run-id> <reviewed-hash>` ends a pending approval as `NOT_APPROVED`. `review` gives the immutable proposed patch or candidate diff path, scope, baseline commit, and exact hash to approve. The CLI is a local prototype, not an authenticated multi-user approval service.
+Use JDK 21 to 25 for `verify` (the bundled PMD cannot read JDK 26 class files). Details: [testing strategy](docs/04-quality/testing.md), [quality gate](docs/04-quality/quality-gate.md), [CI pipeline](docs/04-quality/ci.md).
 
-For a live ADK run, copy `.env.example` to the ignored `.env` file, replace `ANTHROPIC_API_KEY` with your key, and start with `python3 scripts/factory_cli.py start scenarios/bugfix/scenario.json live`. Then use `python3 scripts/factory_cli.py advance <run-id>` and `review <run-id>`. Use the same launcher for later `approve` and `advance` commands so the key remains available to model calls. You can instead export `ANTHROPIC_API_KEY` in the launching shell. `CLAUDE_MODEL` and `FACTORY_MAX_MODEL_CALLS` are optional. Live mode makes paid provider calls; the release gate requires review of the exact candidate diff and hash. The fixture suite is the reproducible evaluation path.
+## Where to go next
 
-A live Claude Sonnet 5 bug-fix run completed after exact-hash release approval, with a verified red regression and five passing candidate tests. Its repair remains in an isolated candidate worktree for review or integration. Live greenfield generation remains less constrained: one trial chose a different stack and did not produce an acceptable patch. See [the agent-system notes](docs/architecture/agent-system.md) for the run evidence and limits.
-
-## Evaluation evidence
-
-See the [rubric scorecard](docs/evaluation/scorecard.md) for implemented evidence, reproducible checks, metric definitions and remaining gaps, and the [risk register](docs/evaluation/risks.md) for residual risks. With both local applications running and JDK 21 configured, `python3 scripts/checks/evaluate.py` checks unit/integration behavior, fault recovery, scenarios and operator controls and saves a machine-readable evidence bundle. It does not make live provider calls or certify an interview score.
-
-## Product contract
-
-`POST /api/shorten` accepts `{"url":"https://example.com","alias":"optional-alias"}` and returns a code and short URL. `GET /{code}` returns a `302` to the target. `HEAD /{code}` returns redirect headers without recording a click. Code lookups are case-insensitive. `GET /api/urls/{code}/analytics` returns `redirectCount` and nullable `lastRedirectAt`. Local hostnames, private IP literals and the configured shortener host are rejected as targets; the service does not resolve DNS or fetch destinations, so this is not a complete abuse filter. Creation is limited to 30 requests per source IP per 60-second fixed window; redirects are never creation-throttled. Links are immutable, with a bounded 60-second in-process lookup cache. Analytics uses a bounded background recorder and may lag or drop writes under failure; redirect availability takes priority.
-
-The code follows the versioned path `project-start` → `url-v1` → `url-v2` → `url-v3` → `url-v4` (organized packages). `url-v2-buggy` is an intentionally seeded redirect-throttling defect and `url-v2-fixed` contains its regression test and repair. See [the agent-system notes](docs/architecture/agent-system.md) for evidence and limitations.
-The endpoint and response schema is in [the OpenAPI file](shortener/openapi.yaml).
+| If you want to | Read |
+| --- | --- |
+| Understand the idea and the vocabulary | [Overview](docs/01-overview/README.md), [glossary](docs/01-overview/glossary.md) |
+| See how the factory works inside | [Factory architecture](docs/02-architecture/factory.md), then the [factory package guide](factory/README.md) |
+| See how the shortener works inside | [Shortener architecture](docs/02-architecture/shortener.md), then the [shortener package guide](shortener/README.md) |
+| Know why it was built this way | [Decision records](docs/02-architecture/decisions/README.md) |
+| Run and operate it | [Runbook](docs/03-operations/runbook.md), [operator guide](docs/03-operations/operator-guide.md) |
+| Judge the engineering quality | [Scorecard](docs/04-quality/scorecard.md), [security model](docs/04-quality/security.md), [risk register](docs/04-quality/risks.md) |

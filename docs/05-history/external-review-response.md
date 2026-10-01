@@ -1,5 +1,8 @@
 # External review: verified findings and response
 
+> **Historical document.** A record of how two external reviews were answered. Revisions, test counts and "now"/"current" statements refer to the commits named in the text (`47fa6f6`, `08e8deb`, `9ca44f8`), not to the current code. Several items listed here as follow-ups have since been implemented (Flyway, connection pools, coverage and enforcer tooling); see the [decision records](../02-architecture/decisions/README.md) and the [quality gate](../04-quality/quality-gate.md).
+
+
 The supplied review was checked against `47fa6f6`, the assignment, source code, local run records and clean Git clones. Its numeric grades are estimates, not published rubric weights.
 
 | Finding | Assessment | Response / remaining work |
@@ -12,7 +15,7 @@ The supplied review was checked against `47fa6f6`, the assignment, source code, 
 | Default tests barely exercise `RunEngine` | Confirmed. DB/Docker tests were opt-in. | Add a `RunStore` boundary and six default behavior tests with copied in-memory state and real Git candidates. Retain integration checks for actual adapters. |
 | No CI / no Testcontainers | CI absence confirmed. Testcontainers is an implementation option. | Add pinned GitHub Actions configuration for clean builds/tests and evidence checksums. Local integration setup remains; no hosted CI pass is claimed. |
 | Analytics wait/count-only API, whole-cache eviction, peer-IP limiting, no expiry/deletion | Confirmed. Proxy behavior is a deployment limitation rather than a defect in direct local operation. | Record exact limitations and production follow-ups. Preserve focus on orchestration evidence rather than expanding optional product scope. |
-| No final engineering summary | Confirmed. | Add [Final Engineering Summary](../SUMMARY.md), mapped to section 4.8. |
+| No final engineering summary | Confirmed. | Add [Final Engineering Summary](engineering-summary.md), mapped to section 4.8. |
 | Evidence not portable in Git | Confirmed. | Add a curated, redacted, checksummed [sample bundle](../evaluation/samples/README.md), including failures. Runtime histories remain ignored. |
 | `.env` ignored | Correct. | No key is copied into source, CI configuration or evidence. |
 

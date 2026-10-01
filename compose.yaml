@@ -1,4 +1,10 @@
+# Local PostgreSQL for development and integration tests. Not a production setup.
+# Both ports are published on 127.0.0.1 only. Passwords come from .env (see .env.example) and are
+# applied only when a volume is first created; later changes need ALTER ROLE or a new volume.
+#   Start: docker-compose up -d shortener-db control-db      Stop: docker-compose down
+#   Delete the data as well: docker-compose down -v
 services:
+  # Product data (links, redirect counters). Used by shortener/ on port 5433.
   shortener-db:
     image: postgres:16-alpine
     environment:
@@ -14,6 +20,8 @@ services:
       retries: 15
     volumes:
       - shortener-data:/var/lib/postgresql/data
+  # Factory control data (run state, audit chain, chat budget). Used by factory/ on port 5434.
+  # Kept separate so that nothing the factory works on can reach its own record.
   control-db:
     image: postgres:16-alpine
     environment:

@@ -1,0 +1,101 @@
+# Scorecard
+
+**In one paragraph.** This page states what was measured, on which commit and how, and maps each quality criterion to the evidence for it and to what is still missing. The numbers come from running the commands shown here; they are not estimates. Anything about live model runs comes from recorded evidence of earlier commits and is labelled as such.
+
+## Measured results
+
+Measured on commit `1628f63` (branch `refactor/production-grade`), 2026-10-01, on macOS with OpenJDK 24.0.2 and Maven 3.9.16, PostgreSQL 16 from `compose.yaml`, and the pinned sandbox image.
+
+| Measure | Shortener | Factory |
+| --- | --- | --- |
+| Unit-level tests (`mvn verify`) | 131 passed | 270 passed |
+| With integration tests (`mvn -Pintegration verify`) | 150 passed | 286 passed |
+| Integration tests alone | 19 (2 classes) | 16 (3 classes) |
+| Test classes | 20 | 48 |
+| Failures, errors, skipped | 0, 0, 0 | 0, 0, 0 |
+| Line coverage, unit-level run | 95.4% (580 of 608 lines) | 84.2% (2,850 of 3,385 lines) |
+| Branch coverage, unit-level run | 82.7% | 76.6% |
+| Line coverage with integration tests | 95.4% | 93.1% |
+| Branch coverage with integration tests | 82.7% | 81.1% |
+| Coverage floor enforced | 80% lines | 70% lines |
+| PMD violations (priority 1 to 3) | 0 | 0 |
+| SpotBugs and FindSecBugs findings | 0 | 0 |
+| Spotless, enforcer | pass | pass |
+
+Totals: 401 tests without external services, 436 with the databases and Docker. All four Maven runs ended with `BUILD SUCCESS`.
+
+### Reproduce
+
+```sh
+export JAVA_HOME=$(/usr/libexec/java_home -v 24)    # any JDK 21 to 25
+docker-compose up -d shortener-db control-db
+
+mvn -f shortener/pom.xml verify
+mvn -f factory/pom.xml verify
+mvn -f shortener/pom.xml -Pintegration verify
+mvn -f factory/pom.xml -Pintegration verify
+```
+
+Test counts are on the `Tests run:` summary line of each build. Coverage is in `target/site/jacoco/jacoco.csv` of each module (sum the `LINE_COVERED` and `LINE_MISSED` columns). Use `clean verify` if `target/` may hold reports from an older build.
+
+Not re-measured for this page: the Python smoke scripts, the scenario replays and the browser check. How to run them is in the [testing strategy](testing.md#scripts).
+
+## Evidence by criterion
+
+| Criterion | What exists | How to check it | What is missing |
+| --- | --- | --- | --- |
+| Orchestration | A validated task graph; dependency-ordered execution; two parallel document branches with a join; patch and release approval gates; clarification; revision that invalidates only downstream work; one recorded retry; recovery after interruption; safe stop | `TaskGraphTest`, the four `RunEngine*Test` classes, `RunEngineResilienceTest`, `agent_smoke.py` | Task graphs are fixed templates. The system does not plan its own graph. |
+| Architecture | Two separated applications and databases; story-named packages with enforced dependency direction; one engine behind three operator surfaces; ports for storage and validation (`RunStore`, `CandidateValidator`) | `StoryArchitectureTest`, `PackageDependencyTest`, [factory architecture](../02-architecture/factory.md), [decision records](../02-architecture/decisions/README.md) | Single host. No scheduling across machines. |
+| Execution quality | Pinned baselines; write scopes; applicability check before approval; exact candidate diff; real Maven execution in a sandbox; changed tests must actually run | `GitWorkspaceTest`, `SandboxValidatorTest`, `GeneratedTestPolicyTest`, `FactoryHttpIntegrationTest` | Fixture output is recorded, not generated. Live success is recorded for one bug-fix run only. |
+| Risk control | Exact-hash approvals; audit chain and evidence checks before every advance and release; scope and policy rules; offline sandbox without credentials; budgets and deadlines | `PatchScopeTest`, `PatchPolicyTest`, `AuditChainTest`, `ControlRecordIntegrationTest`, `RunEngineResilienceTest`, the `policy-violation` and `retry-exhaustion` scenarios | See the residual risks in the [security model](security.md). |
+| Product engineering | Contract-tested HTTP API; database-enforced uniqueness and constraints; fail-fast timeouts; cache in front of immutable data; bulkheaded analytics; graceful shutdown | `OpenApiContractTest`, `PostgresHttpIntegrationTest`, `acceptance.py` | Single instance. No load test. Analytics are best effort. |
+| Build quality | Formatting, static analysis, security analysis, coverage floors and platform rules as a blocking gate, locally and in CI | `mvn verify`, [quality gate](quality-gate.md), [CI pipeline](ci.md) | No trend history. PMD does not analyse test sources. |
+| Decision record | One record per significant decision, each with consequences and a trigger for review | [Decision records](../02-architecture/decisions/README.md) | |
+
+## Recorded evidence from earlier commits
+
+The folder [`docs/evaluation/samples/`](../evaluation/samples/README.md) holds results that cannot be regenerated by a test, because they involved live model calls or a specific past commit. It is protected by a checksum manifest (`python3 scripts/checks/verify_evidence.py`). Read it as history:
+
+| Sample | What it shows | Refers to |
+| --- | --- | --- |
+| `live-bugfix/` | A live run that produced a diagnosis, a regression test that failed for the right reason, a fix, a passing suite and a runbook, with four model calls | An earlier commit; its file paths use the old package names |
+| `live-failures/outcomes.json` | Live greenfield and brownfield attempts that failed | Earlier commits |
+| `review-verification/` | 46 default and 50 integration tests, six scenario replays, operator controls and product acceptance | Commit `08e8deb` |
+| `historical-evaluation/` | An earlier full local evaluation | Commit `101270c` |
+
+These counts differ from the table at the top because the code has changed since. They are not claims about the current commit.
+
+## Reliability metrics
+
+The factory derives run metrics from audit events (`audit/RunMetrics`), so they are reproducible from the database.
+
+| Metric | Definition |
+| --- | --- |
+| Elapsed time | From run creation to its final state, or to now for an unfinished run |
+| Retry offers | Count of `RETRY_AVAILABLE` events |
+| Retry executions | A task or validation start while that task has an unresolved recorded failure |
+| Rollbacks | Count of `PARTIAL_REPLAN` events, plus recoveries that reset the candidate |
+| Replans | Count of `PARTIAL_REPLAN` events |
+| Recovered tasks, mean recovery time | A failed task that later reached `TASK_DONE`; time from the first failure to that event, including time spent waiting for the operator. `null` when nothing recovered, never zero. |
+| Unresolved failures | Tasks that failed and have not recovered |
+| Parallel joins, approval requests | Counts of `PARALLEL_JOIN` and `APPROVAL_REQUIRED` events |
+
+`GET /factory/api/metrics` aggregates the 100 most recently updated runs, separately for fixture and live mode:
+
+| Field | Definition |
+| --- | --- |
+| `completionRate` | Completed runs divided by finished runs. Rejected, failed and safe-stopped runs count in the denominator; unfinished runs do not. Deliberate negative tests lower this number. |
+| `retryRunRate`, `rollbackRunRate` | Share of runs with at least one retry execution or rollback |
+| `meanTerminalLatencyMillis` | Mean elapsed time of finished runs |
+| `meanRecoveryMillis` | Total recovery time divided by recovered tasks |
+
+These describe orchestration. They are not redirect latency, token usage or cost.
+
+## Suggested review path
+
+1. Read the [overview](../01-overview/README.md) and the trust-boundary section of the [factory architecture](../02-architecture/factory.md#trust-boundaries).
+2. Run `mvn -f factory/pom.xml verify` and `mvn -f shortener/pom.xml verify`.
+3. Start the factory, create the **Ambiguous requirement** fixture run, answer its question, request changes on the patch, and watch which tasks are regenerated.
+4. Create the **Seeded bug fix** fixture run and read the red and green validation reports.
+5. Run `python3 scripts/factory_cli.py verify-audit <run-id>` on a finished run.
+6. Read the residual risks in the [security model](security.md) and the [risk register](risks.md).

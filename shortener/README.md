@@ -1,6 +1,6 @@
 # URL shortener
 
-The Spring Boot product built and tested by the software factory. Its public contract is [openapi.yaml](openapi.yaml).
+**In one paragraph.** The Spring Boot product built and tested by the software factory. Its public contract is [openapi.yaml](openapi.yaml). This page maps the code: the package diagram, the dependency rules and the conventions. The request flows as sequence diagrams, the timeouts and the known limits are in [shortener architecture](../docs/02-architecture/shortener.md); the tables are in the [data model](../docs/02-architecture/data-model.md#shortener-database).
 
 ## The story of a link
 
@@ -64,13 +64,17 @@ Historical scenario baselines and exported evaluation evidence retain their orig
 
 Schema migrations are in `src/main/resources/db/migration/`; runtime configuration is in `src/main/resources/application.yml`. Tests mirror production packages under `src/test/java/dev/shortener/`. HTTP-level tests extend `WebSliceTest`, which runs the real controllers, use cases, error mapping, filters and security chain over MockMvc and mocks only link storage, the visit recorder and the statistics reader.
 
-From the repository root, start the database with `docker-compose up -d shortener-db`, then run `python3 scripts/shortener.py` (loads local database settings from `.env`) with JDK 21. Validate the running service with `python3 scripts/checks/acceptance.py`.
+From the repository root, start the database with `docker-compose up -d shortener-db`, then run `python3 scripts/shortener.py` (loads local database settings from `.env`) with JDK 21 or newer. Validate the running service with `python3 scripts/checks/acceptance.py`.
+
+## Quality gate
+
+`mvn -f shortener/pom.xml verify` runs Spotless, PMD, SpotBugs/FindSecBugs, the enforcer rules and a JaCoCo line-coverage floor of 0.80 over the unit tests; any finding fails the build. `mvn -f shortener/pom.xml -Pintegration verify` adds the tests that need the shortener database. Use JDK 21 to 25. Details are in the [quality gate](../docs/04-quality/quality-gate.md).
 
 ## REST Assured integration tests
 
 `PostgresHttpIntegrationTest` starts the real Boot application on a random port and exercises HTTP against PostgreSQL and Flyway. It covers canonical aliases, concurrent alias conflicts, HEAD versus GET analytics, invalid/private targets, body limits, throttling, redirect availability and readiness. `analytics/AnalyticsPoolIntegrationTest` checks that the analytics pool inherits the primary pool's statement and lock timeouts. Redirect following is disabled so tests never visit target URLs. Awaitility waits for asynchronous analytics with a bounded deadline.
 
-From the repository root, with JDK 21 and the shortener database running:
+From the repository root, with JDK 21 or newer and the shortener database running:
 
 ```sh
 mvn -pl shortener -Pintegration -Dtest=PostgresHttpIntegrationTest test

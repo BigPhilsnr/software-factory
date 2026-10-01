@@ -1,44 +1,13 @@
-# Agent system: implementation and validation
+# Agent system (moved)
 
-The [browser interface](../operations/operator-guide.md) connects the native ADK chat and a Spring-backed operator page to this same control plane. Start it with `python3 scripts/factory_web.py` to submit features, inspect progress and evidence, answer clarifications, and review, revise, approve or reject proposals.
+This file is a pointer. It stays at this path because the chat agent loads it as fixed context (`CONTEXT_FILES` in `factory/src/main/java/dev/softwarefactory/operator/chat/ChatConversation.java`). Read the linked documents with the `read_file` tool or in a browser.
 
-The control plane is a single Java 21 process backed by a separate PostgreSQL database. `RunEngine` owns task readiness and transitions; `TaskGraph` validates dependencies and lifecycle order; `ControlRepository` persists state with an append-only SHA-256 audit chain and a per-run advisory lock. `EvidenceStore` keeps versioned outputs outside candidates. `GitWorkspace` creates detached worktrees from pinned baseline commits and checks patch paths and scope. `SandboxValidator` runs candidate Maven tests with no network, no governance credentials, a read-only host dependency cache, a read-only container filesystem, and CPU/memory/process limits.
-
-Fixture mode reads recorded artifacts from `scenarios/`. Live mode uses `AdkClaudeRuntime` through Google ADK and sends bounded repository source context to Claude; it requires an Anthropic key. The Claude adapter handles function calls and retains signed thinking privately for provider continuations, excluding it from public ADK events and artifacts. Shared read-only tools provide web search, public HTTPS page reading, bounded source lookup and Git inspection. Workers read their candidate checkout; chat reads the current checkout. Each provider request reserves run budget, and tool outcomes are audited. The adapter emits patch text for deterministic scope checks and application. There is no unrestricted shell or filesystem-write tool. See the [tool guide](../operations/agent-tools.md) for limits and verification.
-
-The four scenario DAGs are deliberately different. Greenfield starts from `project-start`; brownfield inspects `url-v1`; ambiguity blocks on operator clarification and can selectively invalidate descendants; the seeded bug-fix run adds a regression test, verifies one expected failure on `url-v2-buggy`, applies the repair, and verifies the full suite. At most two ready artifact tasks run concurrently, then downstream tasks wait for both. `PATCH` tasks cannot write outside their declared paths. A deterministic policy requires approval for Maven files, migrations, Compose and application configuration, security configuration, control-plane code, or any scenario-marked A2 patch. Release always requires a separate hash-bound approval of the validated diff.
-
-Approvals bind patch bytes, pinned baseline commit, scenario/requirement hashes, and current upstream artifact hashes. A changed clarification therefore creates a different approval hash. Release also checks that the candidate diff still matches the one validated in the restricted container. A pending approval cannot advance or regenerate itself. An operator can use `revise <run-id> <task-id> [feedback-file]` to invalidate the proposal and its descendants; feedback is recorded in durable state with an audit hash and included in the next generation prompt. This preserves the model-call budget and existing retry counts. A rejected approval is terminal. This local CLI records an operator label but does not provide identity proof; production use would need an authenticated operator channel and stronger separation of credentials.
-
-On restart, a per-run lock prevents a second operator process from advancing the same run. Interrupted artifact output is reconciled from immutable evidence. An interrupted patch causes the isolated candidate to reset to its pinned baseline, replays completed patches, and then uses the saved proposal; validation is rerun. Patch proposals undergo a read-only Git applicability check before approval. Malformed proposals are saved as evidence and pause for a bounded retry; an out-of-scope patch enters `SAFE_STOPPED` immediately. Other retryable failures pause once and become `FAILED` on the second unsuccessful attempt. Red validation derives the generated Java test class from the test patch, then requires exactly one assertion failure without test errors or skips. Live runs enforce a configured model-call count ceiling, a five-minute provider-request timeout, and zero SDK-level automatic retries (retry policy belongs to the control plane), but provider token or dollar ceilings are not measurable through this adapter.
-
-## Local evidence checked
-
-The reproducible command is `python3 scripts/checks/agent_smoke.py` after starting `control-db`, warming Maven's cache, and pulling the validator image as shown in the root README. A local run verified:
-
-| Case | Observed result |
+| Read | For |
 | --- | --- |
-| Greenfield fixture | `COMPLETED`; 3 sandboxed candidate tests passed; audit valid |
-| Brownfield fixture | `COMPLETED`; candidate tests passed; audit valid |
-| Ambiguous fixture | Paused for clarification, invalidated downstream work, required a new patch hash, then `COMPLETED`; audit valid |
-| Seeded bug-fix fixture | One regression test failed at redirect 30 (`302` expected, `429` actual); after repair 5 tests passed; audit valid |
-| Out-of-scope patch | `SAFE_STOPPED` before application |
-| Invalid in-scope patch | `PAUSED` after one attempt, `FAILED` after two; diagnostic artifacts retained |
-| Wrong approval hash | Rejected without changing run state |
-| Rejected release | `NOT_APPROVED` remains terminal |
-| Simulated validation and patch interruption | Recovery returned to release review, with the candidate diff applied once and a valid audit chain |
+| [`docs/02-architecture/factory.md`](../02-architecture/factory.md) | components, run lifecycle, sequences, trust boundaries |
+| [`docs/02-architecture/shortener.md`](../02-architecture/shortener.md) | the three request flows of the product |
+| [`docs/02-architecture/data-model.md`](../02-architecture/data-model.md) | database schemas, evidence files, audit chain |
+| [`docs/01-overview/glossary.md`](../01-overview/glossary.md) | definitions of run, task, candidate, evidence, lease and other terms |
+| [`docs/05-history/run-notes.md`](../05-history/run-notes.md) | what earlier fixture and live runs showed |
 
-Fixture completion uses the explicitly labeled `synthetic-fixture-test` operator. These results show orchestration mechanics and deterministic replay; they do not claim independent human sign-off.
-
-A live run of `scenarios/bugfix/scenario.json` (`d44416f4-8d94-4d6a-9671-1c54ffd9f15f`) used four model calls and reached release review. Its generated regression failed at visit 31 with `429` instead of `302`; its generated repair removed the redirect limiter while preserving creation throttling; five candidate tests passed, and `verify-audit` returned `AUDIT_VALID`. The candidate diff contains one production-line deletion and one new 45-line regression test. The user approved release hash `a4ba50caa030fb3dce329dfcadfdb0d05bad6f2efdc4ede55d96122c7ec6c979`, and the run is now `COMPLETED`. This marks control-plane completion; the candidate remains in its isolated worktree and was not merged or deployed.
-
-A separate live greenfield trial produced requirements, architecture, risk, plan, and independent-test artifacts but exposed an unconstrained-stack problem: from an empty baseline, the model chose Node/TypeScript and returned a patch outside the intended Java project. That trial does not establish live greenfield completion. The product HTTP acceptance script runs separately against the local service; the orchestrator currently gates on candidate Maven tests, not that external HTTP script. Scenario C's 100 requests/second and p95 target are proposed acceptance parameters, not measured throughput results. The control plane is a local prototype; it lacks enterprise authentication, remote audit anchoring, and multi-host scheduling.
-
-Live brownfield run `a5e9f971-13fd-46b6-8efc-4f62dcf1ff44` generated seven planning/handoff artifacts. Review found malformed diff counts, inconsistent alias normalization, and missing feature tests in its first patch proposal. The proposal was invalidated with recorded review feedback. The subsequent patch call exceeded the 32,768-token output allowance and exhausted the existing two-failure retry limit: the run ended `FAILED` after 12 model calls, with an unchanged candidate and a valid audit chain. This is not evidence of live brownfield completion. New feature-request workflows now split production and executable test patches and include architecture/risk analysis plus an independent test plan. This is an implemented mitigation, not evidence that the failed historical run completed.
-
-
-## Additional evaluation hardening
-
-The engine verifies completed artifact digests and the audit chain before advancing and before release. Graph construction rejects release paths that bypass validation or leave required work unjoined. Interrupted patch recovery invalidates dependent validation, documentation and approvals. Product-only model context prevents factory source files from crowding out the shortener and excludes symlinks/build output. Patch scope checks reject symlinks and submodules. The validator names and attempts to remove its own container in a finally block, including after supervisor timeout; daemon unavailability can still prevent cleanup.
-
-The operator page and CLI expose event-derived elapsed time, executed retries, rollbacks, replans, joins and recovery samples. Fleet statistics separate fixture and live modes and disclose the 100-run sample window. See the [evaluation scorecard](../evaluation/scorecard.md) and [risk register](../evaluation/risks.md) for definitions, reproducible verification and limitations.
+The full reading order is in [`docs/README.md`](../README.md).
