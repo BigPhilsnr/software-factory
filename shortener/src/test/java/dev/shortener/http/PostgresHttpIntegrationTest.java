@@ -58,15 +58,31 @@ class PostgresHttpIntegrationTest {
         var first = client.sendAsync(request("/api/shorten", body), HttpResponse.BodyHandlers.ofString());
         var second = client.sendAsync(request("/api/shorten", body), HttpResponse.BodyHandlers.ofString());
         assertEquals(Set.of(201,409), Set.of(first.join().statusCode(), second.join().statusCode()));
-        var redirect = call("/race-alias", null);
+        var head = HttpRequest.newBuilder(URI.create("http://localhost:" + port + "/Race-Alias"))
+            .method("HEAD", HttpRequest.BodyPublishers.noBody()).timeout(Duration.ofSeconds(5)).build();
+        var preview = client.send(head, HttpResponse.BodyHandlers.ofString());
+        assertEquals(302, preview.statusCode());
+        assertEquals(target, preview.headers().firstValue("Location").orElseThrow());
+        assertEquals("", preview.body());
+        var before = new tools.jackson.databind.ObjectMapper().readTree(call("/api/urls/RACE-ALIAS/analytics", null).body());
+        assertEquals(0, before.path("redirectCount").asLong());
+        assertTrue(before.has("lastRedirectAt") && before.get("lastRedirectAt").isNull());
+        var redirect = call("/Race-Alias", null);
         assertEquals(302, redirect.statusCode());
         assertEquals(target, redirect.headers().firstValue("Location").orElseThrow());
         assertEquals(400, call("/api/shorten", "{\"url\":\"file:///etc/passwd\"}").statusCode());
         assertEquals(400, call("/api/shorten", "not-json").statusCode());
+        for (String blocked : new String[]{"http://localhost:8080/x", "http://169.254.169.254/latest", "http://[::1]/x"}) {
+            assertEquals(400, call("/api/shorten", "{\"url\":\"" + blocked + "\"}").statusCode());
+        }
         assertEquals(404, call("/missing-code", null).statusCode());
         var analytics = call("/api/urls/race-alias/analytics", null);
         assertEquals(200, analytics.statusCode());
         assertTrue(analytics.body().matches("(?s).*\\\"redirectCount\\\":\\s*[1-9][0-9]*.*"), analytics.body());
+        var stats = new tools.jackson.databind.ObjectMapper().readTree(analytics.body());
+        assertEquals(1, stats.path("redirectCount").asLong());
+        assertEquals("race-alias", stats.path("code").asText());
+        assertDoesNotThrow(() -> java.time.Instant.parse(stats.path("lastRedirectAt").asText()));
         boolean limited = false;
         for (int i=0; i<65; i++) {
             var response = call("/api/shorten", "{\"url\":\"" + target + "\"}");

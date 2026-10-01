@@ -1,5 +1,7 @@
 package dev.shortener.storage;
 
+import dev.shortener.analytics.RedirectStats;
+
 import dev.shortener.links.Link;
 import dev.shortener.links.LinkRepository;
 
@@ -41,8 +43,13 @@ public class JdbcLinkRepository implements LinkRepository {
 
     @Override
     public long redirectCount(long linkId) {
-        Long count = jdbc.queryForObject("SELECT redirect_count FROM link_stats WHERE link_id = ?", Long.class, linkId);
-        return count == null ? 0 : count;
+        return statistics(linkId).redirectCount();
+    }
+
+    @Override public RedirectStats statistics(long linkId) {
+        return jdbc.queryForObject("SELECT redirect_count, last_redirect_at FROM link_stats WHERE link_id = ?",
+            (row, number) -> new RedirectStats(row.getLong("redirect_count"),
+                row.getTimestamp("last_redirect_at") == null ? null : row.getTimestamp("last_redirect_at").toInstant()), linkId);
     }
 
 }

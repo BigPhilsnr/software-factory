@@ -41,6 +41,8 @@ def main():
     action(run, action='advance')
     data = idle(run)
     assert data['state']['pendingClarificationTask']
+    assert data['clarificationContext'] and data['clarificationContext'][0]['text']
+    assert data['auditCheckedAt']
     action(run, action='clarify', answer='Single instance; immutable links; 60 second cache; preserve redirects.')
     data = idle(run)
     assert data['review']['task'] == 'apply'
@@ -54,6 +56,7 @@ def main():
     action(run, action='approve', hash=data['review']['hash'])
     data = idle(run)
     assert data['review']['task'] == 'release', data['state']
+    assert data['validationEvidence'] and all(item['text'] for item in data['validationEvidence'])
     request(f'/factory/api/runs/{run}/actions', {'action':'reject','hash':'0'*64}, status=409)
     action(run, action='reject', hash=data['review']['hash'])
     data = detail(run)

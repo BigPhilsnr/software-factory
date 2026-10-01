@@ -26,7 +26,7 @@ class ShortenerServiceTest {
         when(repository.findByCode(link.code())).thenReturn(java.util.Optional.of(link))
             .thenThrow(new org.springframework.dao.DataAccessResourceFailureException("offline"));
         ShortenerService service = new ShortenerService(repository, new CodeGenerator(), new UrlPolicy(), new LinkCache(Clock.systemUTC()));
-        assertEquals(link, service.find(link.code()).orElseThrow());
+        assertEquals(link, service.find(link.code().toUpperCase(java.util.Locale.ROOT)).orElseThrow());
         assertEquals(link, service.find(link.code()).orElseThrow());
         verify(repository, times(1)).findByCode(link.code());
     }

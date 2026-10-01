@@ -14,8 +14,8 @@ import java.time.Clock;
 @Configuration
 public class DomainConfiguration {
     @Bean
-    ShortenerService shortenerService(LinkRepository links) {
-        return new ShortenerService(links, new CodeGenerator(), new UrlPolicy(), new LinkCache(Clock.systemUTC()));
+    ShortenerService shortenerService(LinkRepository links, @org.springframework.beans.factory.annotation.Value("${shortener.base-url}") String baseUrl) {
+        return new ShortenerService(links, new CodeGenerator(), new UrlPolicy(baseUrl), new LinkCache(Clock.systemUTC()));
     }
 
     @Bean

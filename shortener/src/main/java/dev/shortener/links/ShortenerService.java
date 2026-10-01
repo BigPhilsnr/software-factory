@@ -1,5 +1,7 @@
 package dev.shortener.links;
 
+import dev.shortener.analytics.RedirectStats;
+
 import dev.shortener.redirects.LinkCache;
 
 import java.util.Optional;
@@ -52,6 +54,8 @@ public final class ShortenerService {
     }
 
     public Optional<Link> find(String code) {
+        if (code == null) return Optional.empty();
+        code = code.toLowerCase(Locale.ROOT);
         Optional<Link> hit = cache.get(code);
         if (hit.isPresent()) return hit;
         Optional<Link> found = links.findByCode(code);
@@ -62,6 +66,8 @@ public final class ShortenerService {
     public long count(Link link) {
         return links.redirectCount(link.id());
     }
+
+    public RedirectStats statistics(Link link) { return links.statistics(link.id()); }
 
     public static final class CapacityException extends RuntimeException {
         public CapacityException(String message) { super(message); }

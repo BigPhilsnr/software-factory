@@ -9,6 +9,8 @@ import dev.softwarefactory.serialization.Json;
 import dev.softwarefactory.workflow.RunEngine;
 import dev.softwarefactory.workflow.RunState;
 import dev.softwarefactory.workflow.RunStatus;
+import dev.softwarefactory.workflow.TaskKind;
+import dev.softwarefactory.workflow.TaskStatus;
 import dev.softwarefactory.workflow.scenario.ScenarioSpec;
 
 import java.nio.file.*;
@@ -24,6 +26,7 @@ public final class FactoryService implements AutoCloseable {
     private final ExecutorService workers = Executors.newVirtualThreadPerTaskExecutor();
     private final Set<String> active = ConcurrentHashMap.newKeySet();
     private final Map<String, String> errors = new ConcurrentHashMap<>();
+    private final RunInspectionCache inspections = new RunInspectionCache(java.time.Clock.systemUTC());
 
     public FactoryService(Path root, ControlRepository repository) {
         this.root = root.toAbsolutePath().normalize();
@@ -127,9 +130,14 @@ public final class FactoryService implements AutoCloseable {
         result.put("tasks", spec.tasks());
         result.put("busy", busy(id));
         result.put("error", errors.getOrDefault(id, ""));
-        result.put("events", repository.events(id));
-        result.put("metrics", RunMetrics.from(state, repository.timeline(id), java.time.Instant.now()));
-        result.put("auditValid", repository.auditValid(id));
+        var events = repository.events(id);
+        result.put("events", events);
+        long sequence = events.isEmpty() ? 0 : ((Number) events.getFirst().get("sequence")).longValue();
+        var inspection = inspections.get(id, sequence, (head, at) -> new RunInspectionCache.Inspection(
+            head, at, repository.auditValid(id), repository.timeline(id)));
+        result.put("metrics", RunMetrics.from(state, inspection.timeline(), java.time.Instant.now()));
+        result.put("auditValid", inspection.auditValid());
+        result.put("auditCheckedAt", inspection.checkedAt());
         List<String> artifacts = new ArrayList<>();
         Path folder = root.resolve("evidence").resolve(state.id);
         if (Files.isDirectory(folder)) {
@@ -138,6 +146,35 @@ public final class FactoryService implements AutoCloseable {
             }
         }
         result.put("artifacts", artifacts);
+        List<Map<String, String>> clarification = new ArrayList<>();
+        List<Map<String, String>> validation = new ArrayList<>();
+        for (var task : spec.tasks()) {
+            if (task.id().equals(state.pendingClarificationTask)) {
+                for (String dependency : task.dependsOn()) {
+                    Integer version = state.artifactVersions.get(dependency);
+                    if (version != null) clarification.add(Map.of("task", dependency,
+                        "text", artifact(id, dependency + "-v" + version + ".txt")));
+                }
+            }
+            if ((task.kind() == TaskKind.VALIDATE || task.kind() == TaskKind.VALIDATE_RED) && state.tasks.get(task.id()) == TaskStatus.DONE) {
+                Integer version = state.artifactVersions.get(task.id());
+                if (version != null) validation.add(Map.of("task", task.id(),
+                    "text", artifact(id, task.id() + "-v" + version + ".txt")));
+            }
+        }
+        result.put("clarificationContext", clarification);
+        result.put("validationEvidence", validation);
+        if (state.status == RunStatus.PAUSED && state.pendingApprovalTask == null && state.pendingClarificationTask == null) {
+            var retry = events.stream().filter(event -> "RETRY_AVAILABLE".equals(event.get("type"))).findFirst();
+            if (retry.isPresent()) {
+                String detail = String.valueOf(retry.get().get("detail"));
+                result.put("retryReason", detail);
+                String[] parts = detail.split(":", 2);
+                if (parts.length == 2 && artifacts.contains(parts[1] + ".txt")) {
+                    result.put("retryReason", detail + "\n" + artifact(id, parts[1] + ".txt"));
+                }
+            }
+        }
         if (state.pendingApprovalTask != null) {
             String name = state.pendingApprovalTask + "-v" + state.artifactVersions.get(state.pendingApprovalTask) + ".txt";
             result.put("review", Map.of("task", state.pendingApprovalTask, "hash", state.pendingApprovalHash,

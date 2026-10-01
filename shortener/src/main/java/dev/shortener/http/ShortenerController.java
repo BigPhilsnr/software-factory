@@ -6,7 +6,6 @@ import dev.shortener.links.ShortenerService;
 import dev.shortener.ratelimit.CreationRateLimiter;
 
 import java.net.URI;
-import java.util.Map;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
@@ -16,6 +15,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -52,12 +52,20 @@ public class ShortenerController {
         return ResponseEntity.status(HttpStatus.FOUND).location(URI.create(link.targetUrl())).build();
     }
 
-    @GetMapping("/api/urls/{code}/analytics")
-    public Map<String, Object> analytics(@PathVariable String code) {
+    @RequestMapping(value = "/{code}", method = RequestMethod.HEAD)
+    public ResponseEntity<Void> preview(@PathVariable String code) {
         Link link = service.find(code).orElseThrow(NotFoundException::new);
-        return Map.of("code", code, "redirectCount", service.count(link));
+        return ResponseEntity.status(HttpStatus.FOUND).location(URI.create(link.targetUrl())).build();
     }
 
+    @GetMapping("/api/urls/{code}/analytics")
+    public AnalyticsResponse analytics(@PathVariable String code) {
+        Link link = service.find(code).orElseThrow(NotFoundException::new);
+        var stats = service.statistics(link);
+        return new AnalyticsResponse(link.code(), stats.redirectCount(), stats.lastRedirectAt());
+    }
+
+    public record AnalyticsResponse(String code, long redirectCount, java.time.Instant lastRedirectAt) {}
     public record CreateRequest(String url, String alias) {}
     public record CreateResponse(String code, String shortUrl) {}
     static final class NotFoundException extends RuntimeException {}

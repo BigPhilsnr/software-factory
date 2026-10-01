@@ -21,11 +21,11 @@ paths:
                 url:
                   type: string
                   format: uri
-                  description: Absolute HTTP or HTTPS URL.
+                  description: Absolute HTTP or HTTPS URL without credentials. Local hostnames, private IP literals, and the configured shortener host are rejected. No DNS resolution or destination fetch is performed; DNS names that resolve privately are not detected.
                 alias:
                   type: string
                   pattern: '^[A-Za-z0-9-]{4,32}$'
-                  description: Optional custom code; stored lowercase.
+                  description: Optional custom code; stored lowercase and resolved case-insensitively.
       responses:
         '201':
           description: Link created
@@ -47,8 +47,26 @@ paths:
               schema: {type: integer, minimum: 1}
         '503': {$ref: '#/components/responses/Unavailable'}
   /{code}:
+    head:
+      summary: Preview a redirect without recording analytics
+      parameters:
+        - name: code
+          in: path
+          required: true
+          description: Case-insensitive short code.
+          schema: {type: string}
+      responses:
+        '302':
+          description: Redirect headers with no body; does not increment counts or update the last redirect timestamp.
+          headers:
+            Location:
+              required: true
+              schema: {type: string, format: uri}
+        '404': {$ref: '#/components/responses/Missing'}
+        '503': {$ref: '#/components/responses/Unavailable'}
     get:
       summary: Redirect to the original URL
+      description: Case-insensitive lookup. Records a best-effort GET redirect, including automated GET requests; counts are not unique human clicks.
       parameters:
         - name: code
           in: path
@@ -65,7 +83,7 @@ paths:
         '503': {$ref: '#/components/responses/Unavailable'}
   /api/urls/{code}/analytics:
     get:
-      summary: Get aggregate redirect count
+      summary: Get aggregate GET redirect count and last recorded timestamp
       parameters:
         - name: code
           in: path
@@ -78,10 +96,14 @@ paths:
             application/json:
               schema:
                 type: object
-                required: [code, redirectCount]
+                required: [code, redirectCount, lastRedirectAt]
                 properties:
                   code: {type: string}
                   redirectCount: {type: integer, format: int64, minimum: 0}
+                  lastRedirectAt:
+                    type: [string, 'null']
+                    format: date-time
+                    description: Last recorded GET redirect in UTC; null before any recorded redirect. Analytics are best-effort.
         '404': {$ref: '#/components/responses/Missing'}
         '503': {$ref: '#/components/responses/Unavailable'}
 components:
