@@ -1,0 +1,24 @@
+.factory-diagram {
+  margin: 1rem 0;
+  padding: 1rem;
+  max-width: 100%;
+  border: 1px solid #aab4c3;
+  border-radius: 8px;
+  background: #fff;
+  color: #202c3d;
+}
+.factory-diagram-viewport { overflow-x: auto; }
+.factory-diagram img { display: block; max-width: none; height: auto; margin: 0 auto; }
+.factory-diagram button {
+  margin-top: .75rem;
+  padding: .4rem .7rem;
+  border: 1px solid #65758a;
+  border-radius: 4px;
+  background: #f3f6fa;
+  color: #202c3d;
+  cursor: pointer;
+}
+.factory-diagram button:focus-visible { outline: 3px solid #2563eb; outline-offset: 2px; }
+.factory-diagram-error { border-color: #a44213; }
+pre.factory-diagram-source-hidden { display: none !important; }
+.factory-diagram-stage { position: fixed; left: -100000px; top: 0; width: 1200px; visibility: hidden; }

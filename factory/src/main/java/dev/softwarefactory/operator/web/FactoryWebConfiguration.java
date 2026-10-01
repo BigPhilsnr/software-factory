@@ -7,6 +7,7 @@ import dev.softwarefactory.operator.security.LocalOperatorFilter;
 import dev.softwarefactory.operator.security.OperatorToken;
 import dev.softwarefactory.operator.security.RequestBodyLimit;
 import dev.softwarefactory.platform.FactorySettings;
+import java.io.IOException;
 import java.util.UUID;
 import org.springframework.boot.security.autoconfigure.web.servlet.SecurityFilterProperties;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
@@ -44,6 +45,11 @@ public class FactoryWebConfiguration implements WebMvcConfigurer {
     public void addViewControllers(ViewControllerRegistry registry) {
         registry.addViewController("/factory/").setViewName("forward:/factory/index.html");
         registry.addRedirectViewController("/factory", "/factory/").setKeepQueryParams(true);
+    }
+
+    @Bean
+    AdkChatPage adkChatPage() throws IOException {
+        return new AdkChatPage();
     }
 
     @Bean

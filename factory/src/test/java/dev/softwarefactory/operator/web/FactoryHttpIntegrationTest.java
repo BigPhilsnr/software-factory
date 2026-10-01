@@ -197,6 +197,22 @@ class FactoryHttpIntegrationTest {
     }
 
     @Test
+    void servesDiagramEnabledAdkChatAndLocalRenderer() {
+        for (String path : new String[] {"/dev-ui/", "/dev-ui/index.html"}) {
+            http().get(path)
+                    .then()
+                    .statusCode(200)
+                    .header("Cache-Control", "no-store")
+                    .header("Content-Security-Policy", containsString("frame-ancestors 'none'"))
+                    .body(containsString("/chat/diagrams.js"))
+                    .body(containsString("<app-root>"));
+        }
+        http().get("/chat/diagrams.js").then().statusCode(200).body(containsString("securityLevel: 'strict'"));
+        http().get("/chat/diagrams.css").then().statusCode(200);
+        http().get("/chat/vendor/mermaid.js").then().statusCode(200);
+    }
+
+    @Test
     void chatCommandsThatChangeWorkflowStateRequireTheOperatorToken() {
         String session = http().body(Map.of())
                 .post("/apps/software_factory/users/tester/sessions")

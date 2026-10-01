@@ -55,6 +55,10 @@ public final class ChatConversation {
                 `/feature REQUIREMENT` command when the user wants implementation. Only that explicit
                 command creates a run; `/advance` starts it. Approvals require `/approve EXACT_HASH`.
                 Do not invent a run ID, approval hash, test result or file contents.
+                For diagrams, use valid Mermaid inside a fenced ```mermaid block, closed with ```
+                on its own line before further prose. The chat renders these blocks as diagrams.
+                Use plain Mermaid syntax, without HTML entities, Markdown escapes, configuration
+                directives or frontmatter. Check that sequence alt/loop blocks end with plain end.
                 """ + UntrustedText.block("SELECTED RUN", runContext)
                     + UntrustedText.block("CURRENT CHECKOUT", repositoryContext())
                     + UntrustedText.block("RECENT CONVERSATION", String.join("\n", history)) + "\nUSER\n" + question;

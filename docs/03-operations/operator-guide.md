@@ -97,6 +97,13 @@ When a run pauses after a failure, the page shows the recorded diagnostic. Decid
 
 ## ADK chat
 
+Architecture replies with fenced `mermaid` blocks render as diagrams in chat, including
+reopened session history. Select **Show source** beneath a diagram to inspect its Mermaid
+text. Wide diagrams scroll horizontally. Invalid syntax keeps the source visible with an
+error; for example, a sequence block must close with `end`, not `end'`. Rendering runs
+locally in your browser and makes no additional model calls. Refresh the ADK page after
+updating the factory to load the renderer.
+
 Plain text is answered by a read-only model. Its prompt contains bounded excerpts of the root README, the shortener's POM, API contract and source, and the state of the selected run. It can also use the [agent tools](agent-tools.md). It remembers the last six exchanges of a session (in memory, for up to 128 sessions) and cannot change anything. Messages are limited to 8,000 characters. Saying "yes", "approve" or "continue" does nothing except remind you of the exact commands.
 
 Slash commands go straight to the engine and never pass through the model:

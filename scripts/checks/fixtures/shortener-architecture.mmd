@@ -1,0 +1,25 @@
+flowchart TD
+    client(["Client or visitor"])
+
+    subgraph shortener ["shortener, port 8080"]
+        filters["Filters<br/>request id, body size limit"]
+        shorten["shorten package<br/>ShortenLink, UrlPolicy, LinkCodes"]
+        ratelimit["CreationRateLimiter"]
+        redirect["redirect package<br/>RedirectController, ResolveLink"]
+        cache["LinkCache<br/>Caffeine: links and misses"]
+        analytics["analytics package<br/>CoalescingVisitRecorder, LinkAnalytics"]
+        repo["LinkRepository"]
+    end
+
+    db[("PostgreSQL<br/>port 5433")]
+
+    client -->|"POST /api/shorten"| filters --> shorten
+    shorten --> ratelimit
+    shorten --> repo
+    client -->|"GET /{code}, HEAD /{code}"| redirect
+    redirect --> cache
+    cache -.->|"on miss"| repo
+    redirect --> analytics
+    analytics -->|"batched UPDATE, 1/s"| db
+    repo --> db
+    client -->|"GET /api/urls/{code}/analytics"| analytics

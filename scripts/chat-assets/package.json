@@ -1,0 +1,13 @@
+{
+  "name": "factory-chat-assets",
+  "private": true,
+  "scripts": {
+    "build": "node build.cjs"
+  },
+  "dependencies": {
+    "mermaid": "11.17.2"
+  },
+  "devDependencies": {
+    "esbuild": "0.25.12"
+  }
+}
