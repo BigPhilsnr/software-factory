@@ -20,10 +20,10 @@ public final class ChatConversation {
     private static final int MAX_FILE_EXCERPT = 12_000;
     private static final List<String> CONTEXT_FILES = List.of(
             "README.md",
-            "docs/architecture/decisions.md",
-            "docs/operations/local-runbook.md",
-            "docs/architecture/agent-system.md",
-            "docs/operations/operator-guide.md",
+            "docs/02-architecture/decisions/README.md",
+            "docs/03-operations/runbook.md",
+            "docs/02-architecture/factory.md",
+            "docs/03-operations/operator-guide.md",
             "shortener/pom.xml",
             "shortener/openapi.yaml");
     private final Path root;

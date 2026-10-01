@@ -34,7 +34,6 @@
 | Folder | Why it exists |
 | --- | --- |
 | [`evaluation/samples/`](evaluation/samples/README.md) | Recorded evidence from earlier commits, protected by a checksum manifest. `scripts/checks/verify_evidence.py` reads this exact path, so it does not move. Its contents are historical and are never edited. |
-| `architecture/`, `operations/` | Four short pointer files. The chat agent loads these fixed paths as context (`CONTEXT_FILES` in `operator/chat/ChatConversation.java`). They only point at the numbered folders and can be deleted once that list is updated. |
 
 ## Conventions
 

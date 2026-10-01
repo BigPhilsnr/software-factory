@@ -21,7 +21,6 @@
 | 13 | The quality gate cannot run on a newer JDK | Certain on JDK 26+ / low | Documented JDK range 21 to 25; CI uses 21 | Lifts when the PMD plugin supports newer class files. |
 | 14 | The two module POMs drift apart in plugin versions or rules | Low / low | Shared rule files in `build-config/` | Plugin configuration is duplicated because the modules do not share a parent. |
 | 15 | A migration cannot be undone | Low / high | Additive, forward-only migrations; integration tests run them on a fresh schema | Rolling back code does not roll back schema or data. |
-| 16 | Chat answers are poorly grounded in the documentation | Medium / low | Chat has repository tools and can read `docs/` on request | The chat's fixed context list still names four pre-reorganisation paths, which now hold only pointers. See the open item below. |
 
 ## Ownership
 
@@ -33,7 +32,6 @@
 
 | Item | Why it is open |
 | --- | --- |
-| Update `CONTEXT_FILES` in `operator/chat/ChatConversation.java` to the numbered documentation paths | The list is in Java source. Until it changes, `docs/architecture/` and `docs/operations/` keep four pointer files so the paths resolve. |
 | Decide whether the shortener's metrics should be reachable | `application.yml` lists `metrics` under exposed endpoints, and `PublicApiSecurity` denies it. The meters exist but cannot be read over HTTP. |
 | Allow `SHORTENER_FORWARD_HEADERS_STRATEGY` in `.env` | `application.yml` reads it, but the launchers' `.env` allowlist rejects it, so it can only be exported in the shell. |
 | Move the feature-request baseline forward | `FeatureScenario` starts every feature run from the tag `url-v4`, which is 15 commits behind `HEAD` and has the previous shortener package layout. The sandbox's trusted POM mirrors the current `shortener/pom.xml`, not the one at that tag. |
