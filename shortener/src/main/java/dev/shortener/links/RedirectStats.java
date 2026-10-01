@@ -1,4 +1,4 @@
-package dev.shortener.analytics;
+package dev.shortener.links;
 
 import java.time.Instant;
 

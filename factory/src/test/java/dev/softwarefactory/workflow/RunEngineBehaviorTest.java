@@ -64,7 +64,7 @@ class RunEngineBehaviorTest {
     @Test void staleApprovalCannotApplyPatchAndExactApprovalCan() throws Exception {
         var state = proposal();
         String id = state.id;
-        assertThrows(IllegalArgumentException.class, () -> engine.approve(id, "0".repeat(64), true));
+        assertThrows(IllegalStateException.class, () -> engine.approve(id, "0".repeat(64), true));
         assertEquals(state.pendingApprovalHash, store.load(id).pendingApprovalHash);
         assertEquals("original\n", Files.readString(Path.of(state.candidatePath).resolve("README.md")));
         engine.approve(id, state.pendingApprovalHash, true);
@@ -128,6 +128,27 @@ class RunEngineBehaviorTest {
         assertEquals(1, state.artifactVersions.get("generate"));
         assertTrue(state.attempts.isEmpty());
         assertTrue(store.has("RUN_RECOVERED"));
+    }
+
+    @Test void failedStartCleansOnlyCandidatesConfirmedAbsentFromPersistence() throws Exception {
+        for (boolean commitBeforeFailure : List.of(false, true)) {
+            var captured = new java.util.concurrent.atomic.AtomicReference<RunState>();
+            RunStore failing = new RunStore() {
+                public RunState load(String id) {
+                    if (!commitBeforeFailure) throw new RunStore.MissingRunException(id);
+                    return captured.get();
+                }
+                public AutoCloseable lease(String id) { return () -> {}; }
+                public boolean auditValid(String id) { return true; }
+                public void record(RunState state, String type, String detail) throws Exception {
+                    captured.set(state);
+                    throw new java.io.IOException("Lost persistence acknowledgement");
+                }
+            };
+            engine = new RunEngine(failing, root);
+            assertThrows(java.io.IOException.class, () -> start(List.of(artifact("generate", List.of(), "missing.txt"))));
+            assertEquals(commitBeforeFailure, Files.exists(Path.of(captured.get().candidatePath)));
+        }
     }
 
     private RunState proposal() throws Exception {

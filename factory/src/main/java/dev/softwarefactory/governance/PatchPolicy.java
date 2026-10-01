@@ -1,13 +1,12 @@
 package dev.softwarefactory.governance;
 
-import dev.softwarefactory.workflow.TaskSpec;
 
 /** Deterministic A2 floor independent of model advice or scenario flags. */
 public final class PatchPolicy {
     private PatchPolicy() {}
 
-    public static boolean requiresApproval(TaskSpec task, String patch) {
-        if (task.requiresApproval()) return true;
+    public static boolean requiresApproval(boolean requested, String patch) {
+        if (requested) return true;
         return patch.lines().anyMatch(line -> {
             if (!line.startsWith("diff --git a/")) return false;
             int marker = line.indexOf(" b/");

@@ -67,7 +67,11 @@ public final class PublicWebReader implements AutoCloseable {
     }
 
     public String fetch(String input) throws Exception {
-        URI url = validateUrl(input);
+        return fetch(input, value -> value);
+    }
+
+    public String fetch(String input, java.util.function.UnaryOperator<String> authorize) throws Exception {
+        URI url = validateUrl(authorize.apply(input));
         for (int redirects = 0; redirects <= 3; redirects++) {
             Request request = new Request.Builder().url(url.toString())
                 .header("User-Agent", "SoftwareFactoryPrototype/1.0")
@@ -76,7 +80,7 @@ public final class PublicWebReader implements AutoCloseable {
                 if (response.isRedirect()) {
                     String location = response.header("Location");
                     if (location == null) throw new IllegalStateException("Redirect without location");
-                    url = validateUrl(url.resolve(location).toString());
+                    url = validateUrl(authorize.apply(url.resolve(location).toString()));
                     continue;
                 }
                 if (!response.isSuccessful()) throw new IllegalStateException("Page returned HTTP " + response.code());

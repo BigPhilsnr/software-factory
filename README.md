@@ -41,7 +41,7 @@ Prerequisites: JDK 21, Maven 3.9+, Python 3, Docker with a running daemon, and `
 export JAVA_HOME=/opt/homebrew/opt/openjdk@21
 docker-compose up -d shortener-db control-db
 mvn -q -f pom.xml test
-mvn -q -f shortener/pom.xml spring-boot:run
+python3 scripts/shortener.py
 ```
 
 In another terminal:
@@ -89,7 +89,7 @@ mvn -q -f factory/pom.xml exec:java -Dexec.args='advance <run-id>'
 mvn -q -f factory/pom.xml exec:java -Dexec.args='verify-audit <run-id>'
 ```
 
-The ambiguous scenario pauses for `clarify <run-id> <answer>` before planning. `revise <run-id> <task-id> [feedback-file]` invalidates affected descendants and optionally records review feedback for the next model attempt. Patch proposals must pass a read-only Git applicability check before approval. `reject <run-id>` ends a pending approval as `NOT_APPROVED`. `review` gives the immutable proposed patch or candidate diff path, scope, baseline commit, and exact hash to approve. The CLI is a local prototype, not an authenticated multi-user approval service.
+The ambiguous scenario pauses for `clarify <run-id> <answer>` before planning. `revise <run-id> <task-id> [feedback-file]` invalidates affected descendants and optionally records review feedback for the next model attempt. Patch proposals must pass a read-only Git applicability check before approval. `reject <run-id> <reviewed-hash>` ends a pending approval as `NOT_APPROVED`. `review` gives the immutable proposed patch or candidate diff path, scope, baseline commit, and exact hash to approve. The CLI is a local prototype, not an authenticated multi-user approval service.
 
 For a live ADK run, copy `.env.example` to the ignored `.env` file, replace `ANTHROPIC_API_KEY` with your key, and start with `python3 scripts/factory_cli.py start scenarios/bugfix/scenario.json live`. Then use `python3 scripts/factory_cli.py advance <run-id>` and `review <run-id>`. Use the same launcher for later `approve` and `advance` commands so the key remains available to model calls. You can instead export `ANTHROPIC_API_KEY` in the launching shell. `CLAUDE_MODEL` and `FACTORY_MAX_MODEL_CALLS` are optional. Live mode makes paid provider calls; the release gate requires review of the exact candidate diff and hash. The fixture suite is the reproducible evaluation path.
 

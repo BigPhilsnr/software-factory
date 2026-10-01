@@ -24,11 +24,16 @@ public final class FactoryService implements AutoCloseable {
     private final ControlRepository repository;
     private final RunEngine engine;
     private final ExecutorService workers = Executors.newVirtualThreadPerTaskExecutor();
-    private final Set<String> active = ConcurrentHashMap.newKeySet();
+    private final Set<String> active;
     private final Map<String, String> errors = new ConcurrentHashMap<>();
     private final RunInspectionCache inspections = new RunInspectionCache(java.time.Clock.systemUTC());
 
     public FactoryService(Path root, ControlRepository repository) {
+        this(root, repository, ConcurrentHashMap.newKeySet());
+    }
+
+    FactoryService(Path root, ControlRepository repository, Set<String> active) {
+        this.active = active;
         this.root = root.toAbsolutePath().normalize();
         this.repository = repository;
         this.engine = new RunEngine(repository, this.root);
@@ -36,7 +41,8 @@ public final class FactoryService implements AutoCloseable {
 
     ChatConversation conversation() {
         return new ChatConversation(root, (role, prompt) -> new AdkClaudeRuntime(
-            System.getenv().getOrDefault("CLAUDE_MODEL", "claude-sonnet-4-5"), root, () -> {}, (event, detail) -> {}).generate(role, prompt));
+            System.getenv().getOrDefault("CLAUDE_MODEL", "claude-sonnet-4-5"), root, () -> repository.reserveChatRequest(Integer.parseInt(System.getenv().getOrDefault("FACTORY_CHAT_DAILY_REQUESTS", "80"))),
+            repository::chatAudit).generate(role, prompt));
     }
 
     public List<RunState> runs() throws Exception { return repository.recentRuns(); }
@@ -92,7 +98,7 @@ public final class FactoryService implements AutoCloseable {
         if (Set.of(RunStatus.COMPLETED, RunStatus.FAILED, RunStatus.SAFE_STOPPED, RunStatus.NOT_APPROVED).contains(state.status)) {
             throw new IllegalStateException("This run has ended; start a new run");
         }
-        if (active.size() >= 2) throw new IllegalStateException("Two runs are active; wait for capacity before starting another");
+        requireCapacity(id);
         if (!active.add(id)) throw new IllegalStateException("This run is already active");
         errors.remove(id);
         workers.submit(() -> {
@@ -102,21 +108,30 @@ public final class FactoryService implements AutoCloseable {
         });
     }
 
-    public void approve(String id, String hash) throws Exception {
+    public synchronized void approve(String id, String hash) throws Exception {
+        requireCapacity(id);
         engine.approve(id, hash, true);
         advance(id);
     }
+    private void requireCapacity(String id) {
+        if (workers.isShutdown()) throw new IllegalStateException("Factory is shutting down; no decision was recorded");
+        if (active.contains(id)) throw new IllegalStateException("This run is already active");
+        if (active.size() >= 2) throw new IllegalStateException("Two runs are active; no decision was recorded. Retry when capacity is available.");
+    }
+
     public void reject(String id, String hash) throws Exception {
         if (hash == null || !hash.matches("[a-f0-9]{64}")) throw new IllegalArgumentException("Review the current proposal before rejecting it");
         engine.approve(id, hash, false);
     }
-    public void clarify(String id, String answer) throws Exception {
+    public synchronized void clarify(String id, String answer) throws Exception {
         if (answer == null || answer.isBlank() || answer.length() > 8000) throw new IllegalArgumentException("Enter an answer in 1–8000 characters");
+        requireCapacity(id);
         engine.clarify(id, answer);
         advance(id);
     }
-    public void revise(String id, String task, String feedback) throws Exception {
+    public synchronized void revise(String id, String task, String feedback) throws Exception {
         if (feedback == null || feedback.isBlank()) throw new IllegalArgumentException("Explain the changes you want");
+        requireCapacity(id);
         engine.revise(id, task, feedback);
         advance(id);
     }
@@ -153,13 +168,13 @@ public final class FactoryService implements AutoCloseable {
                 for (String dependency : task.dependsOn()) {
                     Integer version = state.artifactVersions.get(dependency);
                     if (version != null) clarification.add(Map.of("task", dependency,
-                        "text", artifact(id, dependency + "-v" + version + ".txt")));
+                        "text", displayArtifact(id, dependency + "-v" + version + ".txt")));
                 }
             }
             if ((task.kind() == TaskKind.VALIDATE || task.kind() == TaskKind.VALIDATE_RED) && state.tasks.get(task.id()) == TaskStatus.DONE) {
                 Integer version = state.artifactVersions.get(task.id());
                 if (version != null) validation.add(Map.of("task", task.id(),
-                    "text", artifact(id, task.id() + "-v" + version + ".txt")));
+                    "text", displayArtifact(id, task.id() + "-v" + version + ".txt")));
             }
         }
         result.put("clarificationContext", clarification);
@@ -171,16 +186,23 @@ public final class FactoryService implements AutoCloseable {
                 result.put("retryReason", detail);
                 String[] parts = detail.split(":", 2);
                 if (parts.length == 2 && artifacts.contains(parts[1] + ".txt")) {
-                    result.put("retryReason", detail + "\n" + artifact(id, parts[1] + ".txt"));
+                    result.put("retryReason", detail + "\n" + displayArtifact(id, parts[1] + ".txt"));
                 }
             }
         }
         if (state.pendingApprovalTask != null) {
             String name = state.pendingApprovalTask + "-v" + state.artifactVersions.get(state.pendingApprovalTask) + ".txt";
             result.put("review", Map.of("task", state.pendingApprovalTask, "hash", state.pendingApprovalHash,
-                "artifact", name, "patch", artifact(id, name), "baseline", state.baselineCommit));
+                "artifact", name, "patch", displayArtifact(id, name), "baseline", state.baselineCommit));
         }
         return result;
+    }
+
+    private String displayArtifact(String id, String name) {
+        try { return artifact(id, name); }
+        catch (java.io.IOException | IllegalArgumentException failure) {
+            return "Evidence unavailable: " + name + ". Approval still requires intact evidence. You can reject this run.";
+        } catch (Exception failure) { throw new IllegalStateException("Could not inspect evidence", failure); }
     }
 
     public String artifact(String id, String name) throws Exception {
@@ -188,9 +210,9 @@ public final class FactoryService implements AutoCloseable {
         if (name == null || !name.matches("[a-z0-9-]+\\.txt")) throw new IllegalArgumentException("Invalid artifact name");
         Path folder = root.resolve("evidence").resolve(id);
         Path file = folder.resolve(name);
-        if (Files.isSymbolicLink(file) || !Files.isRegularFile(file)) throw new IllegalArgumentException("Artifact not found");
+        if (Files.isSymbolicLink(file) || !Files.isRegularFile(file)) throw new java.nio.file.NoSuchFileException(name);
         return Files.readString(file);
     }
 
-    @Override public void close() { workers.shutdown(); }
+    @Override public synchronized void close() { workers.shutdown(); }
 }

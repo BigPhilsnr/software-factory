@@ -10,8 +10,11 @@ import java.util.List;
 /** Executes candidate build logic without governance credentials or network access. */
 public final class SandboxValidator {
     private final Path mavenCache;
+    @FunctionalInterface interface Executor { String run(Path directory, List<String> args, Duration timeout) throws Exception; }
+    private final Executor executor;
 
-    public SandboxValidator(Path mavenCache) { this.mavenCache = mavenCache.toAbsolutePath(); }
+    public SandboxValidator(Path mavenCache) { this(mavenCache, GitWorkspace::command); }
+    SandboxValidator(Path mavenCache, Executor executor) { this.mavenCache = mavenCache.toAbsolutePath(); this.executor = executor; }
 
     public String test(Path candidate) throws Exception {
         clearReports(candidate);
@@ -45,7 +48,8 @@ public final class SandboxValidator {
         try {
             run(candidate, List.of("-Dtest=" + testClass, "test"));
             throw new IllegalStateException("Regression was green on the buggy baseline");
-        } catch (IOException expectedFailure) {
+        } catch (CommandRunner.Failed expectedFailure) {
+            if (expectedFailure.exitCode() != 1) throw expectedFailure;
             Path reports = candidate.resolve("shortener/target/surefire-reports");
             if (!Files.isDirectory(reports)) throw expectedFailure;
             List<Path> matches;
@@ -69,6 +73,9 @@ public final class SandboxValidator {
 
     private void clearReports(Path candidate) throws IOException {
         Path reports = candidate.resolve("shortener/target/surefire-reports");
+        for (Path part = reports; !part.equals(candidate); part = part.getParent()) {
+            if (Files.isSymbolicLink(part)) throw new SecurityException("Report directory cannot traverse symlinks");
+        }
         if (!Files.isDirectory(reports)) return;
         try (var files = Files.list(reports)) {
             for (Path file : files.filter(path -> path.getFileName().toString().startsWith("TEST-") && path.toString().endsWith(".xml")).toList()) {
@@ -86,25 +93,44 @@ public final class SandboxValidator {
     }
 
     private String run(Path candidate, List<String> goals) throws Exception {
+        validateMount(candidate);
+        validateMount(mavenCache);
+        Path build = candidate.resolve("shortener/target");
+        Files.createDirectories(build);
+        Path trustedPom = Files.createTempFile(candidate.toAbsolutePath().getParent(), "factory-validator-pom-", ".xml");
+        try (var input = SandboxValidator.class.getResourceAsStream("/validation/shortener-pom.xml")) {
+            if (input == null) throw new IllegalStateException("Trusted validator definition missing");
+            Files.copy(input, trustedPom, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+        }
+        validateMount(trustedPom);
         String container = "factory-validator-" + java.util.UUID.randomUUID();
         List<String> args = new ArrayList<>(List.of(
             "docker", "run", "--rm", "--name", container, "--network", "none", "--cpus", "2", "--memory", "1g",
             "--pids-limit", "128", "--cap-drop", "ALL", "--security-opt", "no-new-privileges",
             "--read-only", "--user", currentUser(), "--tmpfs", "/tmp:rw,nosuid,size=128m",
             "--env", "HOME=/tmp", "--env", "MAVEN_CONFIG=/tmp/.m2",
-            "--mount", "type=bind,source=" + candidate.toAbsolutePath() + ",target=/workspace",
+            "--mount", "type=bind,source=" + candidate.toAbsolutePath() + ",target=/workspace,readonly",
+            "--mount", "type=bind,source=" + build.toAbsolutePath() + ",target=/workspace/shortener/target",
+            "--mount", "type=bind,source=" + trustedPom + ",target=/trusted/pom.xml,readonly",
             "--mount", "type=bind,source=" + mavenCache + ",target=/m2,readonly",
-            "--workdir", "/workspace", "maven:3.9-eclipse-temurin-21",
-            "mvn", "-o", "-q", "-Dmaven.repo.local=/m2", "-f", "shortener/pom.xml"));
+            "--workdir", "/trusted", "maven@sha256:99e61abcff91a9b1333463bd8451fb18495d6eba9250ac66a338b518f8278320",
+            "mvn", "-o", "-q", "-Dmaven.repo.local=/m2", "-f", "/trusted/pom.xml"));
         args.addAll(goals);
         try {
-            return GitWorkspace.command(candidate, args, Duration.ofMinutes(10));
+            return executor.run(candidate, args, Duration.ofMinutes(10));
         } finally {
             // Killing the Docker CLI on timeout does not itself stop the container.
             // Remove only the uniquely named container owned by this invocation.
-            try { GitWorkspace.command(candidate, List.of("docker", "rm", "-f", container), Duration.ofSeconds(20)); }
+            try { executor.run(candidate, List.of("docker", "rm", "-f", container), Duration.ofSeconds(20)); }
             catch (Exception alreadyRemovedOrUnavailable) { /* --rm normally removed it already. */ }
+            Files.deleteIfExists(trustedPom);
         }
+    }
+
+    static void validateMount(Path path) {
+        String value = path.toAbsolutePath().toString();
+        if (value.contains(",") || value.chars().anyMatch(Character::isISOControl))
+            throw new IllegalArgumentException("Mount paths cannot contain commas or control characters");
     }
 
     private static String currentUser() {

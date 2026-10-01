@@ -24,22 +24,24 @@ import static org.junit.jupiter.api.Assertions.*;
 @DirtiesContext
 class PostgresHttpIntegrationTest {
     private static final String SCHEMA = "contract_" + UUID.randomUUID().toString().replace("-", "");
-    private static final String DATABASE = "jdbc:postgresql://localhost:5433/shortener";
+    private static final String DATABASE = System.getenv().getOrDefault("SHORTENER_TEST_DB_URL", System.getenv().getOrDefault("SHORTENER_DB_URL", "jdbc:postgresql://localhost:5433/shortener"));
+    private static final String USER = System.getenv().getOrDefault("SHORTENER_TEST_DB_USER", System.getenv().getOrDefault("SHORTENER_DB_USER", "shortener"));
+    private static final String PASSWORD = System.getenv().getOrDefault("SHORTENER_TEST_DB_PASSWORD", System.getenv().getOrDefault("SHORTENER_DB_PASSWORD", "shortener"));
     @LocalServerPort int port;
     private final HttpClient client = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(5)).build();
 
     @DynamicPropertySource static void database(DynamicPropertyRegistry properties) throws Exception {
-        try (var connection = DriverManager.getConnection(DATABASE, "shortener", "shortener"); var statement = connection.createStatement()) {
+        try (var connection = DriverManager.getConnection(DATABASE, USER, PASSWORD); var statement = connection.createStatement()) {
             statement.execute("CREATE SCHEMA " + SCHEMA);
         }
-        properties.add("spring.datasource.url", () -> DATABASE + "?currentSchema=" + SCHEMA);
-        properties.add("spring.datasource.username", () -> "shortener");
-        properties.add("spring.datasource.password", () -> "shortener");
+        properties.add("spring.datasource.url", () -> DATABASE + (DATABASE.contains("?") ? "&" : "?") + "currentSchema=" + SCHEMA);
+        properties.add("spring.datasource.username", () -> USER);
+        properties.add("spring.datasource.password", () -> PASSWORD);
         properties.add("spring.flyway.schemas", () -> SCHEMA);
     }
 
     @AfterAll static void removeOwnedSchema() throws Exception {
-        try (var connection = DriverManager.getConnection(DATABASE, "shortener", "shortener"); var statement = connection.createStatement()) {
+        try (var connection = DriverManager.getConnection(DATABASE, USER, PASSWORD); var statement = connection.createStatement()) {
             statement.execute("DROP SCHEMA IF EXISTS " + SCHEMA + " CASCADE");
         }
     }
@@ -77,6 +79,12 @@ class PostgresHttpIntegrationTest {
         }
         assertEquals(404, call("/missing-code", null).statusCode());
         var analytics = call("/api/urls/race-alias/analytics", null);
+        long deadline = System.nanoTime() + Duration.ofSeconds(5).toNanos();
+        while (new tools.jackson.databind.ObjectMapper().readTree(analytics.body()).path("redirectCount").asLong() == 0
+                && System.nanoTime() < deadline) {
+            Thread.sleep(25);
+            analytics = call("/api/urls/race-alias/analytics", null);
+        }
         assertEquals(200, analytics.statusCode());
         assertTrue(analytics.body().matches("(?s).*\\\"redirectCount\\\":\\s*[1-9][0-9]*.*"), analytics.body());
         var stats = new tools.jackson.databind.ObjectMapper().readTree(analytics.body());
@@ -94,7 +102,7 @@ class PostgresHttpIntegrationTest {
         }
         assertTrue(limited, "Creation must be bounded");
         for (int i=0; i<35; i++) assertEquals(302, call("/race-alias", null).statusCode());
-        try (var connection = DriverManager.getConnection(DATABASE, "shortener", "shortener"); var statement = connection.createStatement();
+        try (var connection = DriverManager.getConnection(DATABASE, USER, PASSWORD); var statement = connection.createStatement();
              var rows = statement.executeQuery("SELECT count(*) FROM " + SCHEMA + ".links WHERE code='race-alias'")) {
             assertTrue(rows.next()); assertEquals(1, rows.getInt(1));
         }

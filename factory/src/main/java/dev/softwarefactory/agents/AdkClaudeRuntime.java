@@ -47,8 +47,9 @@ public final class AdkClaudeRuntime implements AgentRuntime {
 
     private String generate(String role, String prompt, AnthropicClient client, PublicWebReader web) {
         var session = new ToolSession(beforeRequest, audit);
-        var search = new AnthropicWebSearch(client, model, session);
-        var tools = new EngineeringTools(new RepositoryReader(checkout), web, search::search, session);
+        var access = new dev.softwarefactory.agents.tools.WebAccessPolicy();
+        var search = new AnthropicWebSearch(client, model, session, access::registerSource);
+        var tools = new EngineeringTools(new RepositoryReader(checkout), web, search::search, session, access);
         var agent = LlmAgent.builder()
             .name(role.replace('-', '_'))
             .model(new ThinkingAwareClaude(model, client, session))
@@ -60,7 +61,9 @@ public final class AdkClaudeRuntime implements AgentRuntime {
             String sessionId = UUID.randomUUID().toString();
             runner.sessionService().createSession("software-factory", "operator", Map.of(), sessionId).blockingGet();
             StringBuilder answer = new StringBuilder();
-            for (var event : runner.runAsync("operator", sessionId, Content.fromParts(Part.fromText(prompt))).blockingIterable()) {
+            for (var event : runner.runAsync("operator", sessionId, Content.fromParts(Part.fromText(prompt)))
+                    .takeUntil(io.reactivex.rxjava3.core.Flowable.timer(180, java.util.concurrent.TimeUnit.SECONDS)
+                        .flatMap(ignored -> io.reactivex.rxjava3.core.Flowable.error(new IllegalStateException("Agent invocation deadline exceeded")))).blockingIterable()) {
                 if (event.finalResponse()) event.content().ifPresent(content -> answer.append(content.text()));
             }
             if (answer.isEmpty()) throw new IllegalStateException("ADK returned no final response");

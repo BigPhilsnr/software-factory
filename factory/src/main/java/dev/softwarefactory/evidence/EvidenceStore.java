@@ -5,7 +5,7 @@ import dev.softwarefactory.governance.Hashes;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
+import java.nio.file.FileAlreadyExistsException;
 
 /** Evidence files are immutable once written for a run/task pair. */
 public final class EvidenceStore {
@@ -20,11 +20,19 @@ public final class EvidenceStore {
         Path folder = root.resolve(runId);
         Files.createDirectories(folder);
         Path destination = folder.resolve(taskId + ".txt");
-        if (Files.exists(destination)) throw new IllegalStateException("Evidence already exists: " + taskId);
+        if (Files.isSymbolicLink(folder)) throw new SecurityException("Evidence directory cannot be a symlink");
         Path temporary = Files.createTempFile(folder, taskId, ".tmp");
         try {
             Files.writeString(temporary, content);
-            Files.move(temporary, destination, StandardCopyOption.ATOMIC_MOVE);
+            try {
+                // Atomic create without replace: a concurrent writer cannot overwrite evidence.
+                Files.createLink(destination, temporary);
+            } catch (FileAlreadyExistsException existing) {
+                if (Files.isSymbolicLink(destination) || !java.util.Arrays.equals(Files.readAllBytes(destination),
+                        content.getBytes(java.nio.charset.StandardCharsets.UTF_8))) {
+                    throw new IllegalStateException("Conflicting immutable evidence: " + taskId);
+                }
+            }
         } finally {
             Files.deleteIfExists(temporary);
         }

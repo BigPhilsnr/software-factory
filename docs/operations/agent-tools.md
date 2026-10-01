@@ -41,3 +41,5 @@ python3 scripts/checks/live_tools_smoke.py --live
 ```
 
 The live smoke check exercises all seven tools through `/run_sse`, checks their reported outcomes and that no new live workflow was created, and saves a result under `.runs/tool-checks/`. Run it without another operator creating live workflows. Unit tests cover credential/path denial, symlinks, private URLs and addresses, HTML extraction, read-only Git inspection, request budgets, safe errors, audit hashes and provider tool round trips.
+
+Page fetches now require an exact source URL from provider search evidence. Queries and fragments are stripped and every redirect is authorized again; arbitrary model-composed URLs are denied. Search requests still send their query to the configured provider, so do not use web search for private data. Source delimiters help the model distinguish evidence from instructions but do not grant tool authority.

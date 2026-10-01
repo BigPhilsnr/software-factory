@@ -42,8 +42,8 @@ final class ChatConversation {
                 `/feature REQUIREMENT` command when the user wants implementation. Only that explicit
                 command creates a run; `/advance` starts it. Approvals require `/approve EXACT_HASH`.
                 Do not invent a run ID, approval hash, test result or file contents.
-                """ + "\nSELECTED RUN\n" + runContext + "\nCURRENT CHECKOUT\n" + repositoryContext()
-                + "\nRECENT CONVERSATION\n" + String.join("\n", history) + "\nUSER\n" + question;
+                """ + dev.softwarefactory.agents.UntrustedText.block("SELECTED RUN", runContext) + dev.softwarefactory.agents.UntrustedText.block("CURRENT CHECKOUT", repositoryContext())
+                + dev.softwarefactory.agents.UntrustedText.block("RECENT CONVERSATION", String.join("\n", history)) + "\nUSER\n" + question;
             String answer = runtime.generate("project_chat", prompt);
             if (answer == null || answer.isBlank()) throw new IllegalStateException("Chat returned no answer; please retry");
             history.addLast("USER: " + question + "\nASSISTANT: " + answer.substring(0, Math.min(answer.length(), 6000)));

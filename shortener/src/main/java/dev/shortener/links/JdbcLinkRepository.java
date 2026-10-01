@@ -1,6 +1,5 @@
 package dev.shortener.links;
 
-import dev.shortener.analytics.RedirectStats;
 
 
 import java.util.Optional;
@@ -37,11 +36,6 @@ public class JdbcLinkRepository implements LinkRepository {
     @Override
     public Optional<Link> findByCode(String code) {
         return jdbc.query("SELECT id, code, target_url, created_at FROM links WHERE code = ?", MAPPER, code).stream().findFirst();
-    }
-
-    @Override
-    public long redirectCount(long linkId) {
-        return statistics(linkId).redirectCount();
     }
 
     @Override public RedirectStats statistics(long linkId) {

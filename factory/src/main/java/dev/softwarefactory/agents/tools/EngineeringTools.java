@@ -12,8 +12,14 @@ public final class EngineeringTools {
     private final PublicWebReader web;
     private final WebSearch search;
     private final ToolSession session;
+    private final WebAccessPolicy access;
 
     public EngineeringTools(RepositoryReader repository, PublicWebReader web, WebSearch search, ToolSession session) {
+        this(repository, web, search, session, new WebAccessPolicy());
+    }
+
+    public EngineeringTools(RepositoryReader repository, PublicWebReader web, WebSearch search, ToolSession session, WebAccessPolicy access) {
+        this.access = access;
         this.repository = repository;
         this.web = web;
         this.search = search;
@@ -46,9 +52,9 @@ public final class EngineeringTools {
         return session.invoke("inspect_git", operation, () -> repository.git(operation));
     }
 
-    @Schema(description = "Read a public HTTPS page as text. No JavaScript, login, cookies or local/private addresses. Cite its source URL.")
+    @Schema(description = "Read an exact HTTPS source URL returned by search; query strings are stripped. No JavaScript, login, cookies or local/private addresses. Cite its source URL.")
     public String fetch_page(@Schema(name = "url") String url) throws Exception {
-        return session.invoke("fetch_page", url, () -> web.fetch(url));
+        return session.invoke("fetch_page", url, () -> web.fetch(access.approved(url), access::approved));
     }
 
     @Schema(description = "Search the public web for current documentation/information, returning a summary and source URLs. Do not send secrets or repository contents in a query. Costs a provider request and up to two searches.")

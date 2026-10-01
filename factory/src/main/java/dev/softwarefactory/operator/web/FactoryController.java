@@ -11,11 +11,11 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/factory/api")
 public final class FactoryController {
     private final FactoryService factory;
-    private final String token;
-    public FactoryController(FactoryService factory, String token) { this.factory = factory; this.token = token; }
+    private final OperatorToken token;
+    public FactoryController(FactoryService factory, OperatorToken token) { this.factory = factory; this.token = token; }
 
     @GetMapping("/config") public ResponseEntity<com.fasterxml.jackson.databind.JsonNode> config() throws Exception {
-        return json(Map.of("token", token, "liveReady", System.getenv("ANTHROPIC_API_KEY") != null && !System.getenv("ANTHROPIC_API_KEY").isBlank(),
+        return json(Map.of("token", token.value(), "liveReady", System.getenv("ANTHROPIC_API_KEY") != null && !System.getenv("ANTHROPIC_API_KEY").isBlank(),
             "model", System.getenv().getOrDefault("CLAUDE_MODEL", "claude-sonnet-4-5")));
     }
     @GetMapping("/metrics") public ResponseEntity<com.fasterxml.jackson.databind.JsonNode> metrics() throws Exception { return json(factory.metrics()); }
@@ -41,12 +41,17 @@ public final class FactoryController {
         }
         return json(Map.of("accepted", true));
     }
-    @ExceptionHandler({IllegalArgumentException.class, IllegalStateException.class})
-    public ResponseEntity<com.fasterxml.jackson.databind.JsonNode> invalid(RuntimeException failure) throws Exception {
-        return ResponseEntity.status(409).contentType(org.springframework.http.MediaType.APPLICATION_JSON)
+    @ExceptionHandler({IllegalArgumentException.class, IllegalStateException.class, org.springframework.http.converter.HttpMessageNotReadableException.class})
+    public ResponseEntity<com.fasterxml.jackson.databind.JsonNode> invalid(Exception failure) throws Exception {
+        return ResponseEntity.status(failure instanceof dev.softwarefactory.persistence.ControlRepository.RunNotFound ? 404 : failure instanceof IllegalStateException ? 409 : 400).contentType(org.springframework.http.MediaType.APPLICATION_JSON)
             .body(Json.MAPPER.valueToTree(Map.of("error", String.valueOf(failure.getMessage()))));
     }
+    @ExceptionHandler(java.nio.file.NoSuchFileException.class)
+    public ResponseEntity<com.fasterxml.jackson.databind.JsonNode> missingArtifact() {
+        return ResponseEntity.status(404).body(Json.MAPPER.valueToTree(Map.of("error", "Artifact not found")));
+    }
     @ExceptionHandler(Exception.class) public ResponseEntity<com.fasterxml.jackson.databind.JsonNode> failure(Exception failure) throws Exception {
+        System.getLogger(FactoryController.class.getName()).log(System.Logger.Level.ERROR, "Factory request failed: {0}", failure.getClass().getSimpleName());
         return ResponseEntity.status(500).contentType(org.springframework.http.MediaType.APPLICATION_JSON)
             .body(Json.MAPPER.valueToTree(Map.of("error", "Factory operation failed. Check the database and server logs; " + failure.getClass().getSimpleName())));
     }

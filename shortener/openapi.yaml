@@ -38,6 +38,8 @@ paths:
                   code: {type: string}
                   shortUrl: {type: string, format: uri}
         '400': {$ref: '#/components/responses/Invalid'}
+        '413':
+          description: Request body exceeds 64 KiB (including chunked bodies).
         '409': {$ref: '#/components/responses/Conflict'}
         '429':
           description: Creation rate limit exceeded

@@ -5,7 +5,7 @@ Start `control-db`, then run `python3 scripts/factory_web.py` from the repositor
 - Operator page: http://localhost:8000/factory/
 - ADK chat: http://localhost:8000/dev-ui/?app=software_factory
 
-The operator page and chat share the existing PostgreSQL control plane. ADK chat answers ordinary questions through a read-only model grounded in allowlisted repository documentation and shortener sources. It remembers the last six exchanges per session (in memory, up to 128 sessions). Explicit slash commands route deterministically to the control plane; model answers cannot grant approval or create runs. Chat calls incur provider charges separately from the per-run model-call budget. The existing ADK/Claude runtime still generates engineering artifacts in background workers.
+The operator page and chat share the existing PostgreSQL control plane. ADK chat answers ordinary questions through a read-only model grounded in allowlisted repository documentation and shortener sources. It remembers the last six exchanges per session (in memory, up to 128 sessions). Explicit slash commands route deterministically to the control plane; model answers cannot grant approval or create runs. Chat calls incur provider charges separately from the per-run model-call budget, with a persisted shared daily cap (`FACTORY_CHAT_DAILY_REQUESTS`, default 80 attempted provider calls). Requests and tool outcomes are recorded in `chat_audit` without raw chat text. Each invocation has a three-minute deadline. These are request limits, not dollar budgets. The existing ADK/Claude runtime still generates engineering artifacts in background workers.
 
 ## Request and review work
 

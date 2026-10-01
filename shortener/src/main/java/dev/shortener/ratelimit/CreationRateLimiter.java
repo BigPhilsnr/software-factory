@@ -16,6 +16,7 @@ public final class CreationRateLimiter {
     }
 
     public synchronized Result admit(String address) {
+        address = bucket(address);
         long second = clock.instant().getEpochSecond();
         long epoch = Math.floorDiv(second, 60);
         if (!windows.containsKey(address) && windows.size() >= 10_000) {
@@ -27,6 +28,16 @@ public final class CreationRateLimiter {
             return new Window(epoch, Math.min(limit + 1, previous.count + 1));
         });
         return new Result(window.count <= limit, 60 - Math.floorMod(second, 60));
+    }
+
+    static String bucket(String address) {
+        if (address.contains(":")) {
+            try {
+                byte[] bytes = java.net.InetAddress.getByName(address).getAddress();
+                if (bytes.length == 16) return java.util.HexFormat.of().formatHex(java.util.Arrays.copyOf(bytes, 8)) + "/64";
+            } catch (java.net.UnknownHostException ignored) { /* Socket peers are numeric; retain a bounded fallback key. */ }
+        }
+        return address;
     }
 
     private record Window(long epoch, int count) {}

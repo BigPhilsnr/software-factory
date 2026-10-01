@@ -36,6 +36,9 @@ def main():
     TOKEN = request('/factory/api/config')['token']
     request('/factory/api/runs', {'kind':'scenario','scenario':'bugfix'}, status=403, include_token=False)
     request('/factory/api/runs', {'kind':'scenario','scenario':'bugfix'}, status=403, origin='https://example.org')
+    request('/factory/api/runs/not-a-uuid', status=400)
+    request('/factory/api/runs/00000000-0000-0000-0000-000000000000', status=404)
+    request('/factory/api/runs', {'kind':'feature','requirement':'x'*70000}, status=413)
     state = request('/factory/api/runs', {'kind':'scenario','scenario':'ambiguous','mode':'fixture'})
     run = state['id']
     action(run, action='advance')
@@ -61,7 +64,7 @@ def main():
     action(run, action='reject', hash=data['review']['hash'])
     data = detail(run)
     assert data['state']['status'] == 'NOT_APPROVED' and data['auditValid']
-    request(f'/factory/api/runs/{run}/artifacts/.env', status=409)
+    request(f'/factory/api/runs/{run}/artifacts/.env', status=400)
     print('PASS local protection, clarification, stale hash, revision, patch approval, tests, rejection and audit:', run)
 
 if __name__ == '__main__': main()

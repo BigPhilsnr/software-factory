@@ -1,6 +1,5 @@
 package dev.shortener.links;
 
-import dev.shortener.analytics.RedirectStats;
 
 import dev.shortener.redirects.LinkCache;
 
@@ -30,8 +29,8 @@ public final class ShortenerService {
         String target = urls.validate(url);
         if (alias != null) {
             String normalized = alias.toLowerCase(Locale.ROOT);
-            if (!normalized.matches("[a-z0-9-]{4,32}") || Set.of("api", "actuator", "health", "favicon.ico").contains(normalized)) {
-                throw new IllegalArgumentException("Invalid alias");
+            if (!normalized.matches("[a-z0-9-]{4,32}") || Set.of("api", "actuator", "health").contains(normalized)) {
+                throw new InvalidLinkException("Invalid alias");
             }
             try {
                 Link created = links.create(normalized, target);
@@ -56,15 +55,13 @@ public final class ShortenerService {
     public Optional<Link> find(String code) {
         if (code == null) return Optional.empty();
         code = code.toLowerCase(Locale.ROOT);
+        if (!code.matches("[a-z0-9-]{4,32}")) return Optional.empty();
         Optional<Link> hit = cache.get(code);
         if (hit.isPresent()) return hit;
+        if (cache.containsMiss(code)) return Optional.empty();
         Optional<Link> found = links.findByCode(code);
-        found.ifPresent(cache::put);
+        if (found.isPresent()) cache.put(found.get()); else cache.putMiss(code);
         return found;
-    }
-
-    public long count(Link link) {
-        return links.redirectCount(link.id());
     }
 
     public RedirectStats statistics(Link link) { return links.statistics(link.id()); }

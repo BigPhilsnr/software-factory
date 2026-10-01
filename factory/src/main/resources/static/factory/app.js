@@ -2,7 +2,20 @@
 const $ = id => document.getElementById(id);
 const terminal = new Set(['COMPLETED','FAILED','SAFE_STOPPED','NOT_APPROVED']);
 let token = '', selected = new URLSearchParams(location.search).get('run'), current = null, reviewHash = null, fetching = false;
-let refreshTimer;
+let refreshTimer, refreshPending = false;
+selected = selected?.toLowerCase() || null;
+if (selected && !/^[a-f0-9]{8}(?:-[a-f0-9]{4}){3}-[a-f0-9]{12}$/i.test(selected)) selected = null;
+const renderedHtml = new Map();
+function updateHtml(id, html) {
+  const element = $(id);
+  if (renderedHtml.get(id) === html) return;
+  const selection = window.getSelection();
+  if (selection && !selection.isCollapsed && element.contains(selection.anchorNode)) return;
+  renderedHtml.set(id, html);
+  const focused = document.activeElement?.closest('[data-run]')?.dataset.run;
+  element.innerHTML = html;
+  if (focused && id === 'runs') [...element.querySelectorAll('[data-run]')].find(node => node.dataset.run === focused)?.focus({preventScroll:true});
+}
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 function notice(text) { $('notice').textContent = text; $('notice').hidden = !text; }
 async function api(path, body) {
@@ -20,21 +33,23 @@ async function choose(id) {
   await refresh();
 }
 async function refresh() {
-  if (fetching) return;
+  if (fetching) { refreshPending = true; return; }
   clearTimeout(refreshTimer);
   fetching = true;
   try {
     const runs = await api('runs');
-    $('runs').innerHTML = runs.map(r => `<button class="run-item ${r.id===selected?'selected':''}" data-run="${esc(r.id)}">${esc(r.scenario)} <span>Saved: ${esc(r.status)} · ${esc(r.mode)}</span><span>${esc(r.id.slice(0,8))}</span></button>`).join('') || '<p>No runs yet.</p>';
+    updateHtml('runs', runs.map(r => `<button class="run-item ${r.id===selected?'selected':''}" data-run="${esc(r.id)}">${esc(r.scenario)} <span>Saved: ${esc(r.status)} · ${esc(r.mode)}</span><span>${esc(r.id.slice(0,8))}</span></button>`).join('') || '<p>No runs yet.</p>');
     if (selected) {
       const requested = selected, data = await api('runs/' + encodeURIComponent(requested));
       if (requested === selected) render(data);
     }
     $('connection').textContent = 'Connected · local control plane';
+    if (!current?.error) notice('');
   } catch(e) { notice(e.message); $('connection').textContent = 'Connection unavailable'; }
   finally {
     fetching = false;
-    if (!document.hidden) refreshTimer = setTimeout(refresh, current?.busy ? 5000 : 15000);
+    if (refreshPending) { refreshPending = false; queueMicrotask(refresh); }
+    else if (!document.hidden) refreshTimer = setTimeout(refresh, current?.busy ? 5000 : 15000);
   }
 }
 function artifactLabel(name) {
@@ -63,7 +78,7 @@ function render(data) {
   if(data.error) notice(data.error);
   const m=data.metrics;
   $('reliability').textContent = m ? `Elapsed ${(m.elapsedMillis/1000).toFixed(1)}s · Retries ${m.retryExecutions} (${m.retryOffers} offered) · Rollbacks ${m.rollbacks} · Replans ${m.replans} · Parallel joins ${m.parallelJoins} · Mean recovery ${m.meanRecoveryMillis===null?'no samples':(m.meanRecoveryMillis/1000).toFixed(1)+'s'}` : '';
-  $('tasks').innerHTML = data.tasks.map(t=>`<div class="task"><div><strong>${esc(t.id)}</strong><small>${esc(t.stage)} · after ${esc(t.dependsOn.join(", ") || "run start")}</small></div><span class="badge ${esc(s.tasks[t.id].toLowerCase())}">${esc(s.tasks[t.id])}</span></div>`).join('');
+  updateHtml('tasks', data.tasks.map(t=>`<div class="task"><div><strong>${esc(t.id)}</strong><small>${esc(t.stage)} · after ${esc(t.dependsOn.join(", ") || "run start")}</small></div><span class="badge ${esc(s.tasks[t.id].toLowerCase())}">${esc(s.tasks[t.id])}</span></div>`).join(''));
   $('clarification').hidden = !s.pendingClarificationTask;
   $('question').textContent = data.tasks.find(t=>t.id===s.pendingClarificationTask)?.prompt || '';
   const questions = (data.clarificationContext || []).map(a => a.text).join('\n\n');
@@ -88,7 +103,7 @@ function render(data) {
   }
   $('revision-form').querySelector('button').disabled = data.busy;
   updateOptions('artifact', data.artifacts, 'Select an artifact', artifactLabel);
-  $('events').innerHTML = data.events.map(e=>`<div class="event"><b>${esc(e.type)}</b><small>${esc(e.at)}</small><p>${esc(e.detail)}</p></div>`).join('');
+  updateHtml('events', data.events.map(e=>`<div class="event"><b>${esc(e.type)}</b><small>${esc(e.at)}</small><p>${esc(e.detail)}</p></div>`).join(''));
 }
 function confirmLiveCreation() {
   return confirm('Create a live run? Starting or resuming it sends context to the configured model provider and incurs API charges. Creation alone makes no model calls.');
@@ -102,7 +117,7 @@ async function action(body) {
       return;
     }
   }
-  await api('runs/'+selected+'/actions',body);
+  await api('runs/'+encodeURIComponent(selected)+'/actions',body);
   await refresh();
 }
 $('runs').addEventListener('click', e => {const b=e.target.closest('[data-run]');if(b)perform(()=>choose(b.dataset.run));});
@@ -111,14 +126,14 @@ $('feature-form').onsubmit = e => {e.preventDefault(); perform(async()=>{if(!con
 $('scenario-form').onsubmit = e => {e.preventDefault();perform(async()=>{if($('mode').value==='live'&&!confirmLiveCreation())return;const s=await api('runs',{kind:'scenario',scenario:$('scenario').value,mode:$('mode').value});await choose(s.id);});};
 $('advance').onclick = () => perform(()=>action({action:'advance'}));
 $('reviewed').onchange = () => {$('approve').disabled=!$('reviewed').checked;};
-$('approve').onclick = () => perform(async()=>{if(!$('reviewed').checked || !reviewHash)return;const hash=reviewHash;$('approve').disabled=true;await action({action:'approve',hash});});
+$('approve').onclick = () => perform(async()=>{if(!$('reviewed').checked || !reviewHash)return;const hash=reviewHash;$('approve').disabled=true;try { await action({action:'approve',hash}); } finally { $('approve').disabled=!$('reviewed').checked || !reviewHash; }});
 $('reject').onclick = () => perform(async()=>{
   if (!reviewHash || !confirm('Reject this run permanently? It will end as NOT_APPROVED and cannot resume. Use Request changes to revise the candidate instead.')) return;
   await action({action:'reject',hash:reviewHash});
 });
 $('answer-form').onsubmit = e => {e.preventDefault();perform(()=>action({action:'clarify',answer:$('answer').value}));};
 $('revision-form').onsubmit = e => {e.preventDefault();perform(()=>action({action:'revise',task:$('revision-task').value,feedback:$('feedback').value}));};
-$('artifact').onchange = () => perform(async()=>{const name=$('artifact').value;if(!name){$('artifact-text').hidden=true;return;}const a=await api('runs/'+selected+'/artifacts/'+encodeURIComponent(name));$('artifact-text').textContent=a.text;$('artifact-text').hidden=false;});
+$('artifact').onchange = () => perform(async()=>{const name=$('artifact').value;if(!name){$('artifact-text').hidden=true;return;}const requested=selected;const a=await api('runs/'+encodeURIComponent(requested)+'/artifacts/'+encodeURIComponent(name));if(selected!==requested)return;$('artifact-text').textContent=a.text;$('artifact-text').hidden=false;});
 document.addEventListener('visibilitychange', () => {
   clearTimeout(refreshTimer);
   if (!document.hidden) perform(refresh);

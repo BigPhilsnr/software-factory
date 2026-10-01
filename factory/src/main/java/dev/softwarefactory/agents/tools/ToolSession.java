@@ -68,7 +68,7 @@ public final class ToolSession {
         outcomes.add(name + " " + status);
         audit.record("TOOL_FINISHED", name + ":" + status + ":outputSha256=" + Hashes.sha256(result)
             + ":elapsedMs=" + (System.nanoTime() - started) / 1_000_000);
-        return result;
+        return dev.softwarefactory.agents.UntrustedText.block("Tool result: " + name, result);
     }
 
     public synchronized String summary() { return String.join(", ", outcomes); }

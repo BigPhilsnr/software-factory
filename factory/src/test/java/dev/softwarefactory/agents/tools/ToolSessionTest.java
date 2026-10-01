@@ -19,7 +19,7 @@ class ToolSessionTest {
     @Test void auditsHashesAndOutcomesWithoutLeakingArgumentsOrProviderErrors() throws Exception {
         var events = new ArrayList<String>();
         var session = new ToolSession(() -> {}, (event, detail) -> events.add(event + ":" + detail));
-        assertEquals("output", session.invoke("read_file", "private-input", () -> "output"));
+        assertTrue(session.invoke("read_file", "private-input", () -> "output").contains("\noutput\n"));
         String failure = session.invoke("search_web", "query", () -> { throw new IllegalStateException("SECRET_SENTINEL"); });
         assertFalse(failure.contains("SECRET_SENTINEL"));
         assertTrue(session.summary().contains("search_web ERROR"));

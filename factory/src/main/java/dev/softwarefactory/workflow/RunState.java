@@ -1,12 +1,13 @@
 package dev.softwarefactory.workflow;
 
 import java.time.Instant;
-import java.util.HashMap;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.Map;
 
 /** Authoritative state is serialized transactionally by the control repository. */
 public final class RunState {
     public String id;
+    public long revision;
     public String scenario;
     public String specPath;
     public String specHash;
@@ -24,13 +25,13 @@ public final class RunState {
     public int maxModelCalls;
     public Instant startedAt;
     public Instant finishedAt;
-    public Map<String, TaskStatus> tasks = new HashMap<>();
-    public Map<String, String> artifactHashes = new HashMap<>();
-    public Map<String, Integer> attempts = new HashMap<>();
-    public Map<String, Integer> artifactVersions = new HashMap<>();
-    public Map<String, String> approvals = new HashMap<>();
-    public Map<String, Integer> patchDrafts = new HashMap<>();
-    public Map<String, String> reviewFeedback = new HashMap<>();
+    public Map<String, TaskStatus> tasks = new ConcurrentHashMap<>();
+    public Map<String, String> artifactHashes = new ConcurrentHashMap<>();
+    public Map<String, Integer> attempts = new ConcurrentHashMap<>();
+    public Map<String, Integer> artifactVersions = new ConcurrentHashMap<>();
+    public Map<String, String> approvals = new ConcurrentHashMap<>();
+    public Map<String, Integer> patchDrafts = new ConcurrentHashMap<>();
+    public Map<String, String> reviewFeedback = new ConcurrentHashMap<>();
 
     public RunState() {}
 

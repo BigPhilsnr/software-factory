@@ -57,7 +57,7 @@ The operator owns scope and final quality. The prototype assumes one trusted loc
 
 Hashes and the chained audit log detect ordinary tampering, but a privileged host/database owner can rewrite both. Approval identity is local. Call-count budgets bound requests, not dollars/tokens. Web/source text may contain prompt injection; tool restrictions and deterministic governance remain the authority. See the [risk register](evaluation/risks.md).
 
-Analytics are best effort: redirects can wait up to 100 ms, counts may lag/drop, and the stored last-redirect timestamp is not exposed by the API. The cache clears at its size threshold; cache and limiter are per process. The limiter uses the direct peer address, appropriate for the documented direct local deployment; trusted-proxy handling must be designed before proxy deployment. Link expiry/deletion are absent. The assignment requires reliability features but does not specifically mandate these two features or geographic/device analytics.
+Analytics are best effort: redirects enqueue without waiting for writes; counts may lag/drop, and the API exposes the last recorded GET timestamp. The bounded cache evicts the least recently used entry and briefly caches missing codes; cache and limiter remain per process. The limiter uses the direct peer address, appropriate for the documented direct local deployment; trusted-proxy handling must be designed before proxy deployment. Link expiry/deletion are absent. The assignment requires reliability features but does not specifically mandate these two features or geographic/device analytics.
 
 ## Remaining work
 

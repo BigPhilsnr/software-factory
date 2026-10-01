@@ -14,6 +14,14 @@ class GitWorkspaceTest {
         assertThrows(SecurityException.class, () -> new GitWorkspace(repository).validateScope(
             "diff --git a/shortener/Secret.java b/shortener/Secret.java\nnew file mode 120000\n", List.of("shortener")));
     }
+    @Test void refusesOptionRefsGitMetadataAndAmbiguousHeaders() {
+        var workspace = new GitWorkspace(repository);
+        assertThrows(IllegalArgumentException.class, () -> workspace.resolveCommit("--help"));
+        for (String path : List.of("shortener/.git/config", "shortener/a b.java", "shortener/a\\b.java")) {
+            assertThrows(SecurityException.class, () -> workspace.validateScope("diff --git a/" + path + " b/" + path + "\n", List.of("shortener")));
+        }
+        assertThrows(SecurityException.class, () -> workspace.validateScope("diff --git a/shortener/a b/shortener/a\nrename from a\nrename to b\n", List.of("shortener")));
+    }
     @TempDir Path repository;
 
     @Test

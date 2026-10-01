@@ -21,7 +21,7 @@ class RunEngineResilienceTest {
     @BeforeEach void setup() throws Exception {
         root = Path.of(System.getProperty("user.dir")).toAbsolutePath();
         if (root.getFileName().toString().equals("factory")) root = root.getParent();
-        repository = new ControlRepository("jdbc:postgresql://localhost:5434/control", "control", "control");
+        repository = new ControlRepository(System.getenv().getOrDefault("CONTROL_DB_URL", "jdbc:postgresql://localhost:5434/control"), System.getenv().getOrDefault("CONTROL_DB_USER", "control"), System.getenv().getOrDefault("CONTROL_DB_PASSWORD", "control"));
         repository.initialize();
         engine = new RunEngine(repository, root);
     }
@@ -41,6 +41,31 @@ class RunEngineResilienceTest {
             Files.writeString(artifact, original + "\nINJECTED_TAMPER\n");
             assertEquals(RunStatus.SAFE_STOPPED, engine.advance(state.id).status);
             assertTrue(repository.auditValid(state.id));
+        } finally { Files.writeString(artifact, original); }
+    }
+
+    @Test void missingEvidenceRemainsInspectableAndRejectable() throws Exception {
+        RunState state = proposal();
+        Path artifact = root.resolve("evidence/" + state.id + "/apply-v1.txt");
+        String original = Files.readString(artifact);
+        try (var service = new dev.softwarefactory.operator.web.FactoryService(root, repository)) {
+            Files.delete(artifact);
+            var review = (java.util.Map<?, ?>) service.detail(state.id).get("review");
+            assertTrue(review.get("patch").toString().contains("Evidence unavailable"));
+            service.reject(state.id, state.pendingApprovalHash);
+            assertEquals(RunStatus.NOT_APPROVED, repository.load(state.id).status);
+        } finally { Files.writeString(artifact, original); }
+    }
+
+    @Test void tamperingCannotBeApprovedEvenWithThePreviouslyCorrectHash() throws Exception {
+        RunState state = proposal();
+        Path artifact = root.resolve("evidence/" + state.id + "/understand-v1.txt");
+        String original = Files.readString(artifact);
+        try {
+            Files.writeString(artifact, "altered");
+            assertThrows(IllegalStateException.class, () -> engine.approve(state.id, state.pendingApprovalHash, true));
+            assertEquals(RunStatus.SAFE_STOPPED, repository.load(state.id).status);
+            assertFalse(repository.timeline(state.id).stream().anyMatch(event -> event.type().equals("APPROVAL_GRANTED")));
         } finally { Files.writeString(artifact, original); }
     }
 

@@ -11,7 +11,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 @RestControllerAdvice
 public class ApiErrors {
-    @ExceptionHandler({IllegalArgumentException.class, HttpMessageNotReadableException.class})
+    @ExceptionHandler({InvalidLinkException.class, HttpMessageNotReadableException.class})
     ResponseEntity<Map<String, String>> invalid(Exception ignored) {
         return ResponseEntity.badRequest().body(Map.of("error", "invalid_request"));
     }
@@ -27,7 +27,13 @@ public class ApiErrors {
     }
 
     @ExceptionHandler({DataAccessException.class, ShortenerService.CapacityException.class})
-    ResponseEntity<Map<String, String>> unavailable() {
+    ResponseEntity<Map<String, String>> unavailable(Exception failure) {
+        System.getLogger(ApiErrors.class.getName()).log(System.Logger.Level.WARNING, "Link dependency unavailable: {0}", failure.getClass().getSimpleName());
         return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(Map.of("error", "temporarily_unavailable"));
+    }
+    @ExceptionHandler(Exception.class)
+    ResponseEntity<Map<String, String>> unexpected(Exception failure) {
+        System.getLogger(ApiErrors.class.getName()).log(System.Logger.Level.ERROR, "Link request failed: {0}", failure.getClass().getSimpleName());
+        return ResponseEntity.internalServerError().body(Map.of("error", "internal_error"));
     }
 }

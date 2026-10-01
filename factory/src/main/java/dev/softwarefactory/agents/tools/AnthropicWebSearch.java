@@ -9,8 +9,14 @@ public final class AnthropicWebSearch {
     private final AnthropicClient client;
     private final String model;
     private final ToolSession session;
+    private final java.util.function.Consumer<String> sourceSink;
 
     public AnthropicWebSearch(AnthropicClient client, String model, ToolSession session) {
+        this(client, model, session, ignored -> {});
+    }
+
+    public AnthropicWebSearch(AnthropicClient client, String model, ToolSession session, java.util.function.Consumer<String> sourceSink) {
+        this.sourceSink = sourceSink;
         this.client = client;
         this.model = model;
         this.session = session;
@@ -31,7 +37,10 @@ public final class AnthropicWebSearch {
                 var content = block.asWebSearchToolResult().content();
                 if (content.isError()) throw new IllegalStateException("Provider search failed: " + content.asError().errorCode());
                 searched = true;
-                for (var source : content.asResultBlocks()) result.append("SOURCE: ").append(source.title()).append(" — ").append(source.url()).append('\n');
+                for (var source : content.asResultBlocks()) {
+                    sourceSink.accept(source.url());
+                    result.append("SOURCE: ").append(source.title()).append(" — ").append(source.url()).append('\n');
+                }
             }
         }
         if (!searched) throw new IllegalStateException("Provider did not return search evidence");

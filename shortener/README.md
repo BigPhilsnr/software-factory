@@ -18,4 +18,4 @@ The controller and HTTP integration tests also live in `links/`. Historical scen
 
 Schema migrations are in `src/main/resources/db/migration/`; runtime configuration is in `src/main/resources/application.yml`. Tests mirror production packages under `src/test/java/dev/shortener/`.
 
-From the repository root, start the database with `docker-compose up -d shortener-db`, then run `mvn -f shortener/pom.xml spring-boot:run` with JDK 21. Validate the running service with `python3 scripts/checks/acceptance.py`.
+From the repository root, start the database with `docker-compose up -d shortener-db`, then run `python3 scripts/shortener.py` (loads local database settings from `.env`) with JDK 21. Validate the running service with `python3 scripts/checks/acceptance.py`.

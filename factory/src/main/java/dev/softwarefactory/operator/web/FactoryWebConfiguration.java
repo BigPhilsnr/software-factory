@@ -18,9 +18,10 @@ public class FactoryWebConfiguration implements org.springframework.web.servlet.
         registry.addViewController("/factory/").setViewName("forward:/factory/index.html");
         registry.addRedirectViewController("/factory", "/factory/").setKeepQueryParams(true);
     }
-    @Bean String factoryToken() { return UUID.randomUUID().toString(); }
-    @Bean FactoryController factoryController(FactoryService factory, String factoryToken) { return new FactoryController(factory, factoryToken); }
-    @Bean OncePerRequestFilter localOperatorFilter(String factoryToken) {
+    @Bean RequestBodyLimit requestBodyLimit() { return new RequestBodyLimit(); }
+    @Bean OperatorToken factoryToken() { return new OperatorToken(UUID.randomUUID().toString()); }
+    @Bean FactoryController factoryController(FactoryService factory, OperatorToken factoryToken) { return new FactoryController(factory, factoryToken); }
+    @Bean OncePerRequestFilter localOperatorFilter(OperatorToken factoryToken) {
         return new OncePerRequestFilter() {
             @Override protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain)
                     throws ServletException, IOException {
@@ -31,7 +32,7 @@ public class FactoryWebConfiguration implements org.springframework.web.servlet.
                 }
                 boolean mutation = !Set.of("GET", "HEAD", "OPTIONS").contains(request.getMethod());
                 if (mutation && request.getRequestURI().startsWith("/factory/api/")
-                        && !factoryToken.equals(request.getHeader("X-Factory-Token"))) {
+                        && !factoryToken.value().equals(request.getHeader("X-Factory-Token"))) {
                     response.sendError(403, "Reload the operator page before taking an action");
                     return;
                 }
