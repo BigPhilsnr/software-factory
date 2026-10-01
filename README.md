@@ -69,6 +69,28 @@ mvn -Pintegration test
 
 The last command runs unit tests and all integration tests, including existing recovery/persistence fault tests. Plain `mvn test` excludes the `integration` tag. The test JVM removes the Anthropic key; these tests never intentionally call a paid provider. Connection settings and focused suite commands are in each module's guide. Maven does not automatically load `.env`.
 
+## Quality gate
+
+`mvn test` stays fast (compile, unit tests, JaCoCo report). `mvn verify` adds the local, Sonar-equivalent gate; no external service is involved:
+
+| Check | Tool | Configuration |
+| --- | --- | --- |
+| Formatting (Java and POMs) | Spotless: palantir-java-format, import order, sortPom | module POMs, `.editorconfig` |
+| Bugs and security | SpotBugs + FindSecBugs, effort Max, threshold Medium | `build-config/spotbugs-exclude.xml` |
+| Maintainability | PMD, curated "Sonar way"-like rules, fails on priority 1-3 | `build-config/pmd-ruleset.xml` |
+| Coverage | JaCoCo line coverage floor (`jacoco.line.minimum` in each POM) | `target/site/jacoco/index.html` |
+| Platform | Enforcer: Java 21+, Maven 3.9+, upper-bound dependencies | module POMs |
+
+```sh
+mvn spotless:apply                                   # format Java sources and POMs
+mvn -f shortener/pom.xml verify                      # full gate for one module
+mvn -f factory/pom.xml verify
+mvn verify -Dquality.failOnViolation=false           # report SpotBugs/PMD findings without failing
+mvn -Pintegration verify                             # gate plus integration tests (databases and Docker required)
+```
+
+Reports land in each module's `target/` (`pmd.xml`, `spotbugsXml.xml`, `site/jacoco/`). Run the gate on JDK 21-25: the PMD release bundled with the Maven plugin cannot read JDK 26 class files. The two modules do not inherit from the root POM, so each declares the same plugins and shares the rule files in `build-config/`.
+
 ## Replay and inspect the agent system
 
 To use the browser interface, start the control database, then run:

@@ -25,15 +25,29 @@ public final class UrlPolicy {
     private static final Pattern TOP_LEVEL_LABEL = Pattern.compile("[a-z][a-z0-9-]*");
     /** The only accepted IPv4 spelling: four dotted decimal octets without leading zeros. */
     private static final Pattern DOTTED_DECIMAL_IPV4 =
-        Pattern.compile("(?:(?:25[0-5]|2[0-4]\\d|1\\d\\d|[1-9]?\\d)\\.){3}(?:25[0-5]|2[0-4]\\d|1\\d\\d|[1-9]?\\d)");
-    private static final List<String> LOCAL_NAMES = List.of(
-        "localhost", "local", "internal", "intranet", "lan", "home.arpa");
+            Pattern.compile("(?:(?:25[0-5]|2[0-4]\\d|1\\d\\d|[1-9]?\\d)\\.){3}(?:25[0-5]|2[0-4]\\d|1\\d\\d|[1-9]?\\d)");
+
+    private static final List<String> LOCAL_NAMES =
+            List.of("localhost", "local", "internal", "intranet", "lan", "home.arpa");
     private static final List<Cidr> NON_PUBLIC_IPV4 = Cidr.all(
-        "0.0.0.0/8", "10.0.0.0/8", "100.64.0.0/10", "127.0.0.0/8", "169.254.0.0/16", "172.16.0.0/12",
-        "192.0.0.0/24", "192.0.2.0/24", "192.88.99.0/24", "192.168.0.0/16", "198.18.0.0/15",
-        "198.51.100.0/24", "203.0.113.0/24", "224.0.0.0/4", "240.0.0.0/4");
+            "0.0.0.0/8",
+            "10.0.0.0/8",
+            "100.64.0.0/10",
+            "127.0.0.0/8",
+            "169.254.0.0/16",
+            "172.16.0.0/12",
+            "192.0.0.0/24",
+            "192.0.2.0/24",
+            "192.88.99.0/24",
+            "192.168.0.0/16",
+            "198.18.0.0/15",
+            "198.51.100.0/24",
+            "203.0.113.0/24",
+            "224.0.0.0/4",
+            "240.0.0.0/4");
     /** Within global unicast 2000::/3: IETF protocol space (incl. Teredo), documentation and 6to4. */
     private static final Cidr GLOBAL_UNICAST_IPV6 = Cidr.parse("2000::/3");
+
     private static final List<Cidr> NON_PUBLIC_IPV6 = Cidr.all("2001::/23", "2001:db8::/32", "2002::/16");
 
     private final String shortenerHost;
@@ -49,7 +63,10 @@ public final class UrlPolicy {
         }
         URI uri = parse(value);
         String scheme = uri.getScheme() == null ? "" : uri.getScheme().toLowerCase(Locale.ROOT);
-        if (!WEB_SCHEMES.contains(scheme) || uri.getHost() == null || uri.getHost().isBlank() || uri.getRawUserInfo() != null) {
+        if (!WEB_SCHEMES.contains(scheme)
+                || uri.getHost() == null
+                || uri.getHost().isBlank()
+                || uri.getRawUserInfo() != null) {
             throw new InvalidLinkException("URL must be an absolute HTTP or HTTPS URL without credentials");
         }
         rejectNonPublicHost(canonicalHost(uri.getHost()));
@@ -86,15 +103,17 @@ public final class UrlPolicy {
             rejectNonPublic(ipLiteral(host));
             return;
         }
-        if (labels.length == 1 || LOCAL_NAMES.stream().anyMatch(local -> host.equals(local) || host.endsWith("." + local))) {
+        if (labels.length == 1
+                || LOCAL_NAMES.stream().anyMatch(local -> host.equals(local) || host.endsWith("." + local))) {
             throw new InvalidLinkException("Target must not be a local host name");
         }
     }
 
     private static void rejectNonPublic(byte[] address) {
         boolean nonPublic = address.length == Cidr.IPV4_BYTES
-            ? NON_PUBLIC_IPV4.stream().anyMatch(range -> range.contains(address))
-            : !GLOBAL_UNICAST_IPV6.contains(address) || NON_PUBLIC_IPV6.stream().anyMatch(range -> range.contains(address));
+                ? NON_PUBLIC_IPV4.stream().anyMatch(range -> range.contains(address))
+                : !GLOBAL_UNICAST_IPV6.contains(address)
+                        || NON_PUBLIC_IPV6.stream().anyMatch(range -> range.contains(address));
         if (nonPublic) throw new InvalidLinkException("Target must not be a private or reserved IP address");
     }
 

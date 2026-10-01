@@ -1,7 +1,6 @@
 package dev.softwarefactory.workflow;
 
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-
 import java.time.Instant;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -28,20 +27,35 @@ public final class RunState {
     public String validatedCandidateHash;
     /** A validation task that failed reproducibly; an upstream task must be revised before advancing. */
     public String revisionRequiredTask;
+
     public int modelCalls;
     public int maxModelCalls;
     public Instant startedAt;
     public Instant finishedAt;
-    @JsonDeserialize(as = ConcurrentHashMap.class) public Map<String, TaskStatus> tasks = new ConcurrentHashMap<>();
-    @JsonDeserialize(as = ConcurrentHashMap.class) public Map<String, String> artifactHashes = new ConcurrentHashMap<>();
+
+    @JsonDeserialize(as = ConcurrentHashMap.class)
+    public Map<String, TaskStatus> tasks = new ConcurrentHashMap<>();
+
+    @JsonDeserialize(as = ConcurrentHashMap.class)
+    public Map<String, String> artifactHashes = new ConcurrentHashMap<>();
     /** Failed attempts since the task's inputs last changed; reset when the task is invalidated. */
-    @JsonDeserialize(as = ConcurrentHashMap.class) public Map<String, Integer> attempts = new ConcurrentHashMap<>();
+    @JsonDeserialize(as = ConcurrentHashMap.class)
+    public Map<String, Integer> attempts = new ConcurrentHashMap<>();
     /** Latest diagnostic evidence version per task; never reset, so diagnostic evidence stays immutable. */
-    @JsonDeserialize(as = ConcurrentHashMap.class) public Map<String, Integer> diagnosticVersions = new ConcurrentHashMap<>();
-    @JsonDeserialize(as = ConcurrentHashMap.class) public Map<String, Integer> artifactVersions = new ConcurrentHashMap<>();
-    @JsonDeserialize(as = ConcurrentHashMap.class) public Map<String, String> approvals = new ConcurrentHashMap<>();
-    @JsonDeserialize(as = ConcurrentHashMap.class) public Map<String, Integer> patchDrafts = new ConcurrentHashMap<>();
-    @JsonDeserialize(as = ConcurrentHashMap.class) public Map<String, String> reviewFeedback = new ConcurrentHashMap<>();
+    @JsonDeserialize(as = ConcurrentHashMap.class)
+    public Map<String, Integer> diagnosticVersions = new ConcurrentHashMap<>();
+
+    @JsonDeserialize(as = ConcurrentHashMap.class)
+    public Map<String, Integer> artifactVersions = new ConcurrentHashMap<>();
+
+    @JsonDeserialize(as = ConcurrentHashMap.class)
+    public Map<String, String> approvals = new ConcurrentHashMap<>();
+
+    @JsonDeserialize(as = ConcurrentHashMap.class)
+    public Map<String, Integer> patchDrafts = new ConcurrentHashMap<>();
+
+    @JsonDeserialize(as = ConcurrentHashMap.class)
+    public Map<String, String> reviewFeedback = new ConcurrentHashMap<>();
 
     public RunState() {
         // Jackson and persistence adapters populate fields.

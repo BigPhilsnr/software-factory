@@ -20,7 +20,8 @@ import java.util.UUID;
 public final class IsolatedFactoryEnvironment implements AutoCloseable {
     public static final AuditKey AUDIT_KEY = AuditKey.of("integration-test-audit-key-0123456789abcdef");
     private static final Duration CLONE_TIMEOUT = Duration.ofSeconds(60);
-    private final String database = System.getenv().getOrDefault("CONTROL_DB_URL", "jdbc:postgresql://localhost:5434/control");
+    private final String database =
+            System.getenv().getOrDefault("CONTROL_DB_URL", "jdbc:postgresql://localhost:5434/control");
     private final String user = System.getenv().getOrDefault("CONTROL_DB_USER", "control");
     private final String password = System.getenv().getOrDefault("CONTROL_DB_PASSWORD", "control");
     private final String schema;
@@ -32,7 +33,8 @@ public final class IsolatedFactoryEnvironment implements AutoCloseable {
 
     /** Creates the schema only; for repository tests that need no Git checkout. */
     public IsolatedFactoryEnvironment withSchema() throws SQLException {
-        try (var connection = DriverManager.getConnection(database, user, password); var sql = connection.createStatement()) {
+        try (var connection = DriverManager.getConnection(database, user, password);
+                var sql = connection.createStatement()) {
             sql.execute("CREATE SCHEMA " + schema);
         }
         return this;
@@ -43,7 +45,10 @@ public final class IsolatedFactoryEnvironment implements AutoCloseable {
         Path source = sourceRoot();
         Files.createDirectories(source.resolve(".runs"));
         workspace = Files.createTempDirectory(source.resolve(".runs"), schema.replace('_', '-') + "-");
-        CommandRunner.checked(source, List.of("git", "clone", "--quiet", "--shared", source.toString(), workspace.toString()), CLONE_TIMEOUT);
+        CommandRunner.checked(
+                source,
+                List.of("git", "clone", "--quiet", "--shared", source.toString(), workspace.toString()),
+                CLONE_TIMEOUT);
         try (var files = Files.walk(source.resolve("scenarios"))) {
             for (Path file : files.toList()) {
                 Path target = workspace.resolve(source.relativize(file));
@@ -59,14 +64,30 @@ public final class IsolatedFactoryEnvironment implements AutoCloseable {
         return source.getFileName().toString().equals("factory") ? source.getParent() : source;
     }
 
-    public String url() { return database + (database.contains("?") ? "&" : "?") + "currentSchema=" + schema; }
-    public String user() { return user; }
-    public String password() { return password; }
-    public String schema() { return schema; }
-    public Path workspace() { return workspace; }
+    public String url() {
+        return database + (database.contains("?") ? "&" : "?") + "currentSchema=" + schema;
+    }
 
-    @Override public void close() throws SQLException, IOException {
-        try (var connection = DriverManager.getConnection(database, user, password); var sql = connection.createStatement()) {
+    public String user() {
+        return user;
+    }
+
+    public String password() {
+        return password;
+    }
+
+    public String schema() {
+        return schema;
+    }
+
+    public Path workspace() {
+        return workspace;
+    }
+
+    @Override
+    public void close() throws SQLException, IOException {
+        try (var connection = DriverManager.getConnection(database, user, password);
+                var sql = connection.createStatement()) {
             sql.execute("DROP SCHEMA IF EXISTS " + schema + " CASCADE");
         } finally {
             if (workspace != null && Files.exists(workspace)) {

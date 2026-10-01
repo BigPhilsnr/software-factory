@@ -17,9 +17,15 @@ import org.springframework.context.annotation.Configuration;
 @Configuration(proxyBeanMethods = false)
 @EnableConfigurationProperties(ShortenerProperties.class)
 public class DomainConfiguration {
-    @Bean Clock clock() { return Clock.systemUTC(); }
+    @Bean
+    Clock clock() {
+        return Clock.systemUTC();
+    }
 
-    @Bean CodeGenerator codeGenerator() { return new CodeGenerator(); }
+    @Bean
+    CodeGenerator codeGenerator() {
+        return new CodeGenerator();
+    }
 
     @Bean
     LinkCache linkCache(ShortenerProperties properties, MeterRegistry meters) {
@@ -28,7 +34,10 @@ public class DomainConfiguration {
         return cache;
     }
 
-    @Bean UrlPolicy urlPolicy(ShortenerProperties properties) { return new UrlPolicy(properties.baseUrl()); }
+    @Bean
+    UrlPolicy urlPolicy(ShortenerProperties properties) {
+        return new UrlPolicy(properties.baseUrl());
+    }
 
     @Bean
     ShortenerService shortenerService(LinkRepository links, CodeGenerator codes, UrlPolicy policy, LinkCache cache) {

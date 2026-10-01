@@ -1,7 +1,6 @@
 package dev.softwarefactory.persistence;
 
 import dev.softwarefactory.governance.Hashes;
-
 import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
@@ -38,16 +37,19 @@ final class AuditChain {
 
     String hash(int scheme, String previous, long sequence, Instant at, String type, String detail, String stateJson) {
         return switch (scheme) {
-            case LEGACY_SHA256 -> Hashes.sha256(previous + "|" + sequence + "|" + at + "|" + type + "|" + detail
-                + (stateJson == null ? "" : "|state=" + stateJson));
+            case LEGACY_SHA256 ->
+                Hashes.sha256(previous + "|" + sequence + "|" + at + "|" + type + "|" + detail
+                        + (stateJson == null ? "" : "|state=" + stateJson));
             case HMAC_SHA256 -> hmac(previous, Long.toString(sequence), at.toString(), type, detail, stateJson);
             default -> throw new IllegalArgumentException("Unknown audit hash scheme " + scheme);
         };
     }
 
     static boolean matches(String expected, String actual) {
-        return expected != null && actual != null
-            && MessageDigest.isEqual(expected.getBytes(StandardCharsets.US_ASCII), actual.getBytes(StandardCharsets.US_ASCII));
+        return expected != null
+                && actual != null
+                && MessageDigest.isEqual(
+                        expected.getBytes(StandardCharsets.US_ASCII), actual.getBytes(StandardCharsets.US_ASCII));
     }
 
     private String hmac(String... fields) {

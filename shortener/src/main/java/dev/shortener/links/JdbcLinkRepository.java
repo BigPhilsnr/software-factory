@@ -23,8 +23,11 @@ public class JdbcLinkRepository implements LinkRepository {
         FROM links l LEFT JOIN link_stats s ON s.link_id = l.id
         WHERE l.id = :id
         """;
-    private static final RowMapper<Link> LINK = (rs, row) -> new Link(rs.getLong("id"), rs.getString("code"),
-        rs.getString("target_url"), rs.getObject("created_at", OffsetDateTime.class).toInstant());
+    private static final RowMapper<Link> LINK = (rs, row) -> new Link(
+            rs.getLong("id"),
+            rs.getString("code"),
+            rs.getString("target_url"),
+            rs.getObject("created_at", OffsetDateTime.class).toInstant());
     private static final RowMapper<RedirectStats> STATS = (rs, row) -> {
         OffsetDateTime last = rs.getObject("last_redirect_at", OffsetDateTime.class);
         return new RedirectStats(rs.getLong("redirect_count"), last == null ? null : last.toInstant());
@@ -32,11 +35,17 @@ public class JdbcLinkRepository implements LinkRepository {
 
     private final JdbcClient jdbc;
 
-    public JdbcLinkRepository(JdbcClient jdbc) { this.jdbc = jdbc; }
+    public JdbcLinkRepository(JdbcClient jdbc) {
+        this.jdbc = jdbc;
+    }
 
     @Override
     public Link create(String code, String targetUrl) {
-        return jdbc.sql(CREATE).param("code", code).param("targetUrl", targetUrl).query(LINK).single();
+        return jdbc.sql(CREATE)
+                .param("code", code)
+                .param("targetUrl", targetUrl)
+                .query(LINK)
+                .single();
     }
 
     @Override

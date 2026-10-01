@@ -24,18 +24,21 @@ public class PublicApiSecurity {
     @Bean
     SecurityFilterChain managementSecurity(HttpSecurity http, WebEndpointProperties endpoints) throws Exception {
         // Exposed endpoints plus the whole base path, so unexposed endpoints are denied rather than routed to MVC.
-        RequestMatcher management = new OrRequestMatcher(EndpointRequest.toAnyEndpoint(),
-            PathPatternRequestMatcher.withDefaults().matcher(endpoints.getBasePath() + "/**"));
+        RequestMatcher management = new OrRequestMatcher(
+                EndpointRequest.toAnyEndpoint(),
+                PathPatternRequestMatcher.withDefaults().matcher(endpoints.getBasePath() + "/**"));
         return http.securityMatcher(management)
-            .csrf(AbstractHttpConfigurer::disable)
-            .logout(AbstractHttpConfigurer::disable)
-            .formLogin(AbstractHttpConfigurer::disable)
-            .httpBasic(AbstractHttpConfigurer::disable)
-            .requestCache(AbstractHttpConfigurer::disable)
-            .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-            .authorizeHttpRequests(authorize -> authorize
-                .requestMatchers(EndpointRequest.to(HealthEndpoint.class, InfoEndpoint.class)).permitAll()
-                .anyRequest().denyAll())
-            .build();
+                .csrf(AbstractHttpConfigurer::disable)
+                .logout(AbstractHttpConfigurer::disable)
+                .formLogin(AbstractHttpConfigurer::disable)
+                .httpBasic(AbstractHttpConfigurer::disable)
+                .requestCache(AbstractHttpConfigurer::disable)
+                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .authorizeHttpRequests(authorize -> authorize
+                        .requestMatchers(EndpointRequest.to(HealthEndpoint.class, InfoEndpoint.class))
+                        .permitAll()
+                        .anyRequest()
+                        .denyAll())
+                .build();
     }
 }

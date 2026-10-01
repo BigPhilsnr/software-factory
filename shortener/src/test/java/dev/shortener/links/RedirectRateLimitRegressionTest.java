@@ -28,12 +28,19 @@ class RedirectRateLimitRegressionTest {
     private static final int REDIRECTS = 35;
     private static final int QUOTA = 3;
 
-    @Autowired MockMvc mvc;
-    @MockitoBean ShortenerService service;
-    @MockitoBean AnalyticsRecorder recorder;
+    @Autowired
+    MockMvc mvc;
+
+    @MockitoBean
+    ShortenerService service;
+
+    @MockitoBean
+    AnalyticsRecorder recorder;
 
     private ResultActions create() throws Exception {
-        return mvc.perform(post("/api/shorten").contentType(MediaType.APPLICATION_JSON).content("{\"url\":\"https://example.com\"}"));
+        return mvc.perform(post("/api/shorten")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"url\":\"https://example.com\"}"));
     }
 
     @Test

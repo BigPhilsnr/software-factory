@@ -15,26 +15,46 @@ final class FactoryAgent extends BaseAgent {
     private final OperatorCommands commands;
 
     FactoryAgent(FactoryService factory) {
-        super("software_factory", "Feature requests, run progress, evidence and human approvals. Send /help to begin.", null, null, null);
+        super(
+                "software_factory",
+                "Feature requests, run progress, evidence and human approvals. Send /help to begin.",
+                null,
+                null,
+                null);
         commands = new OperatorCommands(factory);
     }
 
-    @Override protected Flowable<Event> runAsyncImpl(InvocationContext context) {
+    @Override
+    protected Flowable<Event> runAsyncImpl(InvocationContext context) {
         return Flowable.fromCallable(() -> {
             String input = context.userContent().map(Content::text).orElse("");
             String answer;
             try {
                 answer = commands.handle(context.session().id(), input);
-            } catch (IllegalArgumentException | IllegalStateException | NotFoundException | ServiceUnavailableException failure) {
+            } catch (IllegalArgumentException
+                    | IllegalStateException
+                    | NotFoundException
+                    | ServiceUnavailableException failure) {
                 answer = "Action not performed: " + failure.getMessage();
             } catch (Exception failure) {
                 LOG.error("Chat request failed", failure);
-                answer = "The request failed. For chat, check the configured Anthropic key/model and provider availability; for workflow commands, check the operator page. You can retry. Error: " + failure.getClass().getSimpleName();
+                answer =
+                        "The request failed. For chat, check the configured Anthropic key/model and provider availability; for workflow commands, check the operator page. You can retry. Error: "
+                                + failure.getClass().getSimpleName();
             }
-            return Event.builder().author(name()).invocationId(context.invocationId())
-                .content(Content.builder().role("model").parts(Part.fromText(answer)).build()).build();
+            return Event.builder()
+                    .author(name())
+                    .invocationId(context.invocationId())
+                    .content(Content.builder()
+                            .role("model")
+                            .parts(Part.fromText(answer))
+                            .build())
+                    .build();
         });
     }
 
-    @Override protected Flowable<Event> runLiveImpl(InvocationContext context) { return runAsyncImpl(context); }
+    @Override
+    protected Flowable<Event> runLiveImpl(InvocationContext context) {
+        return runAsyncImpl(context);
+    }
 }

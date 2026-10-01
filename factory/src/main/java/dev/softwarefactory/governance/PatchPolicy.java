@@ -14,20 +14,21 @@ public final class PatchPolicy {
      * schema, test-platform and Git metadata files always need an explicit operator decision.
      */
     private static final List<Pattern> APPROVAL_PATHS = Stream.of(
-        ANY_DIRECTORY + "pom\\.xml",
-        ANY_DIRECTORY + "(?:docker-)?compose(?:\\.[^/]+)?\\.ya?ml",
-        ANY_DIRECTORY + "Dockerfile[^/]*",
-        ANY_DIRECTORY + "\\.dockerignore",
-        ANY_DIRECTORY + "\\.git[^/]*",
-        "\\.github/.*",
-        "(?:factory|orchestrator)/.*",
-        ANY_DIRECTORY + "bootstrap/.*",
-        ANY_DIRECTORY + "[^/]*Security[^/]*\\.java",
-        ANY_DIRECTORY + "db/migration/.*",
-        ANY_DIRECTORY + "src/main/resources/.*",
-        ANY_DIRECTORY + "application[^/]*\\.(?:ya?ml|properties)",
-        ANY_DIRECTORY + "src/test/resources/(?:junit-platform\\.properties|META-INF/.*)"
-    ).map(Pattern::compile).toList();
+                    ANY_DIRECTORY + "pom\\.xml",
+                    ANY_DIRECTORY + "(?:docker-)?compose(?:\\.[^/]+)?\\.ya?ml",
+                    ANY_DIRECTORY + "Dockerfile[^/]*",
+                    ANY_DIRECTORY + "\\.dockerignore",
+                    ANY_DIRECTORY + "\\.git[^/]*",
+                    "\\.github/.*",
+                    "(?:factory|orchestrator)/.*",
+                    ANY_DIRECTORY + "bootstrap/.*",
+                    ANY_DIRECTORY + "[^/]*Security[^/]*\\.java",
+                    ANY_DIRECTORY + "db/migration/.*",
+                    ANY_DIRECTORY + "src/main/resources/.*",
+                    ANY_DIRECTORY + "application[^/]*\\.(?:ya?ml|properties)",
+                    ANY_DIRECTORY + "src/test/resources/(?:junit-platform\\.properties|META-INF/.*)")
+            .map(Pattern::compile)
+            .toList();
 
     private PatchPolicy() {}
 

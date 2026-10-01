@@ -30,11 +30,13 @@ class ControlRepositoryIntegrationTest {
     private static final String GENESIS = "0".repeat(64);
     private IsolatedFactoryEnvironment environment;
 
-    @BeforeEach void schema() throws Exception {
+    @BeforeEach
+    void schema() throws Exception {
         environment = new IsolatedFactoryEnvironment("control_test").withSchema();
     }
 
-    @AfterEach void drop() throws Exception {
+    @AfterEach
+    void drop() throws Exception {
         environment.close();
     }
 
@@ -48,10 +50,13 @@ class ControlRepositoryIntegrationTest {
         return DriverManager.getConnection(environment.url(), environment.user(), environment.password());
     }
 
-    @Test void adoptsLegacySchemaWithoutRewritingRunBytes() throws Exception {
+    @Test
+    void adoptsLegacySchemaWithoutRewritingRunBytes() throws Exception {
         String original = "{  \"legacy\": true, \"timestamp\": 1.234 }";
-        try (var connection = connection(); var sql = connection.createStatement()) {
-            sql.execute("CREATE TABLE runs (id UUID PRIMARY KEY, state_json TEXT NOT NULL, updated_at TIMESTAMPTZ NOT NULL)");
+        try (var connection = connection();
+                var sql = connection.createStatement()) {
+            sql.execute(
+                    "CREATE TABLE runs (id UUID PRIMARY KEY, state_json TEXT NOT NULL, updated_at TIMESTAMPTZ NOT NULL)");
             try (var insert = connection.prepareStatement("INSERT INTO runs VALUES (?, ?, now())")) {
                 insert.setObject(1, UUID.randomUUID());
                 insert.setString(2, original);
@@ -64,15 +69,16 @@ class ControlRepositoryIntegrationTest {
                 assertEquals(original, row.getString(1));
                 assertEquals(0, row.getLong(2));
             }
-            try (var indexes = sql.executeQuery("SELECT count(*) FROM pg_indexes WHERE schemaname = '" + environment.schema()
-                    + "' AND indexname IN ('runs_updated_at_idx', 'chat_audit_at_idx')")) {
+            try (var indexes = sql.executeQuery("SELECT count(*) FROM pg_indexes WHERE schemaname = '"
+                    + environment.schema() + "' AND indexname IN ('runs_updated_at_idx', 'chat_audit_at_idx')")) {
                 assertTrue(indexes.next());
                 assertEquals(2, indexes.getInt(1));
             }
         }
     }
 
-    @Test void pooledLeasesConflictWithoutLeakingOrEvictingSessions() throws Exception {
+    @Test
+    void pooledLeasesConflictWithoutLeakingOrEvictingSessions() throws Exception {
         var config = new HikariConfig();
         config.setJdbcUrl(environment.url());
         config.setUsername(environment.user());
@@ -93,12 +99,16 @@ class ControlRepositoryIntegrationTest {
                         return unexpected.getClass().getName();
                     }
                 });
-                assertEquals("conflict", competitor.get(10, TimeUnit.SECONDS), "Contention must surface as a conflict, not a database error");
+                assertEquals(
+                        "conflict",
+                        competitor.get(10, TimeUnit.SECONDS),
+                        "Contention must surface as a conflict, not a database error");
             }
             try (var again = repository.lease(run)) {
                 assertFalse(again.connection().isClosed(), "Released leases can be re-acquired");
             }
-            try (var returned = pool.getConnection(); var query = returned.prepareStatement("SELECT pg_advisory_unlock(?, ?)")) {
+            try (var returned = pool.getConnection();
+                    var query = returned.prepareStatement("SELECT pg_advisory_unlock(?, ?)")) {
                 query.setInt(1, ControlRepository.LEASE_NAMESPACE);
                 query.setInt(2, UUID.fromString(run).hashCode());
                 try (var row = query.executeQuery()) {
@@ -110,19 +120,23 @@ class ControlRepositoryIntegrationTest {
         }
     }
 
-    @Test void chatBudgetSurvivesRepositoryRecreationAndAuditsReservations() throws Exception {
+    @Test
+    void chatBudgetSurvivesRepositoryRecreationAndAuditsReservations() throws Exception {
         repository(IsolatedFactoryEnvironment.AUDIT_KEY).reserveChatRequest(2);
-        var restarted = new ControlRepository(environment.url(), environment.user(), environment.password(), IsolatedFactoryEnvironment.AUDIT_KEY);
+        var restarted = new ControlRepository(
+                environment.url(), environment.user(), environment.password(), IsolatedFactoryEnvironment.AUDIT_KEY);
         restarted.reserveChatRequest(2);
         assertThrows(WorkflowConflictException.class, () -> restarted.reserveChatRequest(2));
-        try (var connection = connection(); var sql = connection.createStatement();
-             var rows = sql.executeQuery("SELECT count(*) FROM chat_audit WHERE type='MODEL_CALL_RESERVED'")) {
+        try (var connection = connection();
+                var sql = connection.createStatement();
+                var rows = sql.executeQuery("SELECT count(*) FROM chat_audit WHERE type='MODEL_CALL_RESERVED'")) {
             assertTrue(rows.next());
             assertEquals(2, rows.getInt(1), "A refused reservation leaves no audit row");
         }
     }
 
-    @Test void rejectsStaleWritersAndBindsStateToTheKeyedAuditChain() throws Exception {
+    @Test
+    void rejectsStaleWritersAndBindsStateToTheKeyedAuditChain() throws Exception {
         var repository = repository(IsolatedFactoryEnvironment.AUDIT_KEY);
         var state = new RunState(UUID.randomUUID().toString(), "audit-test", "hash");
         state.mode = "fixture";
@@ -133,24 +147,29 @@ class ControlRepositoryIntegrationTest {
         assertThrows(WorkflowConflictException.class, () -> repository.record(stale, "STALE", "must not overwrite"));
         assertEquals(1, repository.load(state.id).modelCalls);
         assertTrue(repository.auditValid(state.id));
-        assertFalse(repository(AuditKey.of("a-different-audit-key-0123456789abcdef")).auditValid(state.id),
-            "Hashes cannot be verified, or recomputed, without the key");
-        try (var connection = connection(); var query = connection.prepareStatement(
-                "UPDATE runs SET state_json = replace(state_json, '\"modelCalls\":1', '\"modelCalls\":99') WHERE id=?")) {
+        assertFalse(
+                repository(AuditKey.of("a-different-audit-key-0123456789abcdef"))
+                        .auditValid(state.id),
+                "Hashes cannot be verified, or recomputed, without the key");
+        try (var connection = connection();
+                var query = connection.prepareStatement(
+                        "UPDATE runs SET state_json = replace(state_json, '\"modelCalls\":1', '\"modelCalls\":99') WHERE id=?")) {
             query.setObject(1, UUID.fromString(state.id));
             query.executeUpdate();
         }
         assertFalse(repository.auditValid(state.id));
     }
 
-    @Test void legacyRowsStayVerifiableAndCannotBeUsedToDowngradeTheChain() throws Exception {
+    @Test
+    void legacyRowsStayVerifiableAndCannotBeUsedToDowngradeTheChain() throws Exception {
         var repository = repository(IsolatedFactoryEnvironment.AUDIT_KEY);
         UUID run = UUID.randomUUID();
         var state = new RunState(run.toString(), "legacy", "hash");
         state.mode = "fixture";
         String stateJson = dev.softwarefactory.serialization.Json.MAPPER.writeValueAsString(state);
         try (var connection = connection()) {
-            try (var insert = connection.prepareStatement("INSERT INTO runs(id, state_json, updated_at) VALUES (?, ?, now())")) {
+            try (var insert =
+                    connection.prepareStatement("INSERT INTO runs(id, state_json, updated_at) VALUES (?, ?, now())")) {
                 insert.setObject(1, run);
                 insert.setString(2, stateJson);
                 insert.executeUpdate();
@@ -161,18 +180,22 @@ class ControlRepositoryIntegrationTest {
         RunState loaded = repository.load(run.toString());
         repository.record(loaded, "UPGRADED", "first keyed row");
         assertTrue(repository.auditValid(run.toString()));
-        try (var connection = connection(); var downgrade = connection.prepareStatement(
-                "UPDATE audit_events SET hash_scheme = 1 WHERE run_id = ? AND seq = 2")) {
+        try (var connection = connection();
+                var downgrade = connection.prepareStatement(
+                        "UPDATE audit_events SET hash_scheme = 1 WHERE run_id = ? AND seq = 2")) {
             downgrade.setObject(1, run);
             downgrade.executeUpdate();
         }
         assertFalse(repository.auditValid(run.toString()), "A keyed row cannot be relabelled as keyless");
     }
 
-    private static void insertLegacy(Connection connection, UUID run, long sequence, String previous, String type, String stateJson) throws Exception {
+    private static void insertLegacy(
+            Connection connection, UUID run, long sequence, String previous, String type, String stateJson)
+            throws Exception {
         Instant at = Instant.now().truncatedTo(ChronoUnit.MICROS);
         String hash = Hashes.sha256(previous + "|" + sequence + "|" + at + "|" + type + "|legacy|state=" + stateJson);
-        try (var insert = connection.prepareStatement("INSERT INTO audit_events(run_id, seq, at, type, detail, previous_hash, event_hash, state_json, hash_scheme) VALUES (?, ?, ?, ?, 'legacy', ?, ?, ?, 1)")) {
+        try (var insert = connection.prepareStatement(
+                "INSERT INTO audit_events(run_id, seq, at, type, detail, previous_hash, event_hash, state_json, hash_scheme) VALUES (?, ?, ?, ?, 'legacy', ?, ?, ?, 1)")) {
             insert.setObject(1, run);
             insert.setLong(2, sequence);
             insert.setObject(3, OffsetDateTime.ofInstant(at, ZoneOffset.UTC));

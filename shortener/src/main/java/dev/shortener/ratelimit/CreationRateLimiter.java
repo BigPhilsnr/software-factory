@@ -43,16 +43,18 @@ public final class CreationRateLimiter {
         if (limit < 1 || windowSeconds < 1) throw new IllegalArgumentException("limit and window must be positive");
         this.maxTrackedClients = settings.maxTrackedClients();
         this.aggregated = Counter.builder("shortener.ratelimit.overflow")
-            .description("Creation requests counted in a shared aggregate bucket because the client table was full")
-            .register(meters);
+                .description("Creation requests counted in a shared aggregate bucket because the client table was full")
+                .register(meters);
     }
 
     public Result admit(String address) {
         long second = clock.instant().getEpochSecond();
         long window = Math.floorDiv(second, windowSeconds);
         long retryAfter = windowSeconds - Math.floorMod(second, windowSeconds);
-        Window counted = windows.compute(key(address, window), (key, previous) ->
-            previous == null || previous.id != window ? new Window(window, 1) : previous.increment(limit));
+        Window counted = windows.compute(
+                key(address, window),
+                (key, previous) ->
+                        previous == null || previous.id != window ? new Window(window, 1) : previous.increment(limit));
         return new Result(counted.count <= limit, retryAfter);
     }
 
@@ -64,7 +66,8 @@ public final class CreationRateLimiter {
         aggregated.increment();
         // Aggregates may use up to the same number of entries again; beyond that everyone shares one bucket.
         return windows.containsKey(client.aggregate()) || windows.size() < 2 * maxTrackedClients
-            ? client.aggregate() : OVERFLOW_BUCKET;
+                ? client.aggregate()
+                : OVERFLOW_BUCKET;
     }
 
     private boolean fits(String key) {
@@ -80,7 +83,9 @@ public final class CreationRateLimiter {
 
     private record Window(long id, int count) {
         /** Saturates just above the limit so a flood cannot overflow the counter. */
-        Window increment(int limit) { return new Window(id, Math.min(limit + 1, count + 1)); }
+        Window increment(int limit) {
+            return new Window(id, Math.min(limit + 1, count + 1));
+        }
     }
 
     /** The exact key and its coarser aggregate for one socket peer address. */

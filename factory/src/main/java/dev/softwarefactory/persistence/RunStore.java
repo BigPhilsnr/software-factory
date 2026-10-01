@@ -1,19 +1,21 @@
 package dev.softwarefactory.persistence;
 
 import dev.softwarefactory.workflow.RunState;
-
 import java.io.IOException;
 
 /** Durable workflow authority, independent of a particular database adapter. */
 public interface RunStore {
     class MissingRunException extends IllegalArgumentException {
-        public MissingRunException(String message) { super(message); }
+        public MissingRunException(String message) {
+            super(message);
+        }
     }
 
     /** Held for one operator transition; closing releases it. */
     @FunctionalInterface
     interface Lease extends AutoCloseable {
-        @Override void close() throws IOException;
+        @Override
+        void close() throws IOException;
     }
 
     RunState load(String id) throws IOException;

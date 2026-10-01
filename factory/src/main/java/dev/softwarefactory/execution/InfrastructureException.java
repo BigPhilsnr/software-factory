@@ -7,6 +7,11 @@ import java.io.IOException;
  * Such failures say nothing about the candidate and must not consume its retry budget.
  */
 public class InfrastructureException extends IOException {
-    public InfrastructureException(String message) { super(message); }
-    public InfrastructureException(String message, Throwable cause) { super(message, cause); }
+    public InfrastructureException(String message) {
+        super(message);
+    }
+
+    public InfrastructureException(String message, Throwable cause) {
+        super(message, cause);
+    }
 }

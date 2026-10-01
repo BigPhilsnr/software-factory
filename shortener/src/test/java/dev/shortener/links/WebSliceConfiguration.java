@@ -30,19 +30,32 @@ import org.springframework.context.annotation.Import;
 @TestConfiguration(proxyBeanMethods = false)
 @EnableConfigurationProperties(ShortenerProperties.class)
 @Import({PublicApiSecurity.class, HttpFilterConfiguration.class})
-@ImportAutoConfiguration({EndpointAutoConfiguration.class, WebEndpointAutoConfiguration.class,
-    HealthContributorAutoConfiguration.class, HealthContributorRegistryAutoConfiguration.class,
-    HealthEndpointAutoConfiguration.class, InfoEndpointAutoConfiguration.class,
-    ManagementContextAutoConfiguration.class, ServletManagementContextAutoConfiguration.class})
+@ImportAutoConfiguration({
+    EndpointAutoConfiguration.class,
+    WebEndpointAutoConfiguration.class,
+    HealthContributorAutoConfiguration.class,
+    HealthContributorRegistryAutoConfiguration.class,
+    HealthEndpointAutoConfiguration.class,
+    InfoEndpointAutoConfiguration.class,
+    ManagementContextAutoConfiguration.class,
+    ServletManagementContextAutoConfiguration.class
+})
 class WebSliceConfiguration {
     /** Properties every slice test applies: a small quota and no database health contributor. */
     static final String SMALL_QUOTA = "shortener.rate-limit.requests-per-window=3";
+
     static final String NO_DB_HEALTH = "management.endpoint.health.validate-group-membership=false";
     static final Instant NOW = Instant.parse("2026-10-01T12:00:00Z");
 
-    @Bean Clock clock() { return Clock.fixed(NOW, ZoneOffset.UTC); }
+    @Bean
+    Clock clock() {
+        return Clock.fixed(NOW, ZoneOffset.UTC);
+    }
 
-    @Bean MeterRegistry meterRegistry() { return new SimpleMeterRegistry(); }
+    @Bean
+    MeterRegistry meterRegistry() {
+        return new SimpleMeterRegistry();
+    }
 
     @Bean
     CreationRateLimiter creationRateLimiter(Clock clock, ShortenerProperties properties, MeterRegistry meters) {

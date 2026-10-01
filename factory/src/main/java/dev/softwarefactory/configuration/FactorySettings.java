@@ -11,19 +11,18 @@ import java.util.Objects;
  * is resolved separately by {@code AuditKey}.
  */
 public record FactorySettings(
-    boolean providerKeyConfigured,
-    String model,
-    int maxModelCalls,
-    int chatDailyRequests,
-    String operator,
-    Duration chatDeadline,
-    Duration runDeadline,
-    String controlDatabaseUrl,
-    String controlDatabaseUser,
-    String controlDatabasePassword,
-    Path mavenRepository,
-    String auditKey
-) {
+        boolean providerKeyConfigured,
+        String model,
+        int maxModelCalls,
+        int chatDailyRequests,
+        String operator,
+        Duration chatDeadline,
+        Duration runDeadline,
+        String controlDatabaseUrl,
+        String controlDatabaseUser,
+        String controlDatabasePassword,
+        Path mavenRepository,
+        String auditKey) {
     public static final String DEFAULT_MODEL = "claude-sonnet-4-5";
     static final int DEFAULT_MAX_MODEL_CALLS = 24;
     static final int MAX_MODEL_CALLS_LIMIT = 100;
@@ -50,18 +49,33 @@ public record FactorySettings(
     public static FactorySettings from(Map<String, String> environment) {
         String home = System.getProperty("user.home");
         return new FactorySettings(
-            !text(environment, "ANTHROPIC_API_KEY", "").isBlank(),
-            text(environment, "CLAUDE_MODEL", DEFAULT_MODEL),
-            bounded(environment, "FACTORY_MAX_MODEL_CALLS", DEFAULT_MAX_MODEL_CALLS, MAX_MODEL_CALLS_LIMIT),
-            bounded(environment, "FACTORY_CHAT_DAILY_REQUESTS", DEFAULT_CHAT_DAILY_REQUESTS, CHAT_DAILY_REQUESTS_LIMIT),
-            text(environment, "FACTORY_OPERATOR", System.getProperty("user.name", "operator")),
-            Duration.ofSeconds(bounded(environment, "FACTORY_CHAT_DEADLINE_SECONDS", DEFAULT_CHAT_DEADLINE_SECONDS, MAX_DEADLINE_SECONDS)),
-            Duration.ofSeconds(bounded(environment, "FACTORY_RUN_DEADLINE_SECONDS", DEFAULT_RUN_DEADLINE_SECONDS, MAX_DEADLINE_SECONDS)),
-            text(environment, "CONTROL_DB_URL", DEFAULT_CONTROL_DATABASE_URL),
-            text(environment, "CONTROL_DB_USER", DEFAULT_CONTROL_DATABASE_CREDENTIAL),
-            text(environment, "CONTROL_DB_PASSWORD", DEFAULT_CONTROL_DATABASE_CREDENTIAL),
-            Path.of(text(environment, "FACTORY_MAVEN_REPOSITORY", Path.of(home, ".m2", "repository").toString())),
-            emptyToNull(environment.get("FACTORY_AUDIT_KEY")));
+                !text(environment, "ANTHROPIC_API_KEY", "").isBlank(),
+                text(environment, "CLAUDE_MODEL", DEFAULT_MODEL),
+                bounded(environment, "FACTORY_MAX_MODEL_CALLS", DEFAULT_MAX_MODEL_CALLS, MAX_MODEL_CALLS_LIMIT),
+                bounded(
+                        environment,
+                        "FACTORY_CHAT_DAILY_REQUESTS",
+                        DEFAULT_CHAT_DAILY_REQUESTS,
+                        CHAT_DAILY_REQUESTS_LIMIT),
+                text(environment, "FACTORY_OPERATOR", System.getProperty("user.name", "operator")),
+                Duration.ofSeconds(bounded(
+                        environment,
+                        "FACTORY_CHAT_DEADLINE_SECONDS",
+                        DEFAULT_CHAT_DEADLINE_SECONDS,
+                        MAX_DEADLINE_SECONDS)),
+                Duration.ofSeconds(bounded(
+                        environment,
+                        "FACTORY_RUN_DEADLINE_SECONDS",
+                        DEFAULT_RUN_DEADLINE_SECONDS,
+                        MAX_DEADLINE_SECONDS)),
+                text(environment, "CONTROL_DB_URL", DEFAULT_CONTROL_DATABASE_URL),
+                text(environment, "CONTROL_DB_USER", DEFAULT_CONTROL_DATABASE_CREDENTIAL),
+                text(environment, "CONTROL_DB_PASSWORD", DEFAULT_CONTROL_DATABASE_CREDENTIAL),
+                Path.of(text(
+                        environment,
+                        "FACTORY_MAVEN_REPOSITORY",
+                        Path.of(home, ".m2", "repository").toString())),
+                emptyToNull(environment.get("FACTORY_AUDIT_KEY")));
     }
 
     /** Live generation needs a provider key and an audit key held outside the control database. */
@@ -72,7 +86,8 @@ public record FactorySettings(
     /** Human-readable reason live generation is unavailable, or empty when it is available. */
     public String liveBlocker() {
         if (!providerKeyConfigured) return "Add ANTHROPIC_API_KEY to .env and restart for live features.";
-        if (auditKey == null) return "Set FACTORY_AUDIT_KEY (at least 32 characters) in .env and restart for live features.";
+        if (auditKey == null)
+            return "Set FACTORY_AUDIT_KEY (at least 32 characters) in .env and restart for live features.";
         return "";
     }
 
@@ -81,10 +96,12 @@ public record FactorySettings(
         return "project_chat".equals(role) ? chatDeadline : runDeadline;
     }
 
-    @Override public String toString() {
+    @Override
+    public String toString() {
         // Never print database credentials or the audit key.
-        return "FactorySettings[model=" + model + ", maxModelCalls=" + maxModelCalls + ", chatDailyRequests=" + chatDailyRequests
-            + ", chatDeadline=" + chatDeadline + ", runDeadline=" + runDeadline + ", liveReady=" + liveReady() + "]";
+        return "FactorySettings[model=" + model + ", maxModelCalls=" + maxModelCalls + ", chatDailyRequests="
+                + chatDailyRequests + ", chatDeadline=" + chatDeadline + ", runDeadline=" + runDeadline + ", liveReady="
+                + liveReady() + "]";
     }
 
     private static String text(Map<String, String> environment, String name, String fallback) {

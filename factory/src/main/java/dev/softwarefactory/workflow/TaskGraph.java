@@ -14,8 +14,12 @@ public final class TaskGraph {
     public TaskGraph(List<TaskSpec> tasks) {
         if (tasks == null || tasks.isEmpty()) throw new IllegalArgumentException("Task graph is empty");
         for (TaskSpec task : tasks) {
-            if (task.id() == null || !task.id().matches("[a-z0-9-]{1,64}") ||
-                task.stage() == null || task.kind() == null || task.role() == null || task.role().isBlank()) {
+            if (task.id() == null
+                    || !task.id().matches("[a-z0-9-]{1,64}")
+                    || task.stage() == null
+                    || task.kind() == null
+                    || task.role() == null
+                    || task.role().isBlank()) {
                 throw new IllegalArgumentException("Invalid task identity or stage");
             }
             if (byId.putIfAbsent(task.id(), task) != null) {
@@ -40,14 +44,18 @@ public final class TaskGraph {
         Set<String> complete = new HashSet<>();
         Set<String> visiting = new HashSet<>();
         for (TaskSpec task : tasks) visit(task.id(), visiting, complete);
-        for (TaskSpec release : tasks.stream().filter(t -> t.kind() == TaskKind.RELEASE).toList()) {
+        for (TaskSpec release :
+                tasks.stream().filter(t -> t.kind() == TaskKind.RELEASE).toList()) {
             Set<String> upstream = ancestors(release.id());
             if (tasks.stream().anyMatch(t -> !t.id().equals(release.id()) && !upstream.contains(t.id()))) {
                 throw new IllegalArgumentException("Release must join all required work: " + release.id());
             }
-            List<TaskSpec> validations = tasks.stream().filter(t -> t.kind() == TaskKind.VALIDATE && upstream.contains(t.id())).toList();
+            List<TaskSpec> validations = tasks.stream()
+                    .filter(t -> t.kind() == TaskKind.VALIDATE && upstream.contains(t.id()))
+                    .toList();
             if (validations.isEmpty()) throw new IllegalArgumentException("Release requires passing validation");
-            for (TaskSpec patch : tasks.stream().filter(t -> t.kind() == TaskKind.PATCH).toList()) {
+            for (TaskSpec patch :
+                    tasks.stream().filter(t -> t.kind() == TaskKind.PATCH).toList()) {
                 if (validations.stream().noneMatch(t -> ancestors(t.id()).contains(patch.id()))) {
                     throw new IllegalArgumentException("Patch lacks downstream validation: " + patch.id());
                 }
@@ -75,8 +83,8 @@ public final class TaskGraph {
     public List<TaskSpec> ready(List<TaskSpec> ordered, Map<String, TaskStatus> states) {
         List<TaskSpec> result = new ArrayList<>();
         for (TaskSpec task : ordered) {
-            if (states.getOrDefault(task.id(), TaskStatus.PENDING) == TaskStatus.PENDING &&
-                task.dependsOn().stream().allMatch(id -> states.get(id) == TaskStatus.DONE)) {
+            if (states.getOrDefault(task.id(), TaskStatus.PENDING) == TaskStatus.PENDING
+                    && task.dependsOn().stream().allMatch(id -> states.get(id) == TaskStatus.DONE)) {
                 result.add(task);
             }
         }

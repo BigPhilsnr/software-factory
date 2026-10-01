@@ -24,7 +24,9 @@ public final class RequestCorrelation extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain)
             throws ServletException, IOException {
         String supplied = request.getHeader(HEADER);
-        String id = supplied != null && ACCEPTED_ID.matcher(supplied).matches() ? supplied : UUID.randomUUID().toString();
+        String id = supplied != null && ACCEPTED_ID.matcher(supplied).matches()
+                ? supplied
+                : UUID.randomUUID().toString();
         response.setHeader(HEADER, id);
         MDC.put(MDC_KEY, id);
         try {

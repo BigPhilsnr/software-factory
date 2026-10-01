@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  SpotBugs / FindSecBugs exclusions shared by factory/ and shortener/.
+  Keep this file minimal: every entry needs a justification, and a finding in one place should be
+  suppressed at that place (@SuppressFBWarnings is not on the classpath, so use a narrow <Match> with
+  <Class>/<Method>) rather than by widening a pattern here.
+-->
+<FindBugsFilter xmlns="https://github.com/spotbugs/filter/3.0.0">
+</FindBugsFilter>

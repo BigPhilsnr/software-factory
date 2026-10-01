@@ -14,8 +14,8 @@ public final class LinkCodes {
      * Words that collide with framework, browser or operational paths. Shorter words such as {@code api}
      * need no entry: the 4-character minimum already makes them impossible codes.
      */
-    public static final Set<String> RESERVED = Set.of(
-        "error", "logout", "login", "actuator", "health", "favicon", "robots", "info");
+    public static final Set<String> RESERVED =
+            Set.of("error", "logout", "login", "actuator", "health", "favicon", "robots", "info");
 
     private LinkCodes() {}
 

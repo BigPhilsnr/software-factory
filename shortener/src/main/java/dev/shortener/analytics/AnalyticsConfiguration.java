@@ -20,15 +20,24 @@ public class AnalyticsConfiguration {
 
     /** A wrapper keeps this bulkhead out of Boot's primary DataSource candidate selection. */
     public record AnalyticsPool(HikariDataSource source) implements AutoCloseable {
-        @Override public void close() { source.close(); }
+        @Override
+        public void close() {
+            source.close();
+        }
     }
 
     /** Same URL, credentials and driver properties (socket and statement timeouts) as the primary pool. */
     @Bean(destroyMethod = "close")
-    AnalyticsPool analyticsPool(DataSourceProperties properties, HikariDataSource primary, ShortenerProperties shortener,
-                                MeterRegistry meters) {
+    AnalyticsPool analyticsPool(
+            DataSourceProperties properties,
+            HikariDataSource primary,
+            ShortenerProperties shortener,
+            MeterRegistry meters) {
         ShortenerProperties.Analytics settings = shortener.analytics();
-        HikariDataSource pool = properties.initializeDataSourceBuilder().type(HikariDataSource.class).build();
+        HikariDataSource pool = properties
+                .initializeDataSourceBuilder()
+                .type(HikariDataSource.class)
+                .build();
         pool.setDataSourceProperties(primary.getDataSourceProperties());
         pool.setPoolName(POOL_NAME);
         pool.setMaximumPoolSize(settings.poolSize());
@@ -39,11 +48,12 @@ public class AnalyticsConfiguration {
     }
 
     @Bean
-    BoundedAnalyticsRecorder analyticsRecorder(AnalyticsPool pool, Clock clock, ShortenerProperties shortener,
-                                               MeterRegistry meters) {
+    BoundedAnalyticsRecorder analyticsRecorder(
+            AnalyticsPool pool, Clock clock, ShortenerProperties shortener, MeterRegistry meters) {
         ShortenerProperties.Analytics settings = shortener.analytics();
         var jdbc = new JdbcTemplate(pool.source());
         jdbc.setQueryTimeout(Math.toIntExact(settings.queryTimeout().toSeconds()));
-        return new BoundedAnalyticsRecorder(new JdbcRedirectStatsWriter(jdbc, settings.flushBatchSize()), clock, settings, meters);
+        return new BoundedAnalyticsRecorder(
+                new JdbcRedirectStatsWriter(jdbc, settings.flushBatchSize()), clock, settings, meters);
     }
 }

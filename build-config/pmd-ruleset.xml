@@ -1,0 +1,165 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ruleset name="software-factory"
+         xmlns="http://pmd.sourceforge.net/ruleset/2.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://pmd.sourceforge.net/ruleset/2.0.0 https://pmd.sourceforge.io/ruleset_2_0_0.xsd">
+  <description>
+    Curated PMD 7 rules approximating the "Sonar way" Java profile. Shared by factory/ and shortener/.
+    Every violation of priority 1-3 fails `mvn verify` (see quality.failOnViolation in the module POMs).
+    Excluded rules are style opinions or rules that contradict the code base's conventions (records,
+    constructor injection, final-by-default utility classes); each exclusion says why.
+  </description>
+
+  <!-- Best practices: whole category minus noise. -->
+  <rule ref="category/java/bestpractices.xml">
+    <!-- SLF4J parameterised logging already defers formatting; guards add clutter. -->
+    <exclude name="GuardLogStatement"/>
+    <!-- Test-only conventions; main sources are analysed, tests are not. -->
+    <exclude name="UnitTestAssertionsShouldIncludeMessage"/>
+    <exclude name="UnitTestContainsTooManyAsserts"/>
+    <!-- Sonar has no equivalent; reassigning a normalised parameter/loop variable is accepted here. -->
+    <exclude name="AvoidReassigningParameters"/>
+    <!-- The CLI entry points print to the console by design. -->
+    <exclude name="SystemPrintln"/>
+    <!-- Conflicts with records/compact code; LooseCoupling still catches concrete collection types. -->
+    <exclude name="UseVarargs"/>
+  </rule>
+
+  <!-- Error prone: whole category minus noise. -->
+  <rule ref="category/java/errorprone.xml">
+    <!-- Magic-number style opinion with very high false-positive rate. -->
+    <exclude name="AvoidLiteralsInIfCondition"/>
+    <!-- Records and fluent accessors intentionally share field and method names. -->
+    <exclude name="AvoidFieldNameMatchingMethodName"/>
+    <!-- Explicit null resets are legitimate for cleanup/state machines. -->
+    <exclude name="NullAssignment"/>
+    <!-- No Serializable contract is offered by this code base. -->
+    <exclude name="MissingSerialVersionUID"/>
+    <!-- Configured below with a Sonar-like threshold (S1192). -->
+    <exclude name="AvoidDuplicateLiterals"/>
+  </rule>
+  <rule ref="category/java/errorprone.xml/AvoidDuplicateLiterals">
+    <properties>
+      <property name="maxDuplicateLiterals" value="4"/>
+      <property name="minimumLength" value="6"/>
+      <property name="skipAnnotations" value="true"/>
+    </properties>
+  </rule>
+
+  <!-- Design: complexity and size rules matching Sonar's maintainability gate. -->
+  <rule ref="category/java/design.xml/CognitiveComplexity">
+    <properties>
+      <property name="reportLevel" value="15"/>
+    </properties>
+  </rule>
+  <rule ref="category/java/design.xml/CyclomaticComplexity">
+    <properties>
+      <property name="methodReportLevel" value="10"/>
+      <property name="classReportLevel" value="80"/>
+    </properties>
+  </rule>
+  <rule ref="category/java/design.xml/NPathComplexity"/>
+  <rule ref="category/java/design.xml/GodClass"/>
+  <!-- PMD 7 removed ExcessiveMethodLength/ExcessiveClassLength; NcssCount is their replacement. -->
+  <rule ref="category/java/design.xml/NcssCount">
+    <properties>
+      <property name="methodReportLevel" value="50"/>
+      <property name="classReportLevel" value="500"/>
+    </properties>
+  </rule>
+  <rule ref="category/java/design.xml/ExcessiveParameterList">
+    <properties>
+      <!-- Sonar S107 default. -->
+      <property name="minimum" value="8"/>
+    </properties>
+  </rule>
+  <rule ref="category/java/design.xml/TooManyMethods">
+    <properties>
+      <!-- Sonar S1448 default. -->
+      <property name="maxmethods" value="35"/>
+    </properties>
+  </rule>
+  <rule ref="category/java/design.xml/TooManyFields">
+    <properties>
+      <property name="maxfields" value="20"/>
+    </properties>
+  </rule>
+  <rule ref="category/java/design.xml/AvoidDeeplyNestedIfStmts"/>
+  <rule ref="category/java/design.xml/CouplingBetweenObjects"/>
+  <rule ref="category/java/design.xml/SwitchDensity"/>
+  <rule ref="category/java/design.xml/AvoidCatchingGenericException"/>
+  <rule ref="category/java/design.xml/AvoidThrowingRawExceptionTypes"/>
+  <rule ref="category/java/design.xml/AvoidThrowingNullPointerException"/>
+  <rule ref="category/java/design.xml/AvoidRethrowingException"/>
+  <rule ref="category/java/design.xml/AvoidThrowingNewInstanceOfSameException"/>
+  <rule ref="category/java/design.xml/AvoidUncheckedExceptionsInSignatures"/>
+  <rule ref="category/java/design.xml/DoNotExtendJavaLangError"/>
+  <rule ref="category/java/design.xml/ExceptionAsFlowControl"/>
+  <rule ref="category/java/design.xml/SignatureDeclareThrowsException"/>
+  <rule ref="category/java/design.xml/ClassWithOnlyPrivateConstructorsShouldBeFinal"/>
+  <rule ref="category/java/design.xml/CollapsibleIfStatements"/>
+  <rule ref="category/java/design.xml/FinalFieldCouldBeStatic"/>
+  <rule ref="category/java/design.xml/ImmutableField"/>
+  <rule ref="category/java/design.xml/LogicInversion"/>
+  <rule ref="category/java/design.xml/MutableStaticState"/>
+  <rule ref="category/java/design.xml/SimplifiedTernary"/>
+  <rule ref="category/java/design.xml/SimplifyBooleanReturns"/>
+  <rule ref="category/java/design.xml/SimplifyConditional"/>
+  <rule ref="category/java/design.xml/SingularField"/>
+  <rule ref="category/java/design.xml/UselessOverridingMethod"/>
+  <rule ref="category/java/design.xml/UseUtilityClass"/>
+
+  <!-- Multithreading: whole category minus rules written for Java EE containers / pre-Java-5 memory model. -->
+  <rule ref="category/java/multithreading.xml">
+    <!-- Java EE restriction; this is a standalone Spring Boot process that owns its executors. -->
+    <exclude name="DoNotUseThreads"/>
+    <!-- Flags every Map declaration regardless of sharing; SpotBugs covers real races. -->
+    <exclude name="UseConcurrentHashMap"/>
+    <!-- volatile is the correct tool for single-writer flags. -->
+    <exclude name="AvoidUsingVolatile"/>
+    <!-- Method-level synchronized is a readable, valid monitor choice. -->
+    <exclude name="AvoidSynchronizedAtMethodLevel"/>
+    <exclude name="AvoidSynchronizedStatement"/>
+  </rule>
+
+  <!-- Security: whole category. FindSecBugs (SpotBugs) covers the taint-style checks. -->
+  <rule ref="category/java/security.xml"/>
+
+  <!-- Performance: the handful Sonar also reports. -->
+  <rule ref="category/java/performance.xml/BigIntegerInstantiation"/>
+  <rule ref="category/java/performance.xml/InefficientEmptyStringCheck"/>
+  <rule ref="category/java/performance.xml/StringInstantiation"/>
+  <rule ref="category/java/performance.xml/UseIndexOfChar"/>
+  <rule ref="category/java/performance.xml/UselessStringValueOf"/>
+  <rule ref="category/java/performance.xml/UseStringBufferForStringAppends"/>
+
+  <!-- Code style: only rules that signal a likely defect or dead weight; formatting belongs to Spotless. -->
+  <rule ref="category/java/codestyle.xml/ClassNamingConventions">
+    <properties>
+      <!-- Utility classes follow normal class naming (no forced Utils/Helper suffix). -->
+      <property name="utilityClassPattern" value="[A-Z][a-zA-Z0-9]*"/>
+    </properties>
+  </rule>
+  <rule ref="category/java/codestyle.xml/MethodNamingConventions"/>
+  <rule ref="category/java/codestyle.xml/FormalParameterNamingConventions"/>
+  <rule ref="category/java/codestyle.xml/LocalVariableNamingConventions"/>
+  <rule ref="category/java/codestyle.xml/PackageCase"/>
+  <rule ref="category/java/codestyle.xml/GenericsNaming"/>
+  <!-- ControlStatementBraces (Sonar S121) is deliberately absent: it is not in the default "Sonar way"
+       profile and the code base uses single-line guard clauses throughout. -->
+  <rule ref="category/java/codestyle.xml/EmptyControlStatement"/>
+  <rule ref="category/java/codestyle.xml/ExtendsObject"/>
+  <rule ref="category/java/codestyle.xml/ForLoopShouldBeWhileLoop"/>
+  <rule ref="category/java/codestyle.xml/IdenticalCatchBranches"/>
+  <rule ref="category/java/codestyle.xml/UnnecessaryAnnotationValueElement"/>
+  <rule ref="category/java/codestyle.xml/UnnecessaryBoxing"/>
+  <rule ref="category/java/codestyle.xml/UnnecessaryCast"/>
+  <rule ref="category/java/codestyle.xml/UnnecessaryFullyQualifiedName"/>
+  <rule ref="category/java/codestyle.xml/UnnecessaryImport"/>
+  <rule ref="category/java/codestyle.xml/UnnecessaryModifier"/>
+  <rule ref="category/java/codestyle.xml/UnnecessaryReturn"/>
+  <rule ref="category/java/codestyle.xml/UnnecessarySemicolon"/>
+  <rule ref="category/java/codestyle.xml/UselessParentheses"/>
+  <rule ref="category/java/codestyle.xml/UseDiamondOperator"/>
+  <rule ref="category/java/codestyle.xml/FieldDeclarationsShouldBeAtStartOfClass"/>
+</ruleset>

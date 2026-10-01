@@ -1,0 +1,30 @@
+# Keep in sync with the Spotless configuration in the module POMs (palantir-java-format, sortPom).
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+indent_style = space
+indent_size = 4
+
+[*.java]
+indent_size = 4
+max_line_length = 120
+
+[{*.xml,*.yml,*.yaml,*.json,*.js,*.cjs,*.mjs,*.css,*.html}]
+indent_size = 2
+
+[*.md]
+# Two trailing spaces are a Markdown line break.
+trim_trailing_whitespace = false
+
+[*.patch]
+# Unified diffs carry significant trailing whitespace and must keep their original bytes.
+trim_trailing_whitespace = false
+insert_final_newline = unset
+indent_size = unset
+
+[*.py]
+indent_size = 4

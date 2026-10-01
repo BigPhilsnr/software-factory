@@ -13,7 +13,8 @@ public final class ScenarioFiles {
         Path parent = path.getParent();
         String name = path.getFileName().toString();
         if (parent != null && parent.getFileName().toString().equals("scenarios") && name.endsWith(".json")) {
-            Path relocated = parent.resolve(name.substring(0, name.length() - 5)).resolve("scenario.json");
+            Path relocated =
+                    parent.resolve(name.substring(0, name.length() - 5)).resolve("scenario.json");
             if (Files.isRegularFile(relocated)) return relocated;
         }
         return path;

@@ -2,7 +2,6 @@ package dev.softwarefactory.operator.web;
 
 import dev.softwarefactory.agents.AgentRuntime;
 import dev.softwarefactory.agents.UntrustedText;
-
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -17,9 +16,14 @@ final class ChatConversation {
     private static final int MAX_TURNS = 6;
     private static final int MAX_CONTEXT = 60_000;
     private static final int MAX_FILE_EXCERPT = 12_000;
-    private static final List<String> CONTEXT_FILES = List.of("README.md", "docs/architecture/decisions.md",
-        "docs/operations/local-runbook.md", "docs/architecture/agent-system.md", "docs/operations/operator-guide.md",
-        "shortener/pom.xml", "shortener/openapi.yaml");
+    private static final List<String> CONTEXT_FILES = List.of(
+            "README.md",
+            "docs/architecture/decisions.md",
+            "docs/operations/local-runbook.md",
+            "docs/architecture/agent-system.md",
+            "docs/operations/operator-guide.md",
+            "shortener/pom.xml",
+            "shortener/openapi.yaml");
     private final Path root;
     private final AgentRuntime runtime;
     /** Least recently used conversations are forgotten first. */
@@ -31,7 +35,8 @@ final class ChatConversation {
     }
 
     String answer(String session, String question, String runContext) throws Exception {
-        if (question.length() > MAX_QUESTION) throw new IllegalArgumentException("Keep chat messages within " + MAX_QUESTION + " characters");
+        if (question.length() > MAX_QUESTION)
+            throw new IllegalArgumentException("Keep chat messages within " + MAX_QUESTION + " characters");
         ArrayDeque<String> history = sessions.computeIfAbsent(session, ignored -> new ArrayDeque<>());
         synchronized (history) {
             String prompt = """
@@ -48,11 +53,14 @@ final class ChatConversation {
                 `/feature REQUIREMENT` command when the user wants implementation. Only that explicit
                 command creates a run; `/advance` starts it. Approvals require `/approve EXACT_HASH`.
                 Do not invent a run ID, approval hash, test result or file contents.
-                """ + UntrustedText.block("SELECTED RUN", runContext) + UntrustedText.block("CURRENT CHECKOUT", repositoryContext())
-                + UntrustedText.block("RECENT CONVERSATION", String.join("\n", history)) + "\nUSER\n" + question;
+                """ + UntrustedText.block("SELECTED RUN", runContext)
+                    + UntrustedText.block("CURRENT CHECKOUT", repositoryContext())
+                    + UntrustedText.block("RECENT CONVERSATION", String.join("\n", history)) + "\nUSER\n" + question;
             String answer = runtime.generate("project_chat", prompt);
-            if (answer == null || answer.isBlank()) throw new IllegalStateException("Chat returned no answer; please retry");
-            history.addLast("USER: " + question + "\nASSISTANT: " + answer.substring(0, Math.min(answer.length(), MAX_REMEMBERED_ANSWER)));
+            if (answer == null || answer.isBlank())
+                throw new IllegalStateException("Chat returned no answer; please retry");
+            history.addLast("USER: " + question + "\nASSISTANT: "
+                    + answer.substring(0, Math.min(answer.length(), MAX_REMEMBERED_ANSWER)));
             while (history.size() > MAX_TURNS) history.removeFirst();
             return answer;
         }
@@ -64,7 +72,10 @@ final class ChatConversation {
         Path sources = root.resolve("shortener/src/main");
         if (Files.isDirectory(sources)) {
             try (var paths = Files.walk(sources)) {
-                for (Path file : paths.filter(p -> p.toString().endsWith(".java") || p.toString().endsWith(".sql")).sorted().toList()) append(context, file);
+                for (Path file : paths.filter(p ->
+                                p.toString().endsWith(".java") || p.toString().endsWith(".sql"))
+                        .sorted()
+                        .toList()) append(context, file);
             }
         }
         return context.toString();
@@ -72,13 +83,20 @@ final class ChatConversation {
 
     private void append(StringBuilder context, Path file) throws IOException {
         // Only allowlisted documentation/source files; never environment, credentials or run workspaces.
-        if (!Files.isRegularFile(file) || Files.isSymbolicLink(file) || !file.toRealPath().startsWith(root.toRealPath()) || context.length() >= MAX_CONTEXT) return;
+        if (!Files.isRegularFile(file)
+                || Files.isSymbolicLink(file)
+                || !file.toRealPath().startsWith(root.toRealPath())
+                || context.length() >= MAX_CONTEXT) return;
         String content;
         try (var reader = Files.newBufferedReader(file)) {
             char[] buffer = new char[Math.min(MAX_FILE_EXCERPT, MAX_CONTEXT - context.length())];
             int count = reader.read(buffer);
             content = count < 0 ? "" : new String(buffer, 0, count);
         }
-        context.append("\nFILE ").append(root.relativize(file)).append(" (bounded excerpt)\n").append(content).append('\n');
+        context.append("\nFILE ")
+                .append(root.relativize(file))
+                .append(" (bounded excerpt)\n")
+                .append(content)
+                .append('\n');
     }
 }

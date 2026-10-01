@@ -2,7 +2,6 @@ package dev.softwarefactory.agents.tools;
 
 import dev.softwarefactory.agents.UntrustedText;
 import dev.softwarefactory.governance.Hashes;
-
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
@@ -21,12 +20,24 @@ public final class ToolSession implements AutoCloseable {
     public static final int MAX_TOOL_CALLS = 12;
     /** Upper bound for one provider request, even with a generous invocation deadline. */
     public static final Duration MAX_REQUEST_TIMEOUT = Duration.ofMinutes(5);
+
     private static final int MAX_TOOL_RESULT = 16_000;
     private static final Logger LOG = LoggerFactory.getLogger(ToolSession.class);
 
-    @FunctionalInterface public interface BeforeRequest { void reserve() throws Exception; }
-    @FunctionalInterface public interface Audit { void record(String event, String detail) throws Exception; }
-    @FunctionalInterface public interface Operation { String run() throws Exception; }
+    @FunctionalInterface
+    public interface BeforeRequest {
+        void reserve() throws Exception;
+    }
+
+    @FunctionalInterface
+    public interface Audit {
+        void record(String event, String detail) throws Exception;
+    }
+
+    @FunctionalInterface
+    public interface Operation {
+        String run() throws Exception;
+    }
 
     private final BeforeRequest beforeRequest;
     private final Audit audit;
@@ -79,12 +90,15 @@ public final class ToolSession implements AutoCloseable {
         requireOpen();
         if (deadline == null) return MAX_REQUEST_TIMEOUT;
         Duration remaining = Duration.between(clock.instant(), deadline);
-        if (remaining.isNegative() || remaining.isZero()) throw new IllegalStateException("Agent invocation deadline exceeded");
+        if (remaining.isNegative() || remaining.isZero())
+            throw new IllegalStateException("Agent invocation deadline exceeded");
         return remaining.compareTo(MAX_REQUEST_TIMEOUT) < 0 ? remaining : MAX_REQUEST_TIMEOUT;
     }
 
     public synchronized void recordFinalization() {
-        record("TOOL_BUDGET_FINALIZING", "request=" + requests + "/" + MAX_MODEL_REQUESTS + "; tools=" + calls + "/" + MAX_TOOL_CALLS);
+        record(
+                "TOOL_BUDGET_FINALIZING",
+                "request=" + requests + "/" + MAX_MODEL_REQUESTS + "; tools=" + calls + "/" + MAX_TOOL_CALLS);
     }
 
     public synchronized String invoke(String name, String input, Operation operation) {
@@ -100,20 +114,27 @@ public final class ToolSession implements AutoCloseable {
         } catch (Exception failure) {
             // Provider exceptions may include request bodies or credentials. Return only a safe type.
             result = "Tool unavailable or request denied (" + failure.getClass().getSimpleName()
-                + "). Do not claim this operation succeeded.";
+                    + "). Do not claim this operation succeeded.";
             status = "ERROR";
         }
         result = result.substring(0, Math.min(result.length(), MAX_TOOL_RESULT));
         outcomes.add(name + " " + status);
-        record("TOOL_FINISHED", name + ":" + status + ":outputSha256=" + Hashes.sha256(result)
-            + ":elapsedMs=" + (System.nanoTime() - started) / 1_000_000);
+        record(
+                "TOOL_FINISHED",
+                name + ":" + status + ":outputSha256=" + Hashes.sha256(result) + ":elapsedMs="
+                        + (System.nanoTime() - started) / 1_000_000);
         return UntrustedText.block("Tool result: " + name, result);
     }
 
-    public synchronized String summary() { return String.join(", ", outcomes); }
+    public synchronized String summary() {
+        return String.join(", ", outcomes);
+    }
 
     /** Ends the invocation: subsequent (late) callbacks are refused and not audited. */
-    @Override public void close() { closed.set(true); }
+    @Override
+    public void close() {
+        closed.set(true);
+    }
 
     private void requireOpen() {
         if (closed.get()) throw new IllegalStateException("Agent invocation has ended");

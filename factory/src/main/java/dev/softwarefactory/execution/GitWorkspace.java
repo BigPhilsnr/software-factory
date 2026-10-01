@@ -16,9 +16,10 @@ import java.util.regex.Pattern;
 public final class GitWorkspace {
     /** Validator build output inside the candidate. Never part of a reviewed change. */
     public static final String BUILD_OUTPUT = "shortener/target";
+
     private static final Pattern DIFF_HEADER = Pattern.compile("^diff --git a/(.+) b/(.+)$");
-    private static final Pattern LINK_OR_SUBMODULE = Pattern.compile(
-        "(?:new file mode|old mode|new mode|deleted file mode|index [^ ]+) (?:120000|160000)");
+    private static final Pattern LINK_OR_SUBMODULE =
+            Pattern.compile("(?:new file mode|old mode|new mode|deleted file mode|index [^ ]+) (?:120000|160000)");
     private static final Pattern SAFE_PATH = Pattern.compile("[A-Za-z0-9_./-]+");
     private static final Pattern RUN_ID = Pattern.compile("[a-f0-9-]{36}");
     private static final Pattern BASELINE = Pattern.compile("[a-zA-Z0-9][a-zA-Z0-9._/-]{0,79}");
@@ -28,8 +29,9 @@ public final class GitWorkspace {
     private static final Duration WORKTREE = Duration.ofSeconds(30);
     private static final Duration DIFF = Duration.ofSeconds(60);
     /** Host Git must not run repository-controlled hooks or monitors; diffs also disable external drivers and text conversion. */
-    private static final List<String> GIT = List.of("git", "-c", "core.hooksPath=/dev/null", "-c", "core.fsmonitor=false",
-        "-c", "core.quotePath=true");
+    private static final List<String> GIT =
+            List.of("git", "-c", "core.hooksPath=/dev/null", "-c", "core.fsmonitor=false", "-c", "core.quotePath=true");
+
     private final Path repository;
     private final Path runs;
 
@@ -60,17 +62,21 @@ public final class GitWorkspace {
 
     public boolean isOwnedCandidate(Path candidate) {
         Path normalized = candidate.toAbsolutePath().normalize();
-        return runs.equals(normalized.getParent()) && RUN_ID.matcher(normalized.getFileName().toString()).matches();
+        return runs.equals(normalized.getParent())
+                && RUN_ID.matcher(normalized.getFileName().toString()).matches();
     }
 
     private Path owned(Path candidate) {
-        if (!isOwnedCandidate(candidate)) throw new PolicyViolationException("Can only remove this factory's run workspace");
+        if (!isOwnedCandidate(candidate))
+            throw new PolicyViolationException("Can only remove this factory's run workspace");
         return candidate.toAbsolutePath().normalize();
     }
 
     public String resolveCommit(String baselineTag) throws IOException, InterruptedException {
-        if (baselineTag == null || !BASELINE.matcher(baselineTag).matches()) throw new IllegalArgumentException("Invalid baseline");
-        return git(repository, SHORT, "rev-parse", "--verify", "--end-of-options", baselineTag + "^{commit}").trim();
+        if (baselineTag == null || !BASELINE.matcher(baselineTag).matches())
+            throw new IllegalArgumentException("Invalid baseline");
+        return git(repository, SHORT, "rev-parse", "--verify", "--end-of-options", baselineTag + "^{commit}")
+                .trim();
     }
 
     public void apply(Path candidate, String patch, List<String> allowed) throws IOException, InterruptedException {
@@ -79,11 +85,14 @@ public final class GitWorkspace {
         try {
             Files.writeString(file, patch);
             String actualPaths = git(candidate, APPLY, "apply", "--numstat", "-z", file.toString());
-            List<String> actual = Arrays.stream(actualPaths.split("\u0000")).filter(line -> !line.isBlank()).map(line -> {
-                String[] fields = NUMSTAT_FIELDS.split(line, 3);
-                if (fields.length != 3) throw new PolicyViolationException("Unparseable patch path");
-                return fields[2];
-            }).toList();
+            List<String> actual = Arrays.stream(actualPaths.split("\u0000"))
+                    .filter(line -> !line.isBlank())
+                    .map(line -> {
+                        String[] fields = NUMSTAT_FIELDS.split(line, 3);
+                        if (fields.length != 3) throw new PolicyViolationException("Unparseable patch path");
+                        return fields[2];
+                    })
+                    .toList();
             if (actual.isEmpty() || !changed.containsAll(actual) || !actual.containsAll(changed)) {
                 throw new PolicyViolationException("Patch paths do not match the reviewed diff headers");
             }
@@ -95,7 +104,8 @@ public final class GitWorkspace {
     }
 
     /** Check applicability without changing the candidate or its index. */
-    public void checkApply(Path candidate, String patch, List<String> allowed) throws IOException, InterruptedException {
+    public void checkApply(Path candidate, String patch, List<String> allowed)
+            throws IOException, InterruptedException {
         validateScope(patch, allowed);
         Path file = Files.createTempFile("factory-preflight-", ".diff");
         try {
@@ -117,12 +127,17 @@ public final class GitWorkspace {
             }
             var header = DIFF_HEADER.matcher(line);
             boolean isHeader = header.matches();
-            if (line.startsWith("diff --git ") && !isHeader) throw new PolicyViolationException("Ambiguous or quoted diff path");
+            if (line.startsWith("diff --git ") && !isHeader)
+                throw new PolicyViolationException("Ambiguous or quoted diff path");
             if (!isHeader) continue;
-            if (!header.group(1).equals(header.group(2))) throw new PolicyViolationException("Renames are outside worker authority");
+            if (!header.group(1).equals(header.group(2)))
+                throw new PolicyViolationException("Renames are outside worker authority");
             String path = header.group(1);
-            if (!SAFE_PATH.matcher(path).matches() || path.startsWith("/") || path.contains("..") || isProtectedPath(path)
-                || allowed.stream().noneMatch(prefix -> path.equals(prefix) || path.startsWith(prefix + "/"))) {
+            if (!SAFE_PATH.matcher(path).matches()
+                    || path.startsWith("/")
+                    || path.contains("..")
+                    || isProtectedPath(path)
+                    || allowed.stream().noneMatch(prefix -> path.equals(prefix) || path.startsWith(prefix + "/"))) {
                 throw new PolicyViolationException("Patch outside approved scope: " + path);
             }
             changed.add(path);
@@ -154,11 +169,32 @@ public final class GitWorkspace {
     public String diff(Path candidate, String baselineCommit) throws IOException, InterruptedException {
         Path indexDirectory = Files.createTempDirectory("factory-index-");
         try {
-            Map<String, String> privateIndex = Map.of("GIT_INDEX_FILE", indexDirectory.resolve("index").toString());
-            git(candidate, privateIndex, DIFF, CommandRunner.DEFAULT_OUTPUT_LIMIT,
-                "add", "--all", "--force", "--", ".", ":(top,exclude)" + BUILD_OUTPUT);
-            return git(candidate, privateIndex, DIFF, CommandRunner.DATA_OUTPUT_LIMIT,
-                "diff", "--cached", "--binary", "--no-ext-diff", "--no-textconv", "--no-renames", baselineCommit, "--");
+            Map<String, String> privateIndex =
+                    Map.of("GIT_INDEX_FILE", indexDirectory.resolve("index").toString());
+            git(
+                    candidate,
+                    privateIndex,
+                    DIFF,
+                    CommandRunner.DEFAULT_OUTPUT_LIMIT,
+                    "add",
+                    "--all",
+                    "--force",
+                    "--",
+                    ".",
+                    ":(top,exclude)" + BUILD_OUTPUT);
+            return git(
+                    candidate,
+                    privateIndex,
+                    DIFF,
+                    CommandRunner.DATA_OUTPUT_LIMIT,
+                    "diff",
+                    "--cached",
+                    "--binary",
+                    "--no-ext-diff",
+                    "--no-textconv",
+                    "--no-renames",
+                    baselineCommit,
+                    "--");
         } finally {
             deleteRecursively(indexDirectory);
         }
@@ -170,20 +206,24 @@ public final class GitWorkspace {
         git(candidate, WORKTREE, "clean", "-ffdx");
     }
 
-    public static String command(Path directory, List<String> arguments, Duration timeout) throws IOException, InterruptedException {
+    public static String command(Path directory, List<String> arguments, Duration timeout)
+            throws IOException, InterruptedException {
         return CommandRunner.checked(directory, arguments, timeout);
     }
 
-    private static String git(Path directory, Duration timeout, String... arguments) throws IOException, InterruptedException {
+    private static String git(Path directory, Duration timeout, String... arguments)
+            throws IOException, InterruptedException {
         return git(directory, Map.of(), timeout, CommandRunner.DEFAULT_OUTPUT_LIMIT, arguments);
     }
 
-    private static String git(Path directory, Map<String, String> environment, Duration timeout, int outputLimit,
-                              String... arguments) throws IOException, InterruptedException {
+    private static String git(
+            Path directory, Map<String, String> environment, Duration timeout, int outputLimit, String... arguments)
+            throws IOException, InterruptedException {
         List<String> command = new ArrayList<>(GIT);
         command.addAll(List.of(arguments));
         return CommandRunner.checked(CommandRunner.Invocation.of(directory, command, timeout)
-            .withEnvironment(environment).withOutputLimit(outputLimit, CommandRunner.Overflow.FAIL));
+                .withEnvironment(environment)
+                .withOutputLimit(outputLimit, CommandRunner.Overflow.FAIL));
     }
 
     private static void deleteRecursively(Path directory) throws IOException {

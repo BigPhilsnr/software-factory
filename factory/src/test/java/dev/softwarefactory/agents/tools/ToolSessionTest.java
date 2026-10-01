@@ -1,27 +1,36 @@
 package dev.softwarefactory.agents.tools;
 
+import static org.junit.jupiter.api.Assertions.*;
+
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.jupiter.api.Test;
-import static org.junit.jupiter.api.Assertions.*;
 
 class ToolSessionTest {
-    @Test void countsEveryRequestAndStopsBeforeProviderWhenBudgetExhausted() {
+    @Test
+    void countsEveryRequestAndStopsBeforeProviderWhenBudgetExhausted() {
         AtomicInteger calls = new AtomicInteger();
         var session = new ToolSession(calls::incrementAndGet, (event, detail) -> {});
         for (int i = 0; i < 8; i++) session.reserveRequest();
         assertThrows(SecurityException.class, session::reserveRequest);
         assertEquals(8, calls.get());
-        var exhaustedRun = new ToolSession(() -> { throw new SecurityException("run budget"); }, (event, detail) -> {});
+        var exhaustedRun = new ToolSession(
+                () -> {
+                    throw new SecurityException("run budget");
+                },
+                (event, detail) -> {});
         assertThrows(SecurityException.class, exhaustedRun::reserveRequest);
     }
 
-    @Test void auditsHashesAndOutcomesWithoutLeakingArgumentsOrProviderErrors() throws Exception {
+    @Test
+    void auditsHashesAndOutcomesWithoutLeakingArgumentsOrProviderErrors() throws Exception {
         var events = new ArrayList<String>();
         var session = new ToolSession(() -> {}, (event, detail) -> events.add(event + ":" + detail));
         assertTrue(session.invoke("read_file", "private-input", () -> "output").contains("\noutput\n"));
-        String failure = session.invoke("search_web", "query", () -> { throw new IllegalStateException("SECRET_SENTINEL"); });
+        String failure = session.invoke("search_web", "query", () -> {
+            throw new IllegalStateException("SECRET_SENTINEL");
+        });
         assertFalse(failure.contains("SECRET_SENTINEL"));
         assertTrue(session.summary().contains("search_web ERROR"));
         assertFalse(events.toString().contains("private-input"));
@@ -31,7 +40,8 @@ class ToolSessionTest {
         assertThrows(SecurityException.class, () -> session.invoke("current_time", "", () -> "time"));
     }
 
-    @Test void searchCannotConsumeTheFinalResponseRequest() {
+    @Test
+    void searchCannotConsumeTheFinalResponseRequest() {
         AtomicInteger reservations = new AtomicInteger();
         var session = new ToolSession(reservations::incrementAndGet, (event, detail) -> {});
         for (int i = 0; i < 6; i++) session.reserveRequest();
@@ -45,7 +55,8 @@ class ToolSessionTest {
         assertThrows(SecurityException.class, session::reserveRequest);
     }
 
-    @Test void requestTimeoutsNeverExceedTheInvocationDeadline() {
+    @Test
+    void requestTimeoutsNeverExceedTheInvocationDeadline() {
         Instant now = Instant.parse("2026-01-01T00:00:00Z");
         var clock = java.time.Clock.fixed(now, java.time.ZoneOffset.UTC);
         var soon = new ToolSession(() -> {}, (event, detail) -> {}, now.plusSeconds(30), clock);
@@ -56,7 +67,8 @@ class ToolSessionTest {
         assertThrows(IllegalStateException.class, expired::requestTimeout);
     }
 
-    @Test void lateCallbacksAfterCloseNeitherReserveNorAudit() {
+    @Test
+    void lateCallbacksAfterCloseNeitherReserveNorAudit() {
         AtomicInteger reservations = new AtomicInteger();
         var events = new ArrayList<String>();
         var session = new ToolSession(reservations::incrementAndGet, (event, detail) -> events.add(event));
@@ -68,7 +80,8 @@ class ToolSessionTest {
         assertTrue(events.isEmpty());
     }
 
-    @Test void toolLimitAlsoSwitchesTheModelToFinalResponse() throws Exception {
+    @Test
+    void toolLimitAlsoSwitchesTheModelToFinalResponse() throws Exception {
         var session = new ToolSession(() -> {}, (event, detail) -> {});
         for (int i = 0; i < ToolSession.MAX_TOOL_CALLS; i++) session.invoke("read_file", "path", () -> "source");
         session.reserveRequest();

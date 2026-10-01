@@ -32,13 +32,17 @@ public final class SourceContext {
         }
         if (!omitted.isEmpty()) {
             // Tell the model what it has not seen, so it reads those files with tools instead of guessing.
-            result.append("\n--- OMITTED (size/budget): ").append(String.join(", ", omitted)).append(" ---\n");
+            result.append("\n--- OMITTED (size/budget): ")
+                    .append(String.join(", ", omitted))
+                    .append(" ---\n");
         }
         return result.toString();
     }
 
     private static void append(StringBuilder result, List<String> omitted, Path root, Path file) throws IOException {
-        if (!Files.isRegularFile(file) || Files.isSymbolicLink(file) || !file.toRealPath().startsWith(root)) return;
+        if (!Files.isRegularFile(file)
+                || Files.isSymbolicLink(file)
+                || !file.toRealPath().startsWith(root)) return;
         long size = Files.size(file);
         if (size > MAX_FILE_BYTES || result.length() + size > MAX_CONTEXT_BYTES) {
             omitted.add(root.relativize(file).toString());

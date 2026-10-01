@@ -22,19 +22,30 @@ public final class CommandRunner {
     public static final int DEFAULT_OUTPUT_LIMIT = 2 * 1024 * 1024;
     /** Data-producing commands such as a full candidate diff. */
     public static final int DATA_OUTPUT_LIMIT = 64 * 1024 * 1024;
+
     private static final int BUFFER_SIZE = 8192;
     /** Descendants are re-parented once their parent dies, so the tree is captured while it is alive. */
     private static final Duration PROCESS_TREE_POLL = Duration.ofMillis(100);
+
     private static final Duration OUTPUT_DRAIN = Duration.ofSeconds(2);
     private static final File NO_INPUT = new File("/dev/null");
 
     private CommandRunner() {}
 
     /** What happens when output exceeds the invocation limit. The process is stopped in both cases. */
-    public enum Overflow { FAIL, TRUNCATE }
+    public enum Overflow {
+        FAIL,
+        TRUNCATE
+    }
 
-    public record Invocation(Path directory, List<String> arguments, Duration timeout, int outputLimit, Overflow overflow,
-                             Map<String, String> environment, boolean isolatedEnvironment) {
+    public record Invocation(
+            Path directory,
+            List<String> arguments,
+            Duration timeout,
+            int outputLimit,
+            Overflow overflow,
+            Map<String, String> environment,
+            boolean isolatedEnvironment) {
         public Invocation {
             arguments = List.copyOf(arguments);
             environment = Map.copyOf(environment);
@@ -66,30 +77,43 @@ public final class CommandRunner {
     public static final class Failed extends IOException {
         private final int exitCode;
         private final String output;
+
         Failed(int exitCode, String output) {
             super("Command exited " + exitCode + ":\n" + output);
             this.exitCode = exitCode;
             this.output = output;
         }
-        public int exitCode() { return exitCode; }
-        public String output() { return output; }
+
+        public int exitCode() {
+            return exitCode;
+        }
+
+        public String output() {
+            return output;
+        }
     }
 
     public static final class TimedOut extends IOException {
-        TimedOut(String command, Duration timeout) { super("Command timed out after " + timeout.toSeconds() + "s: " + command); }
+        TimedOut(String command, Duration timeout) {
+            super("Command timed out after " + timeout.toSeconds() + "s: " + command);
+        }
     }
 
     public static final class OutputLimitExceeded extends IOException {
-        OutputLimitExceeded(String command, int limit) { super("Command output exceeded " + limit + " bytes: " + command); }
+        OutputLimitExceeded(String command, int limit) {
+            super("Command output exceeded " + limit + " bytes: " + command);
+        }
     }
 
     private record Captured(byte[] bytes, boolean overflowed) {}
 
-    public static Result run(Path directory, List<String> arguments, Duration timeout) throws IOException, InterruptedException {
+    public static Result run(Path directory, List<String> arguments, Duration timeout)
+            throws IOException, InterruptedException {
         return run(Invocation.of(directory, arguments, timeout));
     }
 
-    public static String checked(Path directory, List<String> arguments, Duration timeout) throws IOException, InterruptedException {
+    public static String checked(Path directory, List<String> arguments, Duration timeout)
+            throws IOException, InterruptedException {
         return checked(Invocation.of(directory, arguments, timeout));
     }
 
@@ -100,8 +124,10 @@ public final class CommandRunner {
     }
 
     public static Result run(Invocation invocation) throws IOException, InterruptedException {
-        ProcessBuilder builder = new ProcessBuilder(invocation.arguments()).directory(invocation.directory().toFile())
-            .redirectInput(ProcessBuilder.Redirect.from(NO_INPUT)).redirectErrorStream(true);
+        ProcessBuilder builder = new ProcessBuilder(invocation.arguments())
+                .directory(invocation.directory().toFile())
+                .redirectInput(ProcessBuilder.Redirect.from(NO_INPUT))
+                .redirectErrorStream(true);
         if (invocation.isolatedEnvironment()) builder.environment().clear();
         builder.environment().putAll(invocation.environment());
         Process process = builder.start();
@@ -120,7 +146,8 @@ public final class CommandRunner {
                 throw new OutputLimitExceeded(command, invocation.outputLimit());
             }
             String output = captured.overflowed()
-                ? decodeUtf8Prefix(captured.bytes()) : new String(captured.bytes(), StandardCharsets.UTF_8);
+                    ? decodeUtf8Prefix(captured.bytes())
+                    : new String(captured.bytes(), StandardCharsets.UTF_8);
             return new Result(process.exitValue(), output, captured.overflowed());
         } catch (ExecutionException failure) {
             throw new IOException("Could not read command output: " + command, failure.getCause());
@@ -154,7 +181,9 @@ public final class CommandRunner {
 
     private static void destroyTree(Process process, Set<ProcessHandle> captured) {
         process.descendants().forEach(captured::add);
-        captured.forEach(child -> { if (child.isAlive()) child.destroyForcibly(); });
+        captured.forEach(child -> {
+            if (child.isAlive()) child.destroyForcibly();
+        });
         if (process.isAlive()) process.destroyForcibly();
     }
 

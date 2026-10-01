@@ -27,6 +27,7 @@ import org.xml.sax.SAXException;
 public final class SandboxValidator {
     /** Pinned by digest: a tag could be re-pointed at different build tooling. */
     public static final String IMAGE = "maven@sha256:99e61abcff91a9b1333463bd8451fb18495d6eba9250ac66a338b518f8278320";
+
     static final String CONTAINER_PREFIX = "factory-validator-";
     static final String OWNER_LABEL = "dev.softwarefactory.validator.pid";
     static final String REPORTS_MOUNT = "/reports";
@@ -36,16 +37,18 @@ public final class SandboxValidator {
     private static final Duration PREFLIGHT_TTL = Duration.ofSeconds(30);
     /** Container and host clocks can disagree slightly about report modification times. */
     private static final Duration REPORT_CLOCK_TOLERANCE = Duration.ofSeconds(2);
+
     private static final int DOCKER_FAILURE_EXIT = 125;
     private static final int MAVEN_FAILURE_EXIT = 1;
     private static final Pattern TEST_CLASS = Pattern.compile("[A-Za-z][A-Za-z0-9]*Test");
     private static final Pattern MAVEN_UNAVAILABLE = Pattern.compile(
-        "Could not resolve dependencies|Cannot access .* in offline mode|offline mode and the artifact|Could not transfer artifact"
-            + "|Non-resolvable parent POM|Plugin .* could not be resolved|Unknown packaging");
+            "Could not resolve dependencies|Cannot access .* in offline mode|offline mode and the artifact|Could not transfer artifact"
+                    + "|Non-resolvable parent POM|Plugin .* could not be resolved|Unknown packaging");
     private static final Pattern COMPILATION_FAILURE = Pattern.compile("COMPILATION ERROR|Compilation failure");
     private static final Pattern TAB = Pattern.compile("\t");
 
-    @FunctionalInterface interface Executor {
+    @FunctionalInterface
+    interface Executor {
         String run(Path directory, List<String> args, Duration timeout) throws IOException, InterruptedException;
     }
 
@@ -59,7 +62,9 @@ public final class SandboxValidator {
     private final Clock clock;
     private final AtomicReference<Preflight> preflight = new AtomicReference<>();
 
-    public SandboxValidator(Path mavenCache) { this(mavenCache, GitWorkspace::command, Clock.systemUTC()); }
+    public SandboxValidator(Path mavenCache) {
+        this(mavenCache, GitWorkspace::command, Clock.systemUTC());
+    }
 
     SandboxValidator(Path mavenCache, Executor executor, Clock clock) {
         this.mavenCache = mavenCache.toAbsolutePath();
@@ -111,7 +116,8 @@ public final class SandboxValidator {
      * Runs the full suite. Every class in {@code requiredTestClasses} (fully qualified) must have produced
      * a report with at least one executed test, so changed tests cannot silently be skipped.
      */
-    public String test(Path candidate, Collection<String> requiredTestClasses) throws IOException, InterruptedException {
+    public String test(Path candidate, Collection<String> requiredTestClasses)
+            throws IOException, InterruptedException {
         requireReady();
         Path reports = reportDirectory(candidate);
         try {
@@ -134,7 +140,7 @@ public final class SandboxValidator {
             }
             if (tests == 0 || failures > 0 || errors > 0 || skipped > 0) {
                 throw new ValidationFailedException("Invalid test result: tests=" + tests + ", failures=" + failures
-                    + ", errors=" + errors + ", skipped=" + skipped);
+                        + ", errors=" + errors + ", skipped=" + skipped);
             }
             for (String required : requiredTestClasses) {
                 Suite suite = suites.get(required);
@@ -142,7 +148,8 @@ public final class SandboxValidator {
                     throw new ValidationFailedException("Changed test class did not execute any test: " + required);
                 }
             }
-            return "Sandboxed Maven tests passed: executed=" + tests + ", failures=0, errors=0, skipped=0, suites=" + suites.size();
+            return "Sandboxed Maven tests passed: executed=" + tests + ", failures=0, errors=0, skipped=0, suites="
+                    + suites.size();
         } finally {
             deleteRecursively(reports);
         }
@@ -162,16 +169,21 @@ public final class SandboxValidator {
             } catch (CommandRunner.Failed expectedFailure) {
                 if (expectedFailure.exitCode() != MAVEN_FAILURE_EXIT) throw classify(expectedFailure, reports);
                 List<Suite> matches = readSuites(reports, started).values().stream()
-                    .filter(suite -> suite.name().equals(testClass) || suite.name().endsWith("." + testClass)).toList();
+                        .filter(suite ->
+                                suite.name().equals(testClass) || suite.name().endsWith("." + testClass))
+                        .toList();
                 if (matches.size() != 1) throw classify(expectedFailure, reports);
                 Suite suite = matches.getFirst();
                 if (suite.tests() != 1 || suite.failures() != 1 || suite.errors() != 0 || suite.skipped() != 0) {
-                    throw new ValidationFailedException("Expected exactly one failing regression, without test errors or skips");
+                    throw new ValidationFailedException(
+                            "Expected exactly one failing regression, without test errors or skips");
                 }
                 var failure = suite.element().getElementsByTagName("failure");
-                if (failure.getLength() != 1) throw new ValidationFailedException("Regression report has no single assertion failure");
-                return "Expected red regression confirmed: " + testClass + "; tests=1, failures=1, errors=0, skipped=0; assertion="
-                    + ((Element) failure.item(0)).getAttribute("message");
+                if (failure.getLength() != 1)
+                    throw new ValidationFailedException("Regression report has no single assertion failure");
+                return "Expected red regression confirmed: " + testClass
+                        + "; tests=1, failures=1, errors=0, skipped=0; assertion="
+                        + ((Element) failure.item(0)).getAttribute("message");
             }
         } finally {
             deleteRecursively(reports);
@@ -187,12 +199,16 @@ public final class SandboxValidator {
     private IOException classify(CommandRunner.Failed failure, Path reports) throws IOException {
         String output = failure.output();
         if (failure.exitCode() >= DOCKER_FAILURE_EXIT) {
-            return new InfrastructureException("Docker could not run the validator (exit " + failure.exitCode() + ")", failure);
+            return new InfrastructureException(
+                    "Docker could not run the validator (exit " + failure.exitCode() + ")", failure);
         }
         if (MAVEN_UNAVAILABLE.matcher(output).find()) {
-            return new InfrastructureException("Offline Maven cache is missing required artifacts; build the shortener once with network access", failure);
+            return new InfrastructureException(
+                    "Offline Maven cache is missing required artifacts; build the shortener once with network access",
+                    failure);
         }
-        if (failure.exitCode() == MAVEN_FAILURE_EXIT && COMPILATION_FAILURE.matcher(output).find()) {
+        if (failure.exitCode() == MAVEN_FAILURE_EXIT
+                && COMPILATION_FAILURE.matcher(output).find()) {
             throw new ValidationFailedException("Candidate does not compile:\n" + output);
         }
         if (failure.exitCode() == MAVEN_FAILURE_EXIT && hasReports(reports)) {
@@ -217,14 +233,22 @@ public final class SandboxValidator {
         Instant earliest = started.minus(REPORT_CLOCK_TOLERANCE);
         try (var files = Files.list(reports)) {
             for (Path file : files.filter(SandboxValidator::isReport).toList()) {
-                if (Files.isSymbolicLink(file) || !Files.isRegularFile(file)) throw new PolicyViolationException("Report is not a regular file: " + file.getFileName());
+                if (Files.isSymbolicLink(file) || !Files.isRegularFile(file))
+                    throw new PolicyViolationException("Report is not a regular file: " + file.getFileName());
                 if (Files.getLastModifiedTime(file).toInstant().isBefore(earliest)) {
                     throw new PolicyViolationException("Report predates this validation run: " + file.getFileName());
                 }
                 Element element = parseSuite(file);
                 String name = element.getAttribute("name");
-                suites.put(name, new Suite(name, count(element, "tests"), count(element, "failures"),
-                    count(element, "errors"), count(element, "skipped"), element));
+                suites.put(
+                        name,
+                        new Suite(
+                                name,
+                                count(element, "tests"),
+                                count(element, "failures"),
+                                count(element, "errors"),
+                                count(element, "skipped"),
+                                element));
             }
         }
         return suites;
@@ -261,10 +285,12 @@ public final class SandboxValidator {
         validateMount(reports);
         Path build = candidate.resolve(GitWorkspace.BUILD_OUTPUT);
         for (Path part = build; !part.equals(candidate); part = part.getParent()) {
-            if (Files.isSymbolicLink(part)) throw new PolicyViolationException("Build directory cannot traverse symlinks");
+            if (Files.isSymbolicLink(part))
+                throw new PolicyViolationException("Build directory cannot traverse symlinks");
         }
         Files.createDirectories(build);
-        Path trustedPom = Files.createTempFile(candidate.toAbsolutePath().getParent(), "factory-validator-pom-", ".xml");
+        Path trustedPom =
+                Files.createTempFile(candidate.toAbsolutePath().getParent(), "factory-validator-pom-", ".xml");
         try (var input = SandboxValidator.class.getResourceAsStream("/validation/shortener-pom.xml")) {
             if (input == null) throw new IllegalStateException("Trusted validator definition missing");
             Files.copy(input, trustedPom, StandardCopyOption.REPLACE_EXISTING);
@@ -272,18 +298,53 @@ public final class SandboxValidator {
         validateMount(trustedPom);
         String container = CONTAINER_PREFIX + UUID.randomUUID();
         List<String> args = new ArrayList<>(List.of(
-            "docker", "run", "--rm", "--name", container, "--label", OWNER_LABEL + "=" + ProcessHandle.current().pid(),
-            "--network", "none", "--cpus", "2", "--memory", "1g",
-            "--pids-limit", "128", "--cap-drop", "ALL", "--security-opt", "no-new-privileges",
-            "--read-only", "--user", currentUser(), "--tmpfs", "/tmp:rw,nosuid,size=128m",
-            "--env", "HOME=/tmp", "--env", "MAVEN_CONFIG=/tmp/.m2",
-            "--mount", "type=bind,source=" + candidate.toAbsolutePath() + ",target=/workspace,readonly",
-            "--mount", "type=bind,source=" + build.toAbsolutePath() + ",target=/workspace/" + GitWorkspace.BUILD_OUTPUT,
-            "--mount", "type=bind,source=" + reports.toAbsolutePath() + ",target=" + REPORTS_MOUNT,
-            "--mount", "type=bind,source=" + trustedPom + ",target=/trusted/pom.xml,readonly",
-            "--mount", "type=bind,source=" + mavenCache + ",target=/m2,readonly",
-            "--workdir", "/trusted", IMAGE,
-            "mvn", "-o", "-q", "-Dmaven.repo.local=/m2", "-f", "/trusted/pom.xml"));
+                "docker",
+                "run",
+                "--rm",
+                "--name",
+                container,
+                "--label",
+                OWNER_LABEL + "=" + ProcessHandle.current().pid(),
+                "--network",
+                "none",
+                "--cpus",
+                "2",
+                "--memory",
+                "1g",
+                "--pids-limit",
+                "128",
+                "--cap-drop",
+                "ALL",
+                "--security-opt",
+                "no-new-privileges",
+                "--read-only",
+                "--user",
+                currentUser(),
+                "--tmpfs",
+                "/tmp:rw,nosuid,size=128m",
+                "--env",
+                "HOME=/tmp",
+                "--env",
+                "MAVEN_CONFIG=/tmp/.m2",
+                "--mount",
+                "type=bind,source=" + candidate.toAbsolutePath() + ",target=/workspace,readonly",
+                "--mount",
+                "type=bind,source=" + build.toAbsolutePath() + ",target=/workspace/" + GitWorkspace.BUILD_OUTPUT,
+                "--mount",
+                "type=bind,source=" + reports.toAbsolutePath() + ",target=" + REPORTS_MOUNT,
+                "--mount",
+                "type=bind,source=" + trustedPom + ",target=/trusted/pom.xml,readonly",
+                "--mount",
+                "type=bind,source=" + mavenCache + ",target=/m2,readonly",
+                "--workdir",
+                "/trusted",
+                IMAGE,
+                "mvn",
+                "-o",
+                "-q",
+                "-Dmaven.repo.local=/m2",
+                "-f",
+                "/trusted/pom.xml"));
         args.addAll(goals);
         try {
             executor.run(candidate, args, RUN_TIMEOUT);
@@ -320,8 +381,17 @@ public final class SandboxValidator {
         long self = ProcessHandle.current().pid();
         int removed = 0;
         try {
-            String listing = executor.run(here, List.of("docker", "ps", "--all", "--filter", "name=" + CONTAINER_PREFIX,
-                "--format", "{{.ID}}\t{{.Names}}\t{{.Label \"" + OWNER_LABEL + "\"}}"), DOCKER_TIMEOUT);
+            String listing = executor.run(
+                    here,
+                    List.of(
+                            "docker",
+                            "ps",
+                            "--all",
+                            "--filter",
+                            "name=" + CONTAINER_PREFIX,
+                            "--format",
+                            "{{.ID}}\t{{.Names}}\t{{.Label \"" + OWNER_LABEL + "\"}}"),
+                    DOCKER_TIMEOUT);
             for (String line : listing.lines().filter(value -> !value.isBlank()).toList()) {
                 String[] fields = TAB.split(line, -1);
                 if (fields.length != 3 || !fields[1].startsWith(CONTAINER_PREFIX)) continue;

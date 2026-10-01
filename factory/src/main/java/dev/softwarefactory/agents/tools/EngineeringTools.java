@@ -7,7 +7,11 @@ import java.util.List;
 
 /** Explicit capability catalog shared by conversational and task agents. No mutation or shell tools. */
 public final class EngineeringTools {
-    @FunctionalInterface public interface WebSearch { String search(String query) throws Exception; }
+    @FunctionalInterface
+    public interface WebSearch {
+        String search(String query) throws Exception;
+    }
+
     private final RepositoryReader repository;
     private final PublicWebReader web;
     private final WebSearch search;
@@ -18,7 +22,12 @@ public final class EngineeringTools {
         this(repository, web, search, session, new WebAccessPolicy());
     }
 
-    public EngineeringTools(RepositoryReader repository, PublicWebReader web, WebSearch search, ToolSession session, WebAccessPolicy access) {
+    public EngineeringTools(
+            RepositoryReader repository,
+            PublicWebReader web,
+            WebSearch search,
+            ToolSession session,
+            WebAccessPolicy access) {
         this.access = access;
         this.repository = repository;
         this.web = web;
@@ -27,37 +36,66 @@ public final class EngineeringTools {
     }
 
     public List<FunctionTool> declarations() {
-        return List.of("list_files", "read_file", "search_repository", "inspect_git", "fetch_page", "search_web", "current_time")
-            .stream().map(name -> FunctionTool.create(this, name)).toList();
+        return List.of(
+                        "list_files",
+                        "read_file",
+                        "search_repository",
+                        "inspect_git",
+                        "fetch_page",
+                        "search_web",
+                        "current_time")
+                .stream()
+                .map(name -> FunctionTool.create(this, name))
+                .toList();
     }
 
-    @Schema(description = "List allowlisted source/documentation paths in this checkout. Empty prefix lists all. Bounded output.")
-    public String list_files(@Schema(name = "prefix", description = "Relative path prefix, e.g. factory/src or empty string") String prefix) {
+    @Schema(
+            description =
+                    "List allowlisted source/documentation paths in this checkout. Empty prefix lists all. Bounded output.")
+    public String list_files(
+            @Schema(name = "prefix", description = "Relative path prefix, e.g. factory/src or empty string")
+                    String prefix) {
         return session.invoke("list_files", prefix, () -> repository.list(prefix));
     }
 
-    @Schema(description = "Read source/documentation with line numbers. Environment files, credentials and symlinks are denied.")
-    public String read_file(@Schema(name = "path") String path, @Schema(name = "start_line") int startLine,
-                            @Schema(name = "line_count", description = "1..200 lines") int lineCount) {
-        return session.invoke("read_file", path + ":" + startLine + ":" + lineCount, () -> repository.read(path, startLine, lineCount));
+    @Schema(
+            description =
+                    "Read source/documentation with line numbers. Environment files, credentials and symlinks are denied.")
+    public String read_file(
+            @Schema(name = "path") String path,
+            @Schema(name = "start_line") int startLine,
+            @Schema(name = "line_count", description = "1..200 lines") int lineCount) {
+        return session.invoke(
+                "read_file",
+                path + ":" + startLine + ":" + lineCount,
+                () -> repository.read(path, startLine, lineCount));
     }
 
-    @Schema(description = "Find literal text in allowlisted source/documentation. Returns paths, line numbers and excerpts.")
+    @Schema(
+            description =
+                    "Find literal text in allowlisted source/documentation. Returns paths, line numbers and excerpts.")
     public String search_repository(@Schema(name = "text") String text) {
         return session.invoke("search_repository", text, () -> repository.search(text));
     }
 
-    @Schema(description = "Inspect Git status, working diff against HEAD, or last five commits for allowlisted source paths. Read-only.")
-    public String inspect_git(@Schema(name = "operation", description = "Exactly status, diff or log") String operation) {
+    @Schema(
+            description =
+                    "Inspect Git status, working diff against HEAD, or last five commits for allowlisted source paths. Read-only.")
+    public String inspect_git(
+            @Schema(name = "operation", description = "Exactly status, diff or log") String operation) {
         return session.invoke("inspect_git", operation, () -> repository.git(operation));
     }
 
-    @Schema(description = "Read an exact HTTPS source URL returned by search; query strings are stripped and redirects stay on the same site. No JavaScript, login, cookies or local/private addresses. Cite its source URL.")
+    @Schema(
+            description =
+                    "Read an exact HTTPS source URL returned by search; query strings are stripped and redirects stay on the same site. No JavaScript, login, cookies or local/private addresses. Cite its source URL.")
     public String fetch_page(@Schema(name = "url") String url) {
         return session.invoke("fetch_page", url, () -> web.fetch(access.approved(url)));
     }
 
-    @Schema(description = "Search the public web for current documentation/information, returning a summary and source URLs. Do not send secrets or repository contents in a query. Costs a provider request and up to two searches.")
+    @Schema(
+            description =
+                    "Search the public web for current documentation/information, returning a summary and source URLs. Do not send secrets or repository contents in a query. Costs a provider request and up to two searches.")
     public String search_web(@Schema(name = "query") String query) {
         return session.invoke("search_web", query, () -> search.search(query));
     }
@@ -69,11 +107,11 @@ public final class EngineeringTools {
 
     public static String help() {
         return "Available automatically in plain-language chat and live task agents:\n\n"
-            + "- `search_web` — public web search with sources\n- `fetch_page` — read public HTTPS pages\n"
-            + "- `list_files`, `read_file`, `search_repository` — inspect source and documentation\n"
-            + "- `inspect_git` — status, diff and recent history\n- `current_time` — UTC time\n\n"
-            + "Example: ‘Search official Spring documentation for rate limiting and find the relevant code in this project.’\n\n"
-            + "Each answer/task allows up to 8 provider requests and 12 tool calls. Search adds provider charges. "
-            + "Code changes, sandbox tests and approvals continue through `/feature`, `/advance` and `/review`.";
+                + "- `search_web` — public web search with sources\n- `fetch_page` — read public HTTPS pages\n"
+                + "- `list_files`, `read_file`, `search_repository` — inspect source and documentation\n"
+                + "- `inspect_git` — status, diff and recent history\n- `current_time` — UTC time\n\n"
+                + "Example: ‘Search official Spring documentation for rate limiting and find the relevant code in this project.’\n\n"
+                + "Each answer/task allows up to 8 provider requests and 12 tool calls. Search adds provider charges. "
+                + "Code changes, sandbox tests and approvals continue through `/feature`, `/advance` and `/review`.";
     }
 }

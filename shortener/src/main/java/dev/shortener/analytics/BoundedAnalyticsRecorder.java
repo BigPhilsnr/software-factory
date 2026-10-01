@@ -29,6 +29,7 @@ import org.springframework.context.SmartLifecycle;
 public final class BoundedAnalyticsRecorder implements AnalyticsRecorder, SmartLifecycle {
     /** Stops after the web server has drained, so the final flush sees every served redirect. */
     private static final int LIFECYCLE_PHASE = SmartLifecycle.DEFAULT_PHASE - 4096;
+
     private static final Logger LOG = LoggerFactory.getLogger(BoundedAnalyticsRecorder.class);
     private static final String DROPPED = "shortener.analytics.dropped";
     private static final String REASON = "reason";
@@ -49,27 +50,36 @@ public final class BoundedAnalyticsRecorder implements AnalyticsRecorder, SmartL
     private final AtomicLong suppressedFailureLogs = new AtomicLong();
     /** Serializes scheduled and shutdown flushes; never taken by {@link #record}. */
     private final Object flushLock = new Object();
+
     private ScheduledExecutorService scheduler;
 
-    public BoundedAnalyticsRecorder(RedirectStatsWriter writer, Clock clock, ShortenerProperties.Analytics settings,
-                                    MeterRegistry meters) {
+    public BoundedAnalyticsRecorder(
+            RedirectStatsWriter writer, Clock clock, ShortenerProperties.Analytics settings, MeterRegistry meters) {
         this.writer = writer;
         this.clock = clock;
         this.maxPendingLinks = settings.maxPendingLinks();
         this.flushInterval = settings.flushInterval();
         this.failureLogInterval = settings.failureLogInterval();
-        this.recorded = Counter.builder("shortener.analytics.recorded").description("Redirects accepted for recording").register(meters);
-        this.flushed = Counter.builder("shortener.analytics.flushed").description("Redirects durably written").register(meters);
+        this.recorded = Counter.builder("shortener.analytics.recorded")
+                .description("Redirects accepted for recording")
+                .register(meters);
+        this.flushed = Counter.builder("shortener.analytics.flushed")
+                .description("Redirects durably written")
+                .register(meters);
         this.droppedOverflow = Counter.builder(DROPPED).tag(REASON, "overflow").register(meters);
-        this.droppedAfterFailure = Counter.builder(DROPPED).tag(REASON, "flush_failed").register(meters);
-        this.flushFailures = Counter.builder("shortener.analytics.flush.failures").register(meters);
+        this.droppedAfterFailure =
+                Counter.builder(DROPPED).tag(REASON, "flush_failed").register(meters);
+        this.flushFailures =
+                Counter.builder("shortener.analytics.flush.failures").register(meters);
         Gauge.builder("shortener.analytics.pending", pending, ConcurrentHashMap::size)
-            .description("Links with redirects awaiting flush").register(meters);
+                .description("Links with redirects awaiting flush")
+                .register(meters);
     }
 
     @Override
     public void record(long linkId) {
-        if (merge(linkId, 1, clock.instant())) recorded.increment(); else droppedOverflow.increment();
+        if (merge(linkId, 1, clock.instant())) recorded.increment();
+        else droppedOverflow.increment();
     }
 
     /** Writes everything pending; safe to call concurrently with {@link #record}. */
@@ -84,7 +94,8 @@ public final class BoundedAnalyticsRecorder implements AnalyticsRecorder, SmartL
                 flushFailures.increment();
                 logFailure(batch.size(), failure);
                 for (RedirectDelta delta : batch) {
-                    if (!merge(delta.linkId(), delta.count(), delta.lastRedirectAt())) droppedAfterFailure.increment(delta.count());
+                    if (!merge(delta.linkId(), delta.count(), delta.lastRedirectAt()))
+                        droppedAfterFailure.increment(delta.count());
                 }
             }
         }
@@ -119,8 +130,11 @@ public final class BoundedAnalyticsRecorder implements AnalyticsRecorder, SmartL
         long now = clock.millis();
         long previous = lastFailureLog.get();
         if (now - previous >= failureLogInterval.toMillis() && lastFailureLog.compareAndSet(previous, now)) {
-            LOG.warn("Analytics flush of {} links failed; counts retained for retry ({} similar warnings suppressed)",
-                links, suppressedFailureLogs.getAndSet(0), failure);
+            LOG.warn(
+                    "Analytics flush of {} links failed; counts retained for retry ({} similar warnings suppressed)",
+                    links,
+                    suppressedFailureLogs.getAndSet(0),
+                    failure);
         } else {
             suppressedFailureLogs.incrementAndGet();
         }
@@ -157,10 +171,14 @@ public final class BoundedAnalyticsRecorder implements AnalyticsRecorder, SmartL
     }
 
     @Override
-    public synchronized boolean isRunning() { return scheduler != null; }
+    public synchronized boolean isRunning() {
+        return scheduler != null;
+    }
 
     @Override
-    public int getPhase() { return LIFECYCLE_PHASE; }
+    public int getPhase() {
+        return LIFECYCLE_PHASE;
+    }
 
     /** Per-link accumulator; once retired by a flush it rejects further additions. */
     private static final class Pending {
@@ -168,7 +186,9 @@ public final class BoundedAnalyticsRecorder implements AnalyticsRecorder, SmartL
         private final AtomicLong count = new AtomicLong();
         private final AtomicReference<Instant> latest;
 
-        Pending(Instant at) { this.latest = new AtomicReference<>(at); }
+        Pending(Instant at) {
+            this.latest = new AtomicReference<>(at);
+        }
 
         boolean add(long redirects, Instant at) {
             // Timestamp first: a flush that observes the count therefore also observes its timestamp.
@@ -181,8 +201,12 @@ public final class BoundedAnalyticsRecorder implements AnalyticsRecorder, SmartL
             return true;
         }
 
-        long retire() { return count.getAndSet(RETIRED); }
+        long retire() {
+            return count.getAndSet(RETIRED);
+        }
 
-        Instant latest() { return latest.get(); }
+        Instant latest() {
+            return latest.get();
+        }
     }
 }

@@ -24,14 +24,18 @@ final class LocalOperatorFilter extends OncePerRequestFilter {
     private static final Set<String> SAFE_METHODS = Set.of("GET", "HEAD", "OPTIONS");
     /** ADK endpoints whose request body carries a chat message routed to {@link OperatorCommands}. */
     private static final Set<String> CHAT_RUN_PATHS = Set.of("/run", "/run_sse");
+
     private static final String LIVE_PATH = "/run_live";
     private static final int HTTP_PORT = 80;
     private static final int HTTPS_PORT = 443;
     private final OperatorToken token;
 
-    LocalOperatorFilter(OperatorToken token) { this.token = token; }
+    LocalOperatorFilter(OperatorToken token) {
+        this.token = token;
+    }
 
-    @Override protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain)
+    @Override
+    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain)
             throws ServletException, IOException {
         if (!LOCAL_HOSTS.contains(request.getServerName()) || !sameOrigin(request.getHeader("Origin"), request)) {
             JsonErrors.write(response, HttpServletResponse.SC_FORBIDDEN, "Local same-origin requests only");
@@ -42,22 +46,28 @@ final class LocalOperatorFilter extends OncePerRequestFilter {
         String path = request.getRequestURI();
         if (path.startsWith(API_PREFIX)) {
             if (mutation && !authorized) {
-                JsonErrors.write(response, HttpServletResponse.SC_FORBIDDEN, "Reload the operator page before taking an action");
+                JsonErrors.write(
+                        response, HttpServletResponse.SC_FORBIDDEN, "Reload the operator page before taking an action");
                 return;
             }
         } else {
             if (path.equals(LIVE_PATH) && !authorized) {
                 // Live socket messages cannot be inspected here, so the whole session needs the token.
-                JsonErrors.write(response, HttpServletResponse.SC_FORBIDDEN, "Live chat sessions require the operator token");
+                JsonErrors.write(
+                        response, HttpServletResponse.SC_FORBIDDEN, "Live chat sessions require the operator token");
                 return;
             }
-            if (mutation && (request.getContentType() == null || !request.getContentType().startsWith("application/json"))) {
+            if (mutation
+                    && (request.getContentType() == null
+                            || !request.getContentType().startsWith("application/json"))) {
                 JsonErrors.write(response, HttpServletResponse.SC_UNSUPPORTED_MEDIA_TYPE, "JSON required");
                 return;
             }
             if (mutation && !authorized && CHAT_RUN_PATHS.contains(path) && changesWorkflowState(request)) {
-                JsonErrors.write(response, HttpServletResponse.SC_FORBIDDEN,
-                    "Workflow commands require the operator token; use the operator page at /factory/");
+                JsonErrors.write(
+                        response,
+                        HttpServletResponse.SC_FORBIDDEN,
+                        "Workflow commands require the operator token; use the operator page at /factory/");
                 return;
             }
         }
@@ -82,7 +92,9 @@ final class LocalOperatorFilter extends OncePerRequestFilter {
         try {
             URI uri = URI.create(origin);
             int port = uri.getPort() < 0 ? ("https".equals(uri.getScheme()) ? HTTPS_PORT : HTTP_PORT) : uri.getPort();
-            return request.getScheme().equals(uri.getScheme()) && request.getServerName().equals(uri.getHost()) && request.getServerPort() == port;
+            return request.getScheme().equals(uri.getScheme())
+                    && request.getServerName().equals(uri.getHost())
+                    && request.getServerPort() == port;
         } catch (IllegalArgumentException malformed) {
             return false;
         }

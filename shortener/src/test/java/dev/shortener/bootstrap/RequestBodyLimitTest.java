@@ -13,7 +13,8 @@ class RequestBodyLimitTest {
     private static final int LIMIT = 64 * 1024;
     private final RequestBodyLimit filter = new RequestBodyLimit(LIMIT);
 
-    @Test void blocksOversizedBodiesBeforeJsonParsingWithAProblemDocument() throws Exception {
+    @Test
+    void blocksOversizedBodiesBeforeJsonParsingWithAProblemDocument() throws Exception {
         var request = new MockHttpServletRequest("POST", "/api/shorten");
         request.setContent(new byte[LIMIT + 1]);
         var response = new MockHttpServletResponse();
@@ -23,9 +24,13 @@ class RequestBodyLimitTest {
         assertTrue(response.getContentAsString().contains("\"error\":\"request_too_large\""));
     }
 
-    @Test void blocksChunkedBodiesWithoutDeclaredLength() throws Exception {
+    @Test
+    void blocksChunkedBodiesWithoutDeclaredLength() throws Exception {
         var request = new MockHttpServletRequest("POST", "/api/shorten") {
-            @Override public long getContentLengthLong() { return -1; }
+            @Override
+            public long getContentLengthLong() {
+                return -1;
+            }
         };
         request.setContent(new byte[LIMIT + 1]);
         var response = new MockHttpServletResponse();
@@ -33,14 +38,19 @@ class RequestBodyLimitTest {
         assertEquals(413, response.getStatus());
     }
 
-    @Test void preservesSmallBodyForTheController() throws Exception {
+    @Test
+    void preservesSmallBodyForTheController() throws Exception {
         var request = new MockHttpServletRequest("POST", "/api/shorten");
         request.setContent("{}".getBytes(StandardCharsets.UTF_8));
-        filter.doFilter(request, new MockHttpServletResponse(),
-            (req, res) -> assertEquals("{}", new String(req.getInputStream().readAllBytes(), StandardCharsets.UTF_8)));
+        filter.doFilter(
+                request,
+                new MockHttpServletResponse(),
+                (req, res) ->
+                        assertEquals("{}", new String(req.getInputStream().readAllBytes(), StandardCharsets.UTF_8)));
     }
 
-    @Test void ignoresBodylessMethods() throws Exception {
+    @Test
+    void ignoresBodylessMethods() throws Exception {
         var request = new MockHttpServletRequest("GET", "/api/urls/abcd/analytics");
         request.setContent(new byte[LIMIT + 1]);
         var response = new MockHttpServletResponse();

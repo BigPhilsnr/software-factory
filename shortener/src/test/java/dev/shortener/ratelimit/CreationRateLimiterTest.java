@@ -23,7 +23,8 @@ class CreationRateLimiterTest {
     private final SimpleMeterRegistry meters = new SimpleMeterRegistry();
 
     private CreationRateLimiter limiter(Clock clock, int limit, int maxClients) {
-        return new CreationRateLimiter(clock, new ShortenerProperties.RateLimit(limit, Duration.ofSeconds(60), maxClients), meters);
+        return new CreationRateLimiter(
+                clock, new ShortenerProperties.RateLimit(limit, Duration.ofSeconds(60), maxClients), meters);
     }
 
     @Test
@@ -82,7 +83,8 @@ class CreationRateLimiterTest {
                 results.add(pool.submit(() -> {
                     start.await();
                     int allowed = 0;
-                    for (int i = 0; i < attemptsPerThread; i++) if (limiter.admit("192.0.2.10").allowed()) allowed++;
+                    for (int i = 0; i < attemptsPerThread; i++)
+                        if (limiter.admit("192.0.2.10").allowed()) allowed++;
                     return allowed;
                 }));
             }
@@ -95,9 +97,24 @@ class CreationRateLimiterTest {
 
     private static final class MutableClock extends Clock {
         private Instant value;
-        MutableClock(Instant value) { this.value = value; }
-        @Override public ZoneId getZone() { return ZoneOffset.UTC; }
-        @Override public Clock withZone(ZoneId zone) { return this; }
-        @Override public Instant instant() { return value; }
+
+        MutableClock(Instant value) {
+            this.value = value;
+        }
+
+        @Override
+        public ZoneId getZone() {
+            return ZoneOffset.UTC;
+        }
+
+        @Override
+        public Clock withZone(ZoneId zone) {
+            return this;
+        }
+
+        @Override
+        public Instant instant() {
+            return value;
+        }
     }
 }

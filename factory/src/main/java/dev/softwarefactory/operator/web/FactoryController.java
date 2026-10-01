@@ -41,7 +41,8 @@ public final class FactoryController {
         this.token = token;
     }
 
-    @GetMapping("/config") public ResponseEntity<JsonNode> config() {
+    @GetMapping("/config")
+    public ResponseEntity<JsonNode> config() {
         var settings = factory.settings();
         var validator = factory.validatorStatus();
         Map<String, Object> body = new LinkedHashMap<>();
@@ -49,31 +50,50 @@ public final class FactoryController {
         body.put("liveReady", settings.liveReady());
         body.put("liveBlocker", settings.liveBlocker());
         body.put("model", settings.model());
-        body.put("validator", Map.of("ready", validator.ready(), "detail", validator.detail(), "checkedAt", validator.checkedAt().toString()));
+        body.put(
+                "validator",
+                Map.of(
+                        "ready",
+                        validator.ready(),
+                        "detail",
+                        validator.detail(),
+                        "checkedAt",
+                        validator.checkedAt().toString()));
         return json(body);
     }
 
-    @GetMapping("/metrics") public ResponseEntity<JsonNode> metrics() throws Exception { return json(factory.metrics()); }
+    @GetMapping("/metrics")
+    public ResponseEntity<JsonNode> metrics() throws Exception {
+        return json(factory.metrics());
+    }
 
-    @GetMapping("/runs") public ResponseEntity<JsonNode> runs() throws Exception { return json(factory.runs()); }
+    @GetMapping("/runs")
+    public ResponseEntity<JsonNode> runs() throws Exception {
+        return json(factory.runs());
+    }
 
-    @GetMapping("/runs/{id}") public ResponseEntity<JsonNode> run(@PathVariable("id") String id) throws Exception {
+    @GetMapping("/runs/{id}")
+    public ResponseEntity<JsonNode> run(@PathVariable("id") String id) throws Exception {
         return json(factory.detail(id));
     }
 
     @GetMapping("/runs/{id}/artifacts/{name}")
-    public ResponseEntity<JsonNode> artifact(@PathVariable("id") String id, @PathVariable("name") String name) throws Exception {
+    public ResponseEntity<JsonNode> artifact(@PathVariable("id") String id, @PathVariable("name") String name)
+            throws Exception {
         return json(Map.of("name", name, "text", factory.artifact(id, name)));
     }
 
-    @PostMapping("/runs") public ResponseEntity<JsonNode> create(@Valid @RequestBody CreateRunRequest body) throws Exception {
-        RunState state = "feature".equals(body.kind()) ? factory.feature(body.requirement())
-            : factory.scenario(body.scenario(), body.mode() == null ? "fixture" : body.mode());
+    @PostMapping("/runs")
+    public ResponseEntity<JsonNode> create(@Valid @RequestBody CreateRunRequest body) throws Exception {
+        RunState state = "feature".equals(body.kind())
+                ? factory.feature(body.requirement())
+                : factory.scenario(body.scenario(), body.mode() == null ? "fixture" : body.mode());
         return json(state);
     }
 
     @PostMapping("/runs/{id}/actions")
-    public ResponseEntity<JsonNode> action(@PathVariable("id") String id, @Valid @RequestBody ActionRequest body) throws Exception {
+    public ResponseEntity<JsonNode> action(@PathVariable("id") String id, @Valid @RequestBody ActionRequest body)
+            throws Exception {
         switch (body.action()) {
             case "advance" -> factory.advance(id);
             case "approve" -> factory.approve(id, body.hash());
@@ -86,13 +106,19 @@ public final class FactoryController {
     }
 
     public record CreateRunRequest(
-        @NotBlank @Pattern(regexp = "feature|scenario") String kind,
-        String requirement, String scenario,
-        @Pattern(regexp = "fixture|live") String mode) {}
+            @NotBlank @Pattern(regexp = "feature|scenario") String kind,
+            String requirement,
+            String scenario,
+            @Pattern(regexp = "fixture|live") String mode) {}
 
     public record ActionRequest(
-        @NotBlank @Pattern(regexp = "advance|approve|reject|clarify|revise") String action,
-        String hash, String answer, String task, String feedback) {}
+            @NotBlank @Pattern(regexp = "advance|approve|reject|clarify|revise")
+            String action,
+
+            String hash,
+            String answer,
+            String task,
+            String feedback) {}
 
     @ExceptionHandler({MethodArgumentNotValidException.class, HttpMessageNotReadableException.class})
     public ResponseEntity<JsonNode> invalidRequest() {
@@ -123,18 +149,24 @@ public final class FactoryController {
     /** Spring MVC protocol errors (unsupported media type, method, ...) keep their own status. */
     @ExceptionHandler(ServletException.class)
     public ResponseEntity<JsonNode> protocol(ServletException failure) {
-        HttpStatusCode status = failure instanceof ErrorResponse response ? response.getStatusCode() : HttpStatus.BAD_REQUEST;
+        HttpStatusCode status =
+                failure instanceof ErrorResponse response ? response.getStatusCode() : HttpStatus.BAD_REQUEST;
         return error(status, failure.getMessage());
     }
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<JsonNode> failure(Exception failure) {
         LOG.error("Factory request failed", failure);
-        return error(HttpStatus.INTERNAL_SERVER_ERROR, "Factory operation failed. Check the database and server logs; " + failure.getClass().getSimpleName());
+        return error(
+                HttpStatus.INTERNAL_SERVER_ERROR,
+                "Factory operation failed. Check the database and server logs; "
+                        + failure.getClass().getSimpleName());
     }
 
     private static ResponseEntity<JsonNode> error(HttpStatusCode status, String message) {
-        return ResponseEntity.status(status).contentType(MediaType.APPLICATION_JSON).body(Json.MAPPER.valueToTree(Map.of("error", String.valueOf(message))));
+        return ResponseEntity.status(status)
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(Json.MAPPER.valueToTree(Map.of("error", String.valueOf(message))));
     }
 
     private static ResponseEntity<JsonNode> json(Object value) {

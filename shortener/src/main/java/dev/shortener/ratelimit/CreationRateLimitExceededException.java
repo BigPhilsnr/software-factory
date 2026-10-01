@@ -9,5 +9,7 @@ public final class CreationRateLimitExceededException extends RuntimeException {
         this.retryAfterSeconds = retryAfterSeconds;
     }
 
-    public long retryAfterSeconds() { return retryAfterSeconds; }
+    public long retryAfterSeconds() {
+        return retryAfterSeconds;
+    }
 }

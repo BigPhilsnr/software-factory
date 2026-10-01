@@ -34,9 +34,13 @@ public record ShortenerProperties(
     /** Fails fast on a base URL that cannot prefix short links; strips trailing slashes once. */
     private static URI normalize(URI baseUrl) {
         String scheme = baseUrl.getScheme() == null ? "" : baseUrl.getScheme().toLowerCase(Locale.ROOT);
-        if (!WEB_SCHEMES.contains(scheme) || baseUrl.getHost() == null || baseUrl.getRawQuery() != null
-                || baseUrl.getRawFragment() != null || baseUrl.getRawUserInfo() != null) {
-            throw new IllegalArgumentException("shortener.base-url must be an absolute http(s) URL with a host, got " + baseUrl);
+        if (!WEB_SCHEMES.contains(scheme)
+                || baseUrl.getHost() == null
+                || baseUrl.getRawQuery() != null
+                || baseUrl.getRawFragment() != null
+                || baseUrl.getRawUserInfo() != null) {
+            throw new IllegalArgumentException(
+                    "shortener.base-url must be an absolute http(s) URL with a host, got " + baseUrl);
         }
         return URI.create(TRAILING_SLASHES.matcher(baseUrl.toString()).replaceAll(""));
     }

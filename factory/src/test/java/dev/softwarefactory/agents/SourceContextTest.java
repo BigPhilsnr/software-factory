@@ -1,14 +1,18 @@
 package dev.softwarefactory.agents;
 
+import static org.junit.jupiter.api.Assertions.*;
+
 import java.nio.file.Files;
 import java.nio.file.Path;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
-import static org.junit.jupiter.api.Assertions.*;
 
 class SourceContextTest {
-    @TempDir Path root;
-    @Test void includesProductButExcludesFactorySecretsBuildOutputAndSymlinks() throws Exception {
+    @TempDir
+    Path root;
+
+    @Test
+    void includesProductButExcludesFactorySecretsBuildOutputAndSymlinks() throws Exception {
         Files.createDirectories(root.resolve("factory/src"));
         Files.writeString(root.resolve("factory/src/Engine.java"), "CONTROL_PLANE_SENTINEL".repeat(5000));
         Files.createDirectories(root.resolve("shortener/src"));
@@ -25,7 +29,8 @@ class SourceContextTest {
         assertFalse(context.contains("OMITTED"));
     }
 
-    @Test void namesFilesDroppedForSizeOrBudget() throws Exception {
+    @Test
+    void namesFilesDroppedForSizeOrBudget() throws Exception {
         Files.createDirectories(root.resolve("shortener/src"));
         Files.writeString(root.resolve("shortener/src/Huge.java"), "x".repeat(SourceContext.MAX_FILE_BYTES + 1));
         Files.writeString(root.resolve("shortener/src/Small.java"), "class Small {}");

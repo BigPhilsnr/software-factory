@@ -1,15 +1,18 @@
 package dev.softwarefactory.agents.tools;
 
+import static org.junit.jupiter.api.Assertions.*;
+
 import java.nio.file.Files;
 import java.nio.file.Path;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
-import static org.junit.jupiter.api.Assertions.*;
 
 class RepositoryReaderTest {
-    @TempDir Path root;
+    @TempDir
+    Path root;
 
-    @Test void readsAndSearchesSourcesButRejectsSecretsTraversalAndSymlinks() throws Exception {
+    @Test
+    void readsAndSearchesSourcesButRejectsSecretsTraversalAndSymlinks() throws Exception {
         Path source = root.resolve("shortener/src/main/java/Example.java");
         Files.createDirectories(source.getParent());
         Files.writeString(source, "class Example {\n // marker\n}\n");
@@ -25,14 +28,20 @@ class RepositoryReaderTest {
         assertTrue(reader.read("shortener/src/main/java/Example.java", 2, 1).contains("2:  // marker"));
         assertTrue(reader.search("marker").contains("Example.java:2:"));
         assertFalse(reader.search("SECRET_SENTINEL").contains("SECRET_SENTINEL"));
-        for (String path : java.util.List.of(".env", "../README.md", "docs/credentials.json", "docs/linked.md", "docs/nested/main/java/Example.java")) {
+        for (String path : java.util.List.of(
+                ".env",
+                "../README.md",
+                "docs/credentials.json",
+                "docs/linked.md",
+                "docs/nested/main/java/Example.java")) {
             assertThrows(SecurityException.class, () -> reader.read(path, 1, 10), path);
         }
         assertThrows(IllegalArgumentException.class, () -> reader.read("README.md", 0, 10));
         assertThrows(IllegalArgumentException.class, () -> reader.git("diff; cat .env"));
     }
 
-    @Test void gitInspectionExcludesTrackedSecretsAndDoesNotExecuteCommands() throws Exception {
+    @Test
+    void gitInspectionExcludesTrackedSecretsAndDoesNotExecuteCommands() throws Exception {
         Files.writeString(root.resolve("README.md"), "original\n");
         Files.writeString(root.resolve("pom.xml"), "<project/>\n");
         Files.writeString(root.resolve(".env"), "old secret\n");
@@ -54,7 +63,10 @@ class RepositoryReaderTest {
     private void git(String... args) throws Exception {
         var command = new java.util.ArrayList<>(java.util.List.of("git"));
         command.addAll(java.util.List.of(args));
-        Process process = new ProcessBuilder(command).directory(root.toFile()).redirectErrorStream(true).start();
+        Process process = new ProcessBuilder(command)
+                .directory(root.toFile())
+                .redirectErrorStream(true)
+                .start();
         process.getInputStream().readAllBytes();
         assertEquals(0, process.waitFor());
     }

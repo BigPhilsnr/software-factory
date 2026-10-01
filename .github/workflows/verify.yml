@@ -8,10 +8,22 @@ name: Verify committed prototype
 permissions:
   contents: read
 
+concurrency:
+  group: verify-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  MAVEN_ARGS: --batch-mode --no-transfer-progress
+  # SpotBugs and PMD findings are reported but do not fail the build until the existing backlog is
+  # cleared; formatting (Spotless), the coverage floor (JaCoCo) and the enforcer always gate.
+  # Flip to 'true' (the POM default) once `mvn verify` is clean locally.
+  QUALITY_FAIL_ON_VIOLATION: 'false'
+
 jobs:
-  default-tests:
+  # Quality gate: unit tests + Spotless check + PMD + SpotBugs/FindSecBugs + JaCoCo coverage floor.
+  verify:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
@@ -22,7 +34,74 @@ jobs:
           distribution: temurin
           java-version: '21'
           cache: maven
-      - name: Compile and test both applications from a clean checkout
-        run: mvn --batch-mode --no-transfer-progress clean test
+      - name: Shortener quality gate
+        run: mvn -f shortener/pom.xml clean verify -Dquality.failOnViolation="$QUALITY_FAIL_ON_VIOLATION"
+      - name: Factory quality gate
+        run: mvn -f factory/pom.xml clean verify -Dquality.failOnViolation="$QUALITY_FAIL_ON_VIOLATION"
+      - name: Aggregator POM formatting
+        run: mvn --non-recursive spotless:check
       - name: Verify committed evidence checksums
         run: python3 scripts/checks/verify_evidence.py
+
+  # Real PostgreSQL, HTTP, Git candidates and the Docker sandbox validator; no model calls
+  # (the factory test JVM blanks ANTHROPIC_API_KEY and FACTORY_AUDIT_KEY; tests use their own audit key).
+  integration:
+    needs: verify
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    services:
+      shortener-db:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: shortener
+          POSTGRES_USER: shortener
+          POSTGRES_PASSWORD: shortener
+        ports:
+          - 5433:5432
+        options: >-
+          --health-cmd "pg_isready -U shortener -d shortener"
+          --health-interval 2s
+          --health-timeout 2s
+          --health-retries 15
+      control-db:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: control
+          POSTGRES_USER: control
+          POSTGRES_PASSWORD: control
+        ports:
+          - 5434:5432
+        options: >-
+          --health-cmd "pg_isready -U control -d control"
+          --health-interval 2s
+          --health-timeout 2s
+          --health-retries 15
+    env:
+      SHORTENER_DB_URL: jdbc:postgresql://localhost:5433/shortener
+      SHORTENER_DB_USER: shortener
+      SHORTENER_DB_PASSWORD: shortener
+      CONTROL_DB_URL: jdbc:postgresql://localhost:5434/control
+      CONTROL_DB_USER: control
+      CONTROL_DB_PASSWORD: control
+      # Must match the IMAGE constant in the factory's SandboxValidator (checked below).
+      VALIDATOR_IMAGE: maven@sha256:99e61abcff91a9b1333463bd8451fb18495d6eba9250ac66a338b518f8278320
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+          # Factory integration tests clone this checkout and resolve scenario baseline tags.
+          fetch-depth: 0
+      - uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+      - name: Check the pinned validator image matches the source
+        run: grep -rqF "\"$VALIDATOR_IMAGE\"" factory/src/main/java
+      - name: Pull the pinned sandbox validator image
+        run: docker pull "$VALIDATOR_IMAGE"
+      # Runs first: it also fills ~/.m2 with the shortener build, which the offline sandbox validator mounts read-only.
+      - name: Shortener integration tests
+        run: mvn -f shortener/pom.xml -Pintegration clean verify -Dquality.failOnViolation="$QUALITY_FAIL_ON_VIOLATION"
+      - name: Factory integration tests
+        run: mvn -f factory/pom.xml -Pintegration clean verify -Dquality.failOnViolation="$QUALITY_FAIL_ON_VIOLATION"

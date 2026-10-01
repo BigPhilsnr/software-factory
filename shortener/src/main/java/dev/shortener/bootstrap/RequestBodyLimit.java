@@ -28,8 +28,7 @@ public final class RequestBodyLimit extends OncePerRequestFilter {
         this.maxBytes = maxBytes;
         // Mirrors the ProblemDetail shape produced by ApiErrors; no caller input is interpolated.
         this.problem = """
-            {"title":"Content Too Large","status":%d,"detail":"Request body exceeds %d bytes","error":"request_too_large"}"""
-            .formatted(HttpStatus.CONTENT_TOO_LARGE.value(), maxBytes);
+            {"title":"Content Too Large","status":%d,"detail":"Request body exceeds %d bytes","error":"request_too_large"}""".formatted(HttpStatus.CONTENT_TOO_LARGE.value(), maxBytes);
     }
 
     @Override
@@ -70,11 +69,28 @@ public final class RequestBodyLimit extends OncePerRequestFilter {
         public ServletInputStream getInputStream() {
             var input = new ByteArrayInputStream(body);
             return new ServletInputStream() {
-                @Override public int read() { return input.read(); }
-                @Override public int read(byte[] buffer, int offset, int length) { return input.read(buffer, offset, length); }
-                @Override public boolean isFinished() { return input.available() == 0; }
-                @Override public boolean isReady() { return true; }
-                @Override public void setReadListener(ReadListener listener) {
+                @Override
+                public int read() {
+                    return input.read();
+                }
+
+                @Override
+                public int read(byte[] buffer, int offset, int length) {
+                    return input.read(buffer, offset, length);
+                }
+
+                @Override
+                public boolean isFinished() {
+                    return input.available() == 0;
+                }
+
+                @Override
+                public boolean isReady() {
+                    return true;
+                }
+
+                @Override
+                public void setReadListener(ReadListener listener) {
                     throw new UnsupportedOperationException("Request bodies are consumed synchronously");
                 }
             };

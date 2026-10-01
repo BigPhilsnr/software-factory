@@ -17,7 +17,12 @@ final class FactoryHttpTestEnvironment implements AutoCloseable {
         properties.add("factory.workspace", () -> environment.workspace().toString());
     }
 
-    Path artifact(String run, String name) { return environment.workspace().resolve("evidence").resolve(run).resolve(name); }
+    Path artifact(String run, String name) {
+        return environment.workspace().resolve("evidence").resolve(run).resolve(name);
+    }
 
-    @Override public void close() throws Exception { environment.close(); }
+    @Override
+    public void close() throws Exception {
+        environment.close();
+    }
 }

@@ -25,11 +25,14 @@ import org.springframework.dao.DuplicateKeyException;
 
 class ShortenerServiceTest {
     private static final ShortenerProperties.Cache CACHE =
-        new ShortenerProperties.Cache(100, Duration.ofMinutes(1), 100, Duration.ofSeconds(2));
+            new ShortenerProperties.Cache(100, Duration.ofMinutes(1), 100, Duration.ofSeconds(2));
 
     private final LinkRepository repository = mock(LinkRepository.class);
-    private final ShortenerService service = new ShortenerService(repository, new CodeGenerator(),
-        new UrlPolicy(URI.create("http://short.example")), new LinkCache(CACHE, Ticker.systemTicker()));
+    private final ShortenerService service = new ShortenerService(
+            repository,
+            new CodeGenerator(),
+            new UrlPolicy(URI.create("http://short.example")),
+            new LinkCache(CACHE, Ticker.systemTicker()));
 
     @Test
     void stopsAfterBoundedCodeCollisions() {
@@ -41,9 +44,13 @@ class ShortenerServiceTest {
 
     @Test
     void canonicalizesAliasesAndRejectsReservedWords() {
-        assertEquals(new LinkDraft("https://example.com", "mixed-case"), service.prepare("https://example.com", "Mixed-Case"));
+        assertEquals(
+                new LinkDraft("https://example.com", "mixed-case"),
+                service.prepare("https://example.com", "Mixed-Case"));
         for (String reserved : LinkCodes.RESERVED) {
-            assertThrows(InvalidLinkException.class, () -> service.prepare("https://example.com", reserved.toUpperCase(Locale.ROOT)));
+            assertThrows(
+                    InvalidLinkException.class,
+                    () -> service.prepare("https://example.com", reserved.toUpperCase(Locale.ROOT)));
         }
         assertThrows(InvalidLinkException.class, () -> service.prepare("https://example.com", "x!"));
     }
@@ -66,8 +73,9 @@ class ShortenerServiceTest {
     @Test
     void servesPreviouslyResolvedImmutableLinkFromCacheDuringDatabaseFailure() {
         Link link = new Link(1, "abc12345", "https://example.com", Instant.now());
-        when(repository.findByCode(link.code())).thenReturn(Optional.of(link))
-            .thenThrow(new DataAccessResourceFailureException("offline"));
+        when(repository.findByCode(link.code()))
+                .thenReturn(Optional.of(link))
+                .thenThrow(new DataAccessResourceFailureException("offline"));
         assertEquals(link, service.find(link.code().toUpperCase(Locale.ROOT)).orElseThrow());
         assertEquals(link, service.find(link.code()).orElseThrow());
         verify(repository, times(1)).findByCode(link.code());

@@ -34,7 +34,9 @@ public class FactoryWebServer {
 
     /** The repository checkout that owns scenarios, candidates ({@code .runs/}) and evidence. */
     static Path workspaceRoot(Environment environment) {
-        Path root = Path.of(environment.getProperty("factory.workspace", System.getProperty("user.dir"))).toAbsolutePath().normalize();
+        Path root = Path.of(environment.getProperty("factory.workspace", System.getProperty("user.dir")))
+                .toAbsolutePath()
+                .normalize();
         return root.getFileName().toString().equals("factory") ? root.getParent() : root;
     }
 
@@ -62,7 +64,8 @@ public class FactoryWebServer {
     }
 
     @Bean(destroyMethod = "close")
-    FactoryService factoryService(ControlRepository repository, FactorySettings settings, ModelClients clients, Environment environment) {
+    FactoryService factoryService(
+            ControlRepository repository, FactorySettings settings, ModelClients clients, Environment environment) {
         return new FactoryService(workspaceRoot(environment), repository, settings, clients);
     }
 
@@ -78,9 +81,14 @@ public class FactoryWebServer {
             factory.removeOrphanedValidatorContainers(false);
             var validator = factory.validatorStatus();
             if (!validator.ready()) LOG.warn("Sandbox validation unavailable: {}", validator.detail());
-            if (!factory.settings().liveReady()) LOG.info("Live generation disabled: {}", factory.settings().liveBlocker());
-            String base = "http://localhost:" + environment.getProperty("local.server.port", environment.getProperty("server.port", "8000"));
-            LOG.info("Software Factory ready. Operator UI: {}/factory/  ADK chat: {}/dev-ui/?app=software_factory", base, base);
+            if (!factory.settings().liveReady())
+                LOG.info("Live generation disabled: {}", factory.settings().liveBlocker());
+            String base = "http://localhost:"
+                    + environment.getProperty("local.server.port", environment.getProperty("server.port", "8000"));
+            LOG.info(
+                    "Software Factory ready. Operator UI: {}/factory/  ADK chat: {}/dev-ui/?app=software_factory",
+                    base,
+                    base);
         };
     }
 }

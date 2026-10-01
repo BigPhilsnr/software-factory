@@ -5,7 +5,6 @@ import dev.softwarefactory.execution.InfrastructureException;
 import dev.softwarefactory.serialization.Json;
 import dev.softwarefactory.workflow.RunState;
 import dev.softwarefactory.workflow.WorkflowConflictException;
-
 import java.io.IOException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -34,11 +33,13 @@ import org.springframework.jdbc.datasource.DriverManagerDataSource;
 public final class ControlRepository implements RunStore {
     /** Dashboards and metrics sample the most recently updated runs. */
     public static final int RECENT_RUNS = 100;
+
     private static final int RECENT_EVENTS = 200;
     private static final int MAX_CHAT_AUDIT_DETAIL = 2000;
     private static final int MAX_CHAT_BUDGET = 10_000;
     /** First key of the two-int advisory lock form; isolates run leases from other advisory lock users. */
     static final int LEASE_NAMESPACE = 0x46414354; // "FACT"
+
     private static final Logger LOG = LoggerFactory.getLogger(ControlRepository.class);
     private final DataSource dataSource;
     private final AuditChain chain;
@@ -61,18 +62,26 @@ public final class ControlRepository implements RunStore {
 
     /** CLI and isolated integration fixtures use the same versioned schema as Boot. */
     public void initialize() {
-        var configuration = Flyway.configure().locations("classpath:db/migration").baselineOnMigrate(true).baselineVersion("0");
+        var configuration = Flyway.configure()
+                .locations("classpath:db/migration")
+                .baselineOnMigrate(true)
+                .baselineVersion("0");
         configuration.dataSource(dataSource);
         configuration.load().migrate();
     }
 
     public static final class RunNotFound extends RunStore.MissingRunException {
-        public RunNotFound(String id) { super("Run not found: " + id); }
+        public RunNotFound(String id) {
+            super("Run not found: " + id);
+        }
     }
 
     public record AuditEvent(long sequence, Instant at, String type, String detail) {}
 
-    @FunctionalInterface private interface Work<T> { T run(Connection connection) throws SQLException, IOException; }
+    @FunctionalInterface
+    private interface Work<T> {
+        T run(Connection connection) throws SQLException, IOException;
+    }
 
     private <T> T withConnection(Work<T> work) throws IOException {
         try (Connection connection = dataSource.getConnection()) {
@@ -82,7 +91,8 @@ public final class ControlRepository implements RunStore {
         }
     }
 
-    @Override public RunState load(String id) throws IOException {
+    @Override
+    public RunState load(String id) throws IOException {
         UUID run = UUID.fromString(id);
         return withConnection(connection -> {
             try (var query = connection.prepareStatement("SELECT state_json, revision FROM runs WHERE id = ?")) {
@@ -100,7 +110,8 @@ public final class ControlRepository implements RunStore {
     public List<RunState> recentRuns() throws IOException {
         return withConnection(connection -> {
             List<RunState> result = new ArrayList<>();
-            try (var query = connection.prepareStatement("SELECT state_json FROM runs ORDER BY updated_at DESC LIMIT ?")) {
+            try (var query =
+                    connection.prepareStatement("SELECT state_json FROM runs ORDER BY updated_at DESC LIMIT ?")) {
                 query.setInt(1, RECENT_RUNS);
                 try (var rows = query.executeQuery()) {
                     while (rows.next()) result.add(Json.MAPPER.readValue(rows.getString(1), RunState.class));
@@ -114,7 +125,8 @@ public final class ControlRepository implements RunStore {
     public List<RunState> runsUpdatedBefore(Instant cutoff) throws IOException {
         return withConnection(connection -> {
             List<RunState> result = new ArrayList<>();
-            try (var query = connection.prepareStatement("SELECT state_json FROM runs WHERE updated_at < ? ORDER BY updated_at")) {
+            try (var query = connection.prepareStatement(
+                    "SELECT state_json FROM runs WHERE updated_at < ? ORDER BY updated_at")) {
                 query.setObject(1, OffsetDateTime.ofInstant(cutoff, ZoneOffset.UTC));
                 try (var rows = query.executeQuery()) {
                     while (rows.next()) result.add(Json.MAPPER.readValue(rows.getString(1), RunState.class));
@@ -128,12 +140,21 @@ public final class ControlRepository implements RunStore {
         UUID run = UUID.fromString(id);
         return withConnection(connection -> {
             List<Map<String, Object>> result = new ArrayList<>();
-            try (var query = connection.prepareStatement("SELECT seq, at, type, detail FROM audit_events WHERE run_id = ? ORDER BY seq DESC LIMIT ?")) {
+            try (var query = connection.prepareStatement(
+                    "SELECT seq, at, type, detail FROM audit_events WHERE run_id = ? ORDER BY seq DESC LIMIT ?")) {
                 query.setObject(1, run);
                 query.setInt(2, RECENT_EVENTS);
                 try (var rows = query.executeQuery()) {
                     while (rows.next()) {
-                        result.add(Map.of("sequence", rows.getLong(1), "at", rows.getString(2), "type", rows.getString(3), "detail", rows.getString(4)));
+                        result.add(Map.of(
+                                "sequence",
+                                rows.getLong(1),
+                                "at",
+                                rows.getString(2),
+                                "type",
+                                rows.getString(3),
+                                "detail",
+                                rows.getString(4)));
                     }
                 }
             }
@@ -145,7 +166,8 @@ public final class ControlRepository implements RunStore {
         UUID run = UUID.fromString(id);
         return withConnection(connection -> {
             List<AuditEvent> result = new ArrayList<>();
-            try (var query = connection.prepareStatement("SELECT seq, at, type, detail FROM audit_events WHERE run_id = ? ORDER BY seq")) {
+            try (var query = connection.prepareStatement(
+                    "SELECT seq, at, type, detail FROM audit_events WHERE run_id = ? ORDER BY seq")) {
                 query.setObject(1, run);
                 try (var rows = query.executeQuery()) {
                     while (rows.next()) result.add(event(rows, 1));
@@ -171,7 +193,8 @@ public final class ControlRepository implements RunStore {
                 query.setArray(2, connection.createArrayOf("text", types.toArray()));
                 try (var rows = query.executeQuery()) {
                     while (rows.next()) {
-                        List<AuditEvent> events = result.computeIfAbsent(rows.getString(1), ignored -> new ArrayList<>());
+                        List<AuditEvent> events =
+                                result.computeIfAbsent(rows.getString(1), ignored -> new ArrayList<>());
                         if (rows.getObject(2) != null) events.add(event(rows, 2));
                     }
                 }
@@ -181,12 +204,16 @@ public final class ControlRepository implements RunStore {
     }
 
     private static AuditEvent event(ResultSet rows, int first) throws SQLException {
-        return new AuditEvent(rows.getLong(first), rows.getObject(first + 1, OffsetDateTime.class).toInstant(),
-            rows.getString(first + 2), rows.getString(first + 3));
+        return new AuditEvent(
+                rows.getLong(first),
+                rows.getObject(first + 1, OffsetDateTime.class).toInstant(),
+                rows.getString(first + 2),
+                rows.getString(first + 3));
     }
 
     /** Holds an exclusive PostgreSQL advisory lock for one operator transition. */
-    @Override public RunLease lease(String id) throws IOException {
+    @Override
+    public RunLease lease(String id) throws IOException {
         UUID run = UUID.fromString(id);
         int key = run.hashCode();
         Connection connection;
@@ -233,7 +260,8 @@ public final class ControlRepository implements RunStore {
     }
 
     public record RunLease(Connection connection, int key) implements RunStore.Lease {
-        @Override public void close() throws IOException {
+        @Override
+        public void close() throws IOException {
             boolean released;
             try (var unlock = connection.prepareStatement("SELECT pg_advisory_unlock(?, ?)")) {
                 unlock.setInt(1, LEASE_NAMESPACE);
@@ -247,7 +275,10 @@ public final class ControlRepository implements RunStore {
                 throw new InfrastructureException("Could not release run lease", failure);
             }
             if (!released) {
-                LOG.error("Run lease {}/{} was not held by its session at release; leases may not be exclusive", LEASE_NAMESPACE, key);
+                LOG.error(
+                        "Run lease {}/{} was not held by its session at release; leases may not be exclusive",
+                        LEASE_NAMESPACE,
+                        key);
             }
             try {
                 connection.close();
@@ -257,8 +288,11 @@ public final class ControlRepository implements RunStore {
         }
     }
 
-    @Override public void record(RunState state, String type, String detail) throws IOException {
-        synchronized (state) { recordSnapshot(state, type, detail); }
+    @Override
+    public void record(RunState state, String type, String detail) throws IOException {
+        synchronized (state) {
+            recordSnapshot(state, type, detail);
+        }
     }
 
     private void recordSnapshot(RunState state, String type, String detail) throws IOException {
@@ -272,7 +306,8 @@ public final class ControlRepository implements RunStore {
                 lockOrCreate(connection, state, run);
                 String previous = AuditChain.GENESIS;
                 long sequence = 1;
-                try (var last = connection.prepareStatement("SELECT seq, event_hash FROM audit_events WHERE run_id = ? ORDER BY seq DESC LIMIT 1")) {
+                try (var last = connection.prepareStatement(
+                        "SELECT seq, event_hash FROM audit_events WHERE run_id = ? ORDER BY seq DESC LIMIT 1")) {
                     last.setObject(1, run);
                     try (var rows = last.executeQuery()) {
                         if (rows.next()) {
@@ -283,7 +318,8 @@ public final class ControlRepository implements RunStore {
                 }
                 Instant at = Instant.now().truncatedTo(ChronoUnit.MICROS);
                 String hash = chain.hash(AuditChain.HMAC_SHA256, previous, sequence, at, type, detail, stateJson);
-                try (var event = connection.prepareStatement("INSERT INTO audit_events(run_id, seq, at, type, detail, previous_hash, event_hash, state_json, hash_scheme) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)")) {
+                try (var event = connection.prepareStatement(
+                        "INSERT INTO audit_events(run_id, seq, at, type, detail, previous_hash, event_hash, state_json, hash_scheme) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)")) {
                     event.setObject(1, run);
                     event.setLong(2, sequence);
                     event.setObject(3, OffsetDateTime.ofInstant(at, ZoneOffset.UTC));
@@ -295,7 +331,8 @@ public final class ControlRepository implements RunStore {
                     event.setInt(9, AuditChain.HMAC_SHA256);
                     event.executeUpdate();
                 }
-                try (var update = connection.prepareStatement("UPDATE runs SET state_json = ?, updated_at = ?, revision = revision + 1 WHERE id = ?")) {
+                try (var update = connection.prepareStatement(
+                        "UPDATE runs SET state_json = ?, updated_at = ?, revision = revision + 1 WHERE id = ?")) {
                     update.setString(1, stateJson);
                     update.setObject(2, OffsetDateTime.now());
                     update.setObject(3, run);
@@ -316,13 +353,15 @@ public final class ControlRepository implements RunStore {
             lock.setObject(1, run);
             try (var current = lock.executeQuery()) {
                 if (current.next()) {
-                    if (current.getLong(1) != state.revision) throw new WorkflowConflictException("Stale run revision; reload before retrying");
+                    if (current.getLong(1) != state.revision)
+                        throw new WorkflowConflictException("Stale run revision; reload before retrying");
                     return;
                 }
             }
         }
         if (state.revision != 0) throw new WorkflowConflictException("Run no longer exists");
-        try (var insert = connection.prepareStatement("INSERT INTO runs(id, state_json, updated_at) VALUES (?, ?, ?)")) {
+        try (var insert =
+                connection.prepareStatement("INSERT INTO runs(id, state_json, updated_at) VALUES (?, ?, ?)")) {
             insert.setObject(1, run);
             insert.setString(2, Json.MAPPER.writeValueAsString(state));
             insert.setObject(3, OffsetDateTime.now());
@@ -338,7 +377,8 @@ public final class ControlRepository implements RunStore {
         }
     }
 
-    @Override public boolean auditValid(String id) throws IOException {
+    @Override
+    public boolean auditValid(String id) throws IOException {
         UUID run = UUID.fromString(id);
         return withConnection(connection -> {
             connection.setAutoCommit(false);
@@ -374,13 +414,17 @@ public final class ControlRepository implements RunStore {
                 while (rows.next()) {
                     int rowScheme = rows.getInt(8);
                     // Downgrading to the keyless scheme would let a database writer forge later rows.
-                    if (rowScheme < scheme || (rowScheme != AuditChain.LEGACY_SHA256 && rowScheme != AuditChain.HMAC_SHA256)) return null;
+                    if (rowScheme < scheme
+                            || (rowScheme != AuditChain.LEGACY_SHA256 && rowScheme != AuditChain.HMAC_SHA256))
+                        return null;
                     scheme = rowScheme;
                     Instant at = rows.getObject(2, OffsetDateTime.class).toInstant();
                     String state = rows.getString(7);
-                    String calculated = chain.hash(scheme, previous, expected, at, rows.getString(3), rows.getString(4), state);
-                    if (rows.getLong(1) != expected || !AuditChain.matches(previous, rows.getString(5))
-                        || !AuditChain.matches(calculated, rows.getString(6))) return null;
+                    String calculated =
+                            chain.hash(scheme, previous, expected, at, rows.getString(3), rows.getString(4), state);
+                    if (rows.getLong(1) != expected
+                            || !AuditChain.matches(previous, rows.getString(5))
+                            || !AuditChain.matches(calculated, rows.getString(6))) return null;
                     latestState = state == null ? "" : state;
                     previous = calculated;
                     expected++;
@@ -392,7 +436,8 @@ public final class ControlRepository implements RunStore {
 
     /** Increments the persistent daily budget and audits the reservation in one transaction. */
     public void reserveChatRequest(int limit) throws IOException {
-        if (limit < 1 || limit > MAX_CHAT_BUDGET) throw new IllegalArgumentException("Chat request budget must be 1.." + MAX_CHAT_BUDGET);
+        if (limit < 1 || limit > MAX_CHAT_BUDGET)
+            throw new IllegalArgumentException("Chat request budget must be 1.." + MAX_CHAT_BUDGET);
         withConnection(connection -> {
             connection.setAutoCommit(false);
             try {
@@ -401,7 +446,8 @@ public final class ControlRepository implements RunStore {
                     query.setObject(1, LocalDate.now(ZoneOffset.UTC));
                     query.setInt(2, limit);
                     try (var row = query.executeQuery()) {
-                        if (!row.next()) throw new WorkflowConflictException("Daily chat provider-request budget exhausted");
+                        if (!row.next())
+                            throw new WorkflowConflictException("Daily chat provider-request budget exhausted");
                     }
                 }
                 insertChatAudit(connection, "MODEL_CALL_RESERVED", "dailyLimit=" + limit);
@@ -422,7 +468,8 @@ public final class ControlRepository implements RunStore {
     }
 
     private static void insertChatAudit(Connection connection, String type, String detail) throws SQLException {
-        try (var query = connection.prepareStatement("INSERT INTO chat_audit(id, at, type, detail) VALUES (?, ?, ?, ?)")) {
+        try (var query =
+                connection.prepareStatement("INSERT INTO chat_audit(id, at, type, detail) VALUES (?, ?, ?, ?)")) {
             query.setObject(1, UUID.randomUUID());
             query.setObject(2, OffsetDateTime.now());
             query.setString(3, type);

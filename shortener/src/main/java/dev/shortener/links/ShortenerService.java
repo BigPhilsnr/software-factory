@@ -25,7 +25,8 @@ public final class ShortenerService {
         String target = urls.validate(url);
         if (alias == null) return new LinkDraft(target, null);
         String canonical = LinkCodes.canonical(alias)
-            .orElseThrow(() -> new InvalidLinkException("Alias must be 4-32 letters, digits or hyphens and not a reserved word"));
+                .orElseThrow(() -> new InvalidLinkException(
+                        "Alias must be 4-32 letters, digits or hyphens and not a reserved word"));
         return new LinkDraft(target, canonical);
     }
 
@@ -70,10 +71,14 @@ public final class ShortenerService {
     }
 
     public static final class CapacityException extends RuntimeException {
-        public CapacityException(String message) { super(message); }
+        public CapacityException(String message) {
+            super(message);
+        }
     }
 
     public static final class AliasConflictException extends RuntimeException {
-        public AliasConflictException(Throwable cause) { super("Alias already exists", cause); }
+        public AliasConflictException(Throwable cause) {
+            super("Alias already exists", cause);
+        }
     }
 }

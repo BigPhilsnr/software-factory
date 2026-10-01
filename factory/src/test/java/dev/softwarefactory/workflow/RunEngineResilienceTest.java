@@ -31,17 +31,21 @@ class RunEngineResilienceTest {
     private ModelClients clients;
     private RunEngine engine;
 
-    @BeforeEach void setup() throws Exception {
-        environment = new IsolatedFactoryEnvironment("resilience_test").withSchema().withWorkspace();
+    @BeforeEach
+    void setup() throws Exception {
+        environment =
+                new IsolatedFactoryEnvironment("resilience_test").withSchema().withWorkspace();
         root = environment.workspace();
-        repository = new ControlRepository(environment.url(), environment.user(), environment.password(), IsolatedFactoryEnvironment.AUDIT_KEY);
+        repository = new ControlRepository(
+                environment.url(), environment.user(), environment.password(), IsolatedFactoryEnvironment.AUDIT_KEY);
         repository.initialize();
         settings = FactorySettings.from(Map.of());
         clients = new ModelClients(settings);
         engine = new RunEngine(repository, root, settings, clients);
     }
 
-    @AfterEach void cleanup() throws Exception {
+    @AfterEach
+    void cleanup() throws Exception {
         clients.close();
         environment.close();
     }
@@ -53,7 +57,8 @@ class RunEngineResilienceTest {
         return state;
     }
 
-    @Test void alteredEvidenceSafeStopsBeforePendingApprovalCanAdvance() throws Exception {
+    @Test
+    void alteredEvidenceSafeStopsBeforePendingApprovalCanAdvance() throws Exception {
         RunState state = proposal();
         Path artifact = root.resolve("evidence/" + state.id + "/understand-v1.txt");
         Files.writeString(artifact, Files.readString(artifact) + "\nINJECTED_TAMPER\n");
@@ -61,7 +66,8 @@ class RunEngineResilienceTest {
         assertTrue(repository.auditValid(state.id));
     }
 
-    @Test void missingEvidenceRemainsInspectableAndRejectable() throws Exception {
+    @Test
+    void missingEvidenceRemainsInspectableAndRejectable() throws Exception {
         RunState state = proposal();
         try (var service = new FactoryService(root, repository, settings, clients)) {
             Files.delete(root.resolve("evidence/" + state.id + "/apply-v1.txt"));
@@ -72,15 +78,18 @@ class RunEngineResilienceTest {
         }
     }
 
-    @Test void tamperingCannotBeApprovedEvenWithThePreviouslyCorrectHash() throws Exception {
+    @Test
+    void tamperingCannotBeApprovedEvenWithThePreviouslyCorrectHash() throws Exception {
         RunState state = proposal();
         Files.writeString(root.resolve("evidence/" + state.id + "/understand-v1.txt"), "altered");
         assertThrows(IllegalStateException.class, () -> engine.approve(state.id, state.pendingApprovalHash, true));
         assertEquals(RunStatus.SAFE_STOPPED, repository.load(state.id).status);
-        assertFalse(repository.timeline(state.id).stream().anyMatch(event -> event.type().equals("APPROVAL_GRANTED")));
+        assertFalse(repository.timeline(state.id).stream()
+                .anyMatch(event -> event.type().equals("APPROVAL_GRANTED")));
     }
 
-    @Test void concurrentAdvanceCannotAcquireTheSameRun() throws Exception {
+    @Test
+    void concurrentAdvanceCannotAcquireTheSameRun() throws Exception {
         RunState state = proposal();
         try (var lease = repository.lease(state.id)) {
             assertThrows(WorkflowConflictException.class, () -> engine.advance(state.id));
@@ -89,7 +98,8 @@ class RunEngineResilienceTest {
         assertTrue(repository.auditValid(state.id));
     }
 
-    @Test void recoveredPatchInvalidatesAndRerunsDownstreamValidation() throws Exception {
+    @Test
+    void recoveredPatchInvalidatesAndRerunsDownstreamValidation() throws Exception {
         RunState state = proposal();
         engine.approve(state.id, state.pendingApprovalHash, true);
         state = engine.advance(state.id);
@@ -104,7 +114,10 @@ class RunEngineResilienceTest {
         state.artifactVersions.put("apply", state.artifactVersions.get("apply") - 1);
         state.artifactHashes.remove("apply");
         state.attempts.put("validate", 1);
-        repository.record(state, "TEST_INTERRUPTION_INJECTED", "fixture-only patch checkpoint; downstream evidence must be refreshed");
+        repository.record(
+                state,
+                "TEST_INTERRUPTION_INJECTED",
+                "fixture-only patch checkpoint; downstream evidence must be refreshed");
         state = engine.advance(state.id);
         assertEquals("release", state.pendingApprovalTask);
         assertTrue(state.artifactVersions.get("validate") > validatedVersion);
@@ -112,7 +125,8 @@ class RunEngineResilienceTest {
         assertFalse(state.attempts.containsKey("validate"), "Invalidated downstream tasks get a fresh retry budget");
         var events = repository.timeline(state.id);
         assertTrue(events.stream().anyMatch(e -> e.type().equals("RUN_RECOVERING")));
-        assertTrue(events.stream().anyMatch(e -> e.type().equals("RUN_RECOVERED") && e.detail().contains("candidateReset=true")));
+        assertTrue(events.stream()
+                .anyMatch(e -> e.type().equals("RUN_RECOVERED") && e.detail().contains("candidateReset=true")));
         assertTrue(repository.auditValid(state.id));
     }
 }

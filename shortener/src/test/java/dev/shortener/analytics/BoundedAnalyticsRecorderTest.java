@@ -35,14 +35,23 @@ class BoundedAnalyticsRecorderTest {
     };
 
     private BoundedAnalyticsRecorder recorder(int maxPendingLinks, Duration flushInterval) {
-        var settings = new ShortenerProperties.Analytics(flushInterval, maxPendingLinks, 500, Duration.ofSeconds(30),
-            2, Duration.ofSeconds(1), Duration.ofSeconds(2));
+        var settings = new ShortenerProperties.Analytics(
+                flushInterval,
+                maxPendingLinks,
+                500,
+                Duration.ofSeconds(30),
+                2,
+                Duration.ofSeconds(1),
+                Duration.ofSeconds(2));
         return new BoundedAnalyticsRecorder(writer, clock, settings, meters);
     }
 
-    private double counter(String name, String... tags) { return meters.get(name).tags(tags).counter().count(); }
+    private double counter(String name, String... tags) {
+        return meters.get(name).tags(tags).counter().count();
+    }
 
-    @Test void coalescesRedirectsIntoOneDeltaPerLinkWithTheLatestTimestamp() {
+    @Test
+    void coalescesRedirectsIntoOneDeltaPerLinkWithTheLatestTimestamp() {
         var recorder = recorder(100, Duration.ofHours(1));
         recorder.record(2);
         recorder.record(1);
@@ -58,7 +67,8 @@ class BoundedAnalyticsRecorderTest {
         assertEquals(1, writes.size(), "an empty flush writes nothing");
     }
 
-    @Test void dropsAndCountsRedirectsForNewLinksBeyondThePendingBound() {
+    @Test
+    void dropsAndCountsRedirectsForNewLinksBeyondThePendingBound() {
         var recorder = recorder(2, Duration.ofHours(1));
         recorder.record(1);
         recorder.record(2);
@@ -69,7 +79,8 @@ class BoundedAnalyticsRecorderTest {
         assertEquals(List.of(new RedirectDelta(1, 2, T0), new RedirectDelta(2, 1, T0)), writes.getFirst());
     }
 
-    @Test void failedFlushIsMergedBackAndRetried() {
+    @Test
+    void failedFlushIsMergedBackAndRetried() {
         var recorder = recorder(100, Duration.ofHours(1));
         recorder.record(1);
         recorder.record(1);
@@ -84,7 +95,8 @@ class BoundedAnalyticsRecorderTest {
         assertEquals(List.of(new RedirectDelta(1, 3, T0.plusSeconds(1))), writes.getFirst());
     }
 
-    @Test void failedFlushDropsOnlyWhatNoLongerFits() {
+    @Test
+    void failedFlushDropsOnlyWhatNoLongerFits() {
         var recorder = recorder(1, Duration.ofHours(1));
         recorder.record(1);
         failing.set(true);
@@ -96,7 +108,8 @@ class BoundedAnalyticsRecorderTest {
         assertEquals(List.of(new RedirectDelta(1, 1, T0)), writes.getFirst());
     }
 
-    @Test void flushesPeriodicallyAndOnShutdown() {
+    @Test
+    void flushesPeriodicallyAndOnShutdown() {
         var recorder = recorder(100, Duration.ofMillis(20));
         recorder.start();
         assertTrue(recorder.isRunning());
@@ -106,11 +119,15 @@ class BoundedAnalyticsRecorderTest {
         recorder.record(1);
         recorder.stop();
         assertTrue(!recorder.isRunning());
-        long total = writes.stream().flatMap(List::stream).mapToLong(RedirectDelta::count).sum();
+        long total = writes.stream()
+                .flatMap(List::stream)
+                .mapToLong(RedirectDelta::count)
+                .sum();
         assertEquals(3, total, "the shutdown flush writes the remainder");
     }
 
-    @Test void concurrentRecordingAndFlushingLosesNothing() throws Exception {
+    @Test
+    void concurrentRecordingAndFlushingLosesNothing() throws Exception {
         var recorder = recorder(1_000, Duration.ofHours(1));
         int threads = 8;
         int perThread = 20_000;
@@ -137,14 +154,30 @@ class BoundedAnalyticsRecorderTest {
         recorder.flush();
         Map<Long, Long> totals = new ConcurrentHashMap<>();
         writes.stream().flatMap(List::stream).forEach(delta -> totals.merge(delta.linkId(), delta.count(), Long::sum));
-        for (long link = 0; link < links; link++) assertEquals((long) threads * perThread / links, totals.get(link), "link " + link);
+        for (long link = 0; link < links; link++)
+            assertEquals((long) threads * perThread / links, totals.get(link), "link " + link);
     }
 
     private static final class MutableClock extends Clock {
         private volatile Instant value;
-        MutableClock(Instant value) { this.value = value; }
-        @Override public ZoneId getZone() { return ZoneOffset.UTC; }
-        @Override public Clock withZone(ZoneId zone) { return this; }
-        @Override public Instant instant() { return value; }
+
+        MutableClock(Instant value) {
+            this.value = value;
+        }
+
+        @Override
+        public ZoneId getZone() {
+            return ZoneOffset.UTC;
+        }
+
+        @Override
+        public Clock withZone(ZoneId zone) {
+            return this;
+        }
+
+        @Override
+        public Instant instant() {
+            return value;
+        }
     }
 }

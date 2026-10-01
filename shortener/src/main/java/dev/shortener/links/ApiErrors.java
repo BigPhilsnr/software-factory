@@ -29,23 +29,25 @@ import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExcep
 public class ApiErrors extends ResponseEntityExceptionHandler {
     /** Problem-document extension member holding the stable error code. */
     private static final String ERROR_PROPERTY = "error";
+
     private static final Logger LOG = LoggerFactory.getLogger(ApiErrors.class);
     private static final Map<Integer, String> CODES = Map.of(
-        HttpStatus.BAD_REQUEST.value(), "invalid_request",
-        HttpStatus.NOT_FOUND.value(), "not_found",
-        HttpStatus.METHOD_NOT_ALLOWED.value(), "method_not_allowed",
-        HttpStatus.NOT_ACCEPTABLE.value(), "not_acceptable",
-        HttpStatus.CONFLICT.value(), "alias_conflict",
-        HttpStatus.CONTENT_TOO_LARGE.value(), "request_too_large",
-        HttpStatus.UNSUPPORTED_MEDIA_TYPE.value(), "unsupported_media_type",
-        HttpStatus.TOO_MANY_REQUESTS.value(), "rate_limited",
-        HttpStatus.SERVICE_UNAVAILABLE.value(), "temporarily_unavailable",
-        HttpStatus.INTERNAL_SERVER_ERROR.value(), "internal_error");
+            HttpStatus.BAD_REQUEST.value(), "invalid_request",
+            HttpStatus.NOT_FOUND.value(), "not_found",
+            HttpStatus.METHOD_NOT_ALLOWED.value(), "method_not_allowed",
+            HttpStatus.NOT_ACCEPTABLE.value(), "not_acceptable",
+            HttpStatus.CONFLICT.value(), "alias_conflict",
+            HttpStatus.CONTENT_TOO_LARGE.value(), "request_too_large",
+            HttpStatus.UNSUPPORTED_MEDIA_TYPE.value(), "unsupported_media_type",
+            HttpStatus.TOO_MANY_REQUESTS.value(), "rate_limited",
+            HttpStatus.SERVICE_UNAVAILABLE.value(), "temporarily_unavailable",
+            HttpStatus.INTERNAL_SERVER_ERROR.value(), "internal_error");
 
     private final String unavailableRetryAfter;
 
     public ApiErrors(ShortenerProperties properties) {
-        this.unavailableRetryAfter = Long.toString(properties.http().unavailableRetryAfter().toSeconds());
+        this.unavailableRetryAfter =
+                Long.toString(properties.http().unavailableRetryAfter().toSeconds());
     }
 
     /** The stable code for a status; unlisted statuses derive one from their reason phrase. */
@@ -79,8 +81,11 @@ public class ApiErrors extends ResponseEntityExceptionHandler {
     }
 
     /** Only failures that a retry can plausibly fix are reported as 503. */
-    @ExceptionHandler({TransientDataAccessException.class, DataAccessResourceFailureException.class,
-        ShortenerService.CapacityException.class})
+    @ExceptionHandler({
+        TransientDataAccessException.class,
+        DataAccessResourceFailureException.class,
+        ShortenerService.CapacityException.class
+    })
     ResponseEntity<ProblemDetail> unavailable(RuntimeException failure) {
         LOG.warn("Link dependency temporarily unavailable: {}", failure.toString());
         var headers = new HttpHeaders();
@@ -98,16 +103,20 @@ public class ApiErrors extends ResponseEntityExceptionHandler {
     @ExceptionHandler(Exception.class)
     ResponseEntity<Object> unexpected(Exception failure, WebRequest request) {
         if (failure instanceof ErrorResponse response) {
-            return handleExceptionInternal(failure, response.getBody(), response.getHeaders(), response.getStatusCode(), request);
+            return handleExceptionInternal(
+                    failure, response.getBody(), response.getHeaders(), response.getStatusCode(), request);
         }
         LOG.error("Unexpected request failure", failure);
-        ResponseEntity<ProblemDetail> problem = problem(HttpStatus.INTERNAL_SERVER_ERROR, "Internal server error", new HttpHeaders());
-        return ResponseEntity.status(problem.getStatusCode()).headers(problem.getHeaders()).body(problem.getBody());
+        ResponseEntity<ProblemDetail> problem =
+                problem(HttpStatus.INTERNAL_SERVER_ERROR, "Internal server error", new HttpHeaders());
+        return ResponseEntity.status(problem.getStatusCode())
+                .headers(problem.getHeaders())
+                .body(problem.getBody());
     }
 
     @Override
-    protected ResponseEntity<Object> handleExceptionInternal(Exception failure, Object body, HttpHeaders headers,
-            HttpStatusCode status, WebRequest request) {
+    protected ResponseEntity<Object> handleExceptionInternal(
+            Exception failure, Object body, HttpHeaders headers, HttpStatusCode status, WebRequest request) {
         ResponseEntity<Object> response = super.handleExceptionInternal(failure, body, headers, status, request);
         if (response != null && response.getBody() instanceof ProblemDetail problem) {
             problem.setProperty(ERROR_PROPERTY, errorCode(response.getStatusCode()));
@@ -118,6 +127,9 @@ public class ApiErrors extends ResponseEntityExceptionHandler {
     private static ResponseEntity<ProblemDetail> problem(HttpStatus status, String detail, HttpHeaders headers) {
         ProblemDetail body = ProblemDetail.forStatusAndDetail(status, detail);
         body.setProperty(ERROR_PROPERTY, errorCode(status));
-        return ResponseEntity.status(status).headers(headers).contentType(MediaType.APPLICATION_PROBLEM_JSON).body(body);
+        return ResponseEntity.status(status)
+                .headers(headers)
+                .contentType(MediaType.APPLICATION_PROBLEM_JSON)
+                .body(body);
     }
 }

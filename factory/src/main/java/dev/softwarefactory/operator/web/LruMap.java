@@ -12,7 +12,8 @@ final class LruMap {
 
     static <K, V> Map<K, V> create(int capacity) {
         return Collections.synchronizedMap(new LinkedHashMap<>(capacity, 0.75f, true) {
-            @Override protected boolean removeEldestEntry(Map.Entry<K, V> eldest) {
+            @Override
+            protected boolean removeEldestEntry(Map.Entry<K, V> eldest) {
                 return size() > capacity;
             }
         });

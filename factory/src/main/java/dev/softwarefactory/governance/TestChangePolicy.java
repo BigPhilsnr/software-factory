@@ -1,7 +1,6 @@
 package dev.softwarefactory.governance;
 
 import dev.softwarefactory.execution.PolicyViolationException;
-
 import java.util.LinkedHashSet;
 import java.util.Set;
 import java.util.regex.Matcher;
@@ -15,7 +14,8 @@ public final class TestChangePolicy {
     private static final Pattern DIFF_HEADER = Pattern.compile("^diff --git a/(\\S+) b/(\\S+)$");
     /** Surefire's default inclusion patterns, rooted at a Maven test source directory. */
     private static final Pattern TEST_SOURCE = Pattern.compile(
-        "(?:.*/)?src/test/java/((?:[A-Za-z_$][A-Za-z0-9_$]*/)*)((?:Test[A-Za-z0-9_$]*)|(?:[A-Za-z_$][A-Za-z0-9_$]*(?:Test|Tests|TestCase)))\\.java");
+            "(?:.*/)?src/test/java/((?:[A-Za-z_$][A-Za-z0-9_$]*/)*)((?:Test[A-Za-z0-9_$]*)|(?:[A-Za-z_$][A-Za-z0-9_$]*(?:Test|Tests|TestCase)))\\.java");
+
     private static final Pattern EXCLUDED_TAG = Pattern.compile("^\\+.*@Tag\\s*\\(\\s*\"integration\"\\s*\\)");
 
     private TestChangePolicy() {}
@@ -34,7 +34,8 @@ public final class TestChangePolicy {
                 throw new PolicyViolationException("Existing tests cannot be deleted: " + path);
             }
             if (EXCLUDED_TAG.matcher(line).find()) {
-                throw new PolicyViolationException("Generated tests cannot opt out of validation with @Tag(\"integration\"): " + path);
+                throw new PolicyViolationException(
+                        "Generated tests cannot opt out of validation with @Tag(\"integration\"): " + path);
             }
         }
     }

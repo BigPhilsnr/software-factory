@@ -2,7 +2,6 @@ package dev.softwarefactory.operator.web;
 
 import dev.softwarefactory.agents.tools.EngineeringTools;
 import dev.softwarefactory.workflow.RunState;
-
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
@@ -14,14 +13,18 @@ import java.util.regex.Pattern;
  */
 final class OperatorCommands {
     /** Prefixes of commands that create, advance or decide runs. */
-    private static final List<String> STATE_CHANGING = List.of("/feature", "/demo", "/advance", "/approve", "/reject", "/answer", "/changes");
+    private static final List<String> STATE_CHANGING =
+            List.of("/feature", "/demo", "/advance", "/approve", "/reject", "/answer", "/changes");
+
     private static final Pattern AMBIGUOUS_DECISION = Pattern.compile("(?i)(yes|no|approve|approved|reject|continue)");
     private static final Pattern WHITESPACE = Pattern.compile("\\s+");
     private final FactoryService factory;
     private final ChatConversation chat;
     private final Map<String, String> selected = LruMap.create(LruMap.DEFAULT_CAPACITY);
 
-    OperatorCommands(FactoryService factory) { this(factory, factory.conversation()); }
+    OperatorCommands(FactoryService factory) {
+        this(factory, factory.conversation());
+    }
 
     OperatorCommands(FactoryService factory, ChatConversation chat) {
         this.factory = factory;
@@ -39,8 +42,16 @@ final class OperatorCommands {
         if (text.equals("/tools")) return EngineeringTools.help();
         if (text.equals("/runs")) {
             StringBuilder result = new StringBuilder("## Factory runs\n\n");
-            for (RunState run : factory.runs()) result.append("- `").append(run.id).append("` · ").append(run.scenario).append(" · **").append(run.status).append("**\n");
-            return result.append("\nUse `/select RUN_ID` or [open the operator page](/factory/).").toString();
+            for (RunState run : factory.runs())
+                result.append("- `")
+                        .append(run.id)
+                        .append("` · ")
+                        .append(run.scenario)
+                        .append(" · **")
+                        .append(run.status)
+                        .append("**\n");
+            return result.append("\nUse `/select RUN_ID` or [open the operator page](/factory/).")
+                    .toString();
         }
         if (text.startsWith("/select ")) {
             RunState state = factory.state(argument(text, "/select"));
@@ -64,10 +75,14 @@ final class OperatorCommands {
         if (text.startsWith("/feature ")) {
             RunState state = factory.feature(argument(text, "/feature"));
             selected.put(session, state.id);
-            return describe(state) + "\n\nFeature request saved. Type `/advance` to begin paid live generation, or [open the run](/factory/?run=" + state.id + ") to review its workflow.";
+            return describe(state)
+                    + "\n\nFeature request saved. Type `/advance` to begin paid live generation, or [open the run](/factory/?run="
+                    + state.id + ") to review its workflow.";
         }
         String id = selected.get(session);
-        if (id == null) throw new IllegalArgumentException("Select a run with /select RUN_ID, use /feature REQUIREMENT, or try /demo bugfix");
+        if (id == null)
+            throw new IllegalArgumentException(
+                    "Select a run with /select RUN_ID, use /feature REQUIREMENT, or try /demo bugfix");
         return runCommand(id, text);
     }
 
@@ -75,7 +90,8 @@ final class OperatorCommands {
         if (text.equals("/status")) return describe(factory.state(id));
         if (text.equals("/advance")) {
             factory.advance(id);
-            return "Run started. Use `/status` to refresh or follow live progress on the [operator page](/factory/?run=" + id + ").";
+            return "Run started. Use `/status` to refresh or follow live progress on the [operator page](/factory/?run="
+                    + id + ").";
         }
         if (text.equals("/review")) return review(id);
         if (text.startsWith("/approve ")) {
@@ -103,10 +119,13 @@ final class OperatorCommands {
     private String review(String id) throws Exception {
         Map<String, Object> detail = factory.detail(id);
         if (!detail.containsKey("review")) return "No approval is pending. " + describe(factory.state(id));
-        @SuppressWarnings("unchecked") Map<String, Object> review = (Map<String, Object>) detail.get("review");
-        return "## Review " + review.get("task") + "\n\nHash: `" + review.get("hash") + "`\n\n[View full diff, test evidence and approval controls](/factory/?run=" + id
-            + ").\n\nTo approve, send `/approve " + review.get("hash") + "`. To request changes, send `/changes " + review.get("task")
-            + " YOUR_FEEDBACK`. To reject, send `/reject " + review.get("hash") + "`.";
+        @SuppressWarnings("unchecked")
+        Map<String, Object> review = (Map<String, Object>) detail.get("review");
+        return "## Review " + review.get("task") + "\n\nHash: `" + review.get("hash")
+                + "`\n\n[View full diff, test evidence and approval controls](/factory/?run=" + id
+                + ").\n\nTo approve, send `/approve " + review.get("hash") + "`. To request changes, send `/changes "
+                + review.get("task")
+                + " YOUR_FEEDBACK`. To reject, send `/reject " + review.get("hash") + "`.";
     }
 
     private static String argument(String text, String command) {
@@ -115,25 +134,29 @@ final class OperatorCommands {
 
     private static String describe(RunState state) {
         return "Run `" + state.id + "` · **" + state.status + "** · " + state.mode + "\n\n"
-            + "Tasks: " + state.tasks + "\n\nModel calls: " + state.modelCalls + "/" + state.maxModelCalls
-            + (state.pendingApprovalTask == null ? "" : "\n\nReview required: **" + state.pendingApprovalTask + "**. Use `/review`.")
-            + (state.pendingClarificationTask == null ? "" : "\n\nClarification required. Use `/answer YOUR_ANSWER` or the operator page.")
-            + "\n\n[Open this run](/factory/?run=" + state.id + ")";
+                + "Tasks: " + state.tasks + "\n\nModel calls: " + state.modelCalls + "/" + state.maxModelCalls
+                + (state.pendingApprovalTask == null
+                        ? ""
+                        : "\n\nReview required: **" + state.pendingApprovalTask + "**. Use `/review`.")
+                + (state.pendingClarificationTask == null
+                        ? ""
+                        : "\n\nClarification required. Use `/answer YOUR_ANSWER` or the operator page.")
+                + "\n\n[Open this run](/factory/?run=" + state.id + ")";
     }
 
     private static String help() {
         return "## Software factory\n\nAsk questions about the project or discuss a feature in plain language. Chat answers use the repository and recent conversation; they do not create runs. Use `/feature REQUIREMENT` to save a feature request, then `/advance` to start it. Chat answers use paid model calls, separately from run budgets.\n\n"
-            + "- `/demo bugfix` — start a fixture demonstration without model charges\n"
-            + "- `/tools` — show web browsing and engineering tools\n"
-            + "- `/runs` and `/select RUN_ID` — find an existing run\n"
-            + "- `/status` — refresh selected run\n"
-            + "- `/review` — show pending approval details\n"
-            + "- `/approve EXACT_HASH` — approve the reviewed proposal and resume\n"
-            + "- `/changes TASK_ID feedback` — request revision\n"
-            + "- `/answer answer` — answer a clarification\n"
-            + "- `/reject EXACT_HASH` — reject the reviewed proposal\n\n"
-            + "Commands that create, advance or decide runs require the operator token (sent by the operator page or the "
-            + "`X-Factory-Token` header); without it they are refused.\n\n"
-            + "[Open the operator page for live progress, artifact inspection and approval buttons](/factory/).";
+                + "- `/demo bugfix` — start a fixture demonstration without model charges\n"
+                + "- `/tools` — show web browsing and engineering tools\n"
+                + "- `/runs` and `/select RUN_ID` — find an existing run\n"
+                + "- `/status` — refresh selected run\n"
+                + "- `/review` — show pending approval details\n"
+                + "- `/approve EXACT_HASH` — approve the reviewed proposal and resume\n"
+                + "- `/changes TASK_ID feedback` — request revision\n"
+                + "- `/answer answer` — answer a clarification\n"
+                + "- `/reject EXACT_HASH` — reject the reviewed proposal\n\n"
+                + "Commands that create, advance or decide runs require the operator token (sent by the operator page or the "
+                + "`X-Factory-Token` header); without it they are refused.\n\n"
+                + "[Open the operator page for live progress, artifact inspection and approval buttons](/factory/).";
     }
 }

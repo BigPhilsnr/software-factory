@@ -12,7 +12,6 @@ import dev.softwarefactory.workflow.RunState;
 import dev.softwarefactory.workflow.RunStatus;
 import dev.softwarefactory.workflow.scenario.ScenarioFiles;
 import dev.softwarefactory.workflow.scenario.ScenarioSpec;
-
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -30,18 +29,23 @@ import java.util.Set;
 public final class FactoryCli {
     private static final int USAGE_EXIT = 2;
     private static final int DEFAULT_PRUNE_DAYS = 30;
-    private static final Set<RunStatus> TERMINAL = Set.of(RunStatus.COMPLETED, RunStatus.FAILED, RunStatus.SAFE_STOPPED, RunStatus.NOT_APPROVED);
+    private static final Set<RunStatus> TERMINAL =
+            Set.of(RunStatus.COMPLETED, RunStatus.FAILED, RunStatus.SAFE_STOPPED, RunStatus.NOT_APPROVED);
 
     private FactoryCli() {}
 
     /** Thrown for malformed arguments; reported as usage with exit code 2. */
     private static final class UsageException extends Exception {
-        UsageException() { super("usage"); }
+        UsageException() {
+            super("usage");
+        }
     }
 
     public static void main(String[] args) throws Exception {
         // CLI stdout is a machine-readable JSON protocol; diagnostics belong on stderr.
-        System.setProperty("logback.configurationFile", FactoryCli.class.getResource("/factory-logback.xml").toExternalForm());
+        System.setProperty(
+                "logback.configurationFile",
+                FactoryCli.class.getResource("/factory-logback.xml").toExternalForm());
         try {
             run(args);
         } catch (UsageException invalid) {
@@ -55,8 +59,11 @@ public final class FactoryCli {
         FactorySettings settings = FactorySettings.fromEnvironment();
         Path root = Path.of(System.getProperty("user.dir")).toAbsolutePath();
         if (root.getFileName().toString().equals("factory")) root = root.getParent();
-        var repo = new ControlRepository(settings.controlDatabaseUrl(), settings.controlDatabaseUser(), settings.controlDatabasePassword(),
-            AuditKey.resolve(settings.auditKey(), root));
+        var repo = new ControlRepository(
+                settings.controlDatabaseUrl(),
+                settings.controlDatabaseUser(),
+                settings.controlDatabasePassword(),
+                AuditKey.resolve(settings.auditKey(), root));
         repo.initialize();
         try (var clients = new ModelClients(settings)) {
             RunEngine engine = new RunEngine(repo, root, settings, clients);
@@ -80,7 +87,10 @@ public final class FactoryCli {
                 case "prune" -> prune(repo, root, args);
                 default -> throw new UsageException();
             };
-            System.out.println(result instanceof String text ? text : Json.MAPPER.writerWithDefaultPrettyPrinter().writeValueAsString(result));
+            System.out.println(
+                    result instanceof String text
+                            ? text
+                            : Json.MAPPER.writerWithDefaultPrettyPrinter().writeValueAsString(result));
         }
     }
 
@@ -92,18 +102,30 @@ public final class FactoryCli {
     private static Map<String, Object> review(ControlRepository repo, Path root, String id) throws IOException {
         RunState state = repo.load(id);
         if (state.pendingApprovalTask == null) throw new IllegalStateException("No pending approval");
-        ScenarioSpec spec = Json.MAPPER.readValue(Files.readString(ScenarioFiles.resolve(Path.of(state.specPath))), ScenarioSpec.class);
-        var task = spec.tasks().stream().filter(item -> item.id().equals(state.pendingApprovalTask)).findFirst()
-            .orElseThrow(() -> new IllegalStateException("Pending task is not in the scenario"));
-        Path proposal = root.resolve("evidence").resolve(state.id).resolve(task.id() + "-v" + state.artifactVersions.get(task.id()) + ".txt");
+        ScenarioSpec spec = Json.MAPPER.readValue(
+                Files.readString(ScenarioFiles.resolve(Path.of(state.specPath))), ScenarioSpec.class);
+        var task = spec.tasks().stream()
+                .filter(item -> item.id().equals(state.pendingApprovalTask))
+                .findFirst()
+                .orElseThrow(() -> new IllegalStateException("Pending task is not in the scenario"));
+        Path proposal = root.resolve("evidence")
+                .resolve(state.id)
+                .resolve(task.id() + "-v" + state.artifactVersions.get(task.id()) + ".txt");
         return Map.of(
-            "runId", state.id,
-            "task", task.id(),
-            "reviewedHash", state.pendingApprovalHash,
-            "baselineCommit", state.baselineCommit == null ? state.baselineTag : state.baselineCommit,
-            "writeScope", task.writeScope(),
-            "proposal", Files.exists(proposal) ? proposal.toString() : "none",
-            "validatedCandidateHash", state.validatedCandidateHash == null ? "not yet validated" : state.validatedCandidateHash);
+                "runId",
+                state.id,
+                "task",
+                task.id(),
+                "reviewedHash",
+                state.pendingApprovalHash,
+                "baselineCommit",
+                state.baselineCommit == null ? state.baselineTag : state.baselineCommit,
+                "writeScope",
+                task.writeScope(),
+                "proposal",
+                Files.exists(proposal) ? proposal.toString() : "none",
+                "validatedCandidateHash",
+                state.validatedCandidateHash == null ? "not yet validated" : state.validatedCandidateHash);
     }
 
     /**
@@ -127,9 +149,11 @@ public final class FactoryCli {
         GitWorkspace workspace = new GitWorkspace(root);
         List<Map<String, Object>> pruned = new ArrayList<>();
         for (RunState state : repo.runsUpdatedBefore(cutoff)) {
-            if (!TERMINAL.contains(state.status) || state.finishedAt == null || !state.finishedAt.isBefore(cutoff)) continue;
+            if (!TERMINAL.contains(state.status) || state.finishedAt == null || !state.finishedAt.isBefore(cutoff))
+                continue;
             Path candidate = state.candidatePath == null ? null : Path.of(state.candidatePath);
-            boolean ownsCandidate = candidate != null && Files.isDirectory(candidate) && workspace.isOwnedCandidate(candidate);
+            boolean ownsCandidate =
+                    candidate != null && Files.isDirectory(candidate) && workspace.isOwnedCandidate(candidate);
             Path evidence = root.resolve("evidence").resolve(state.id);
             boolean hasEvidence = Files.isDirectory(evidence) && !Files.isSymbolicLink(evidence);
             if (!ownsCandidate && !hasEvidence) continue;
@@ -170,8 +194,9 @@ public final class FactoryCli {
     }
 
     private static void usage() {
-        System.err.println("Usage: start <scenario.json> <fixture|live> | advance <run-id> | review <run-id> | approve <run-id> <reviewed-hash>"
-            + " | reject <run-id> <reviewed-hash> | clarify <run-id> <answer> | revise <run-id> <task-id> [feedback-file] | status <run-id>"
-            + " | metrics <run-id> | verify-audit <run-id> | prune [--days N] [--apply]");
+        System.err.println(
+                "Usage: start <scenario.json> <fixture|live> | advance <run-id> | review <run-id> | approve <run-id> <reviewed-hash>"
+                        + " | reject <run-id> <reviewed-hash> | clarify <run-id> <answer> | revise <run-id> <task-id> [feedback-file] | status <run-id>"
+                        + " | metrics <run-id> | verify-audit <run-id> | prune [--days N] [--apply]");
     }
 }

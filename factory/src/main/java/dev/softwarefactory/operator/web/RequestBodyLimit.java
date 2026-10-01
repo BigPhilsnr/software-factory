@@ -24,7 +24,8 @@ public final class RequestBodyLimit extends OncePerRequestFilter {
     static final String BODY_ATTRIBUTE = RequestBodyLimit.class.getName() + ".body";
     private static final Set<String> BODY_METHODS = Set.of("POST", "PUT", "PATCH");
 
-    @Override protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain)
+    @Override
+    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain)
             throws ServletException, IOException {
         if (!BODY_METHODS.contains(request.getMethod())) {
             chain.doFilter(request, response);
@@ -51,17 +52,38 @@ public final class RequestBodyLimit extends OncePerRequestFilter {
             this.input = new ByteArrayInputStream(bytes);
         }
 
-        @Override public ServletInputStream getInputStream() {
+        @Override
+        public ServletInputStream getInputStream() {
             return new ServletInputStream() {
-                @Override public int read() { return input.read(); }
-                @Override public int read(byte[] buffer, int offset, int length) { return input.read(buffer, offset, length); }
-                @Override public boolean isFinished() { return input.available() == 0; }
-                @Override public boolean isReady() { return true; }
-                @Override public void setReadListener(ReadListener listener) { throw new UnsupportedOperationException("Synchronous JSON input"); }
+                @Override
+                public int read() {
+                    return input.read();
+                }
+
+                @Override
+                public int read(byte[] buffer, int offset, int length) {
+                    return input.read(buffer, offset, length);
+                }
+
+                @Override
+                public boolean isFinished() {
+                    return input.available() == 0;
+                }
+
+                @Override
+                public boolean isReady() {
+                    return true;
+                }
+
+                @Override
+                public void setReadListener(ReadListener listener) {
+                    throw new UnsupportedOperationException("Synchronous JSON input");
+                }
             };
         }
 
-        @Override public BufferedReader getReader() {
+        @Override
+        public BufferedReader getReader() {
             return new BufferedReader(new InputStreamReader(getInputStream(), StandardCharsets.UTF_8));
         }
     }

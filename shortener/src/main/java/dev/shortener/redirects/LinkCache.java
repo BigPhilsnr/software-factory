@@ -18,10 +18,18 @@ public final class LinkCache {
     private final Cache<String, Boolean> misses;
 
     public LinkCache(ShortenerProperties.Cache settings, Ticker ticker) {
-        this.links = Caffeine.newBuilder().ticker(ticker).maximumSize(settings.maxLinks())
-            .expireAfterWrite(settings.linkTtl()).recordStats().build();
-        this.misses = Caffeine.newBuilder().ticker(ticker).maximumSize(settings.maxMisses())
-            .expireAfterWrite(settings.missTtl()).recordStats().build();
+        this.links = Caffeine.newBuilder()
+                .ticker(ticker)
+                .maximumSize(settings.maxLinks())
+                .expireAfterWrite(settings.linkTtl())
+                .recordStats()
+                .build();
+        this.misses = Caffeine.newBuilder()
+                .ticker(ticker)
+                .maximumSize(settings.maxMisses())
+                .expireAfterWrite(settings.missTtl())
+                .recordStats()
+                .build();
     }
 
     public Optional<Link> get(String code) {

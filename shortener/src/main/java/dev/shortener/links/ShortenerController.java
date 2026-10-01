@@ -30,8 +30,11 @@ public class ShortenerController {
     private final AnalyticsRecorder recorder;
     private final String baseUrl;
 
-    public ShortenerController(ShortenerService service, CreationRateLimiter limiter, AnalyticsRecorder recorder,
-                               ShortenerProperties properties) {
+    public ShortenerController(
+            ShortenerService service,
+            CreationRateLimiter limiter,
+            AnalyticsRecorder recorder,
+            ShortenerProperties properties) {
         this.service = service;
         this.limiter = limiter;
         this.recorder = recorder;
@@ -39,13 +42,18 @@ public class ShortenerController {
     }
 
     /** Only requests that pass validation consume quota; see openapi.yaml. */
-    @PostMapping(path = "/api/shorten", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<CreateLinkResponse> create(@Valid @RequestBody CreateLinkRequest request, HttpServletRequest http) {
+    @PostMapping(
+            path = "/api/shorten",
+            consumes = MediaType.APPLICATION_JSON_VALUE,
+            produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<CreateLinkResponse> create(
+            @Valid @RequestBody CreateLinkRequest request, HttpServletRequest http) {
         LinkDraft draft = service.prepare(request.url(), request.alias());
         CreationRateLimiter.Result rate = limiter.admit(http.getRemoteAddr());
         if (!rate.allowed()) throw new CreationRateLimitExceededException(rate.retryAfterSeconds());
         Link link = service.create(draft);
-        return ResponseEntity.status(HttpStatus.CREATED).body(new CreateLinkResponse(link.code(), baseUrl + "/" + link.code()));
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(new CreateLinkResponse(link.code(), baseUrl + "/" + link.code()));
     }
 
     @GetMapping("/{code}")
@@ -71,9 +79,9 @@ public class ShortenerController {
     /** Redirects are never cached so every GET is observed and counted. */
     private static ResponseEntity<Void> redirectTo(Link link) {
         return ResponseEntity.status(HttpStatus.FOUND)
-            .location(URI.create(link.targetUrl()))
-            .cacheControl(CacheControl.noStore().cachePrivate())
-            .header(REFERRER_POLICY, NO_REFERRER)
-            .build();
+                .location(URI.create(link.targetUrl()))
+                .cacheControl(CacheControl.noStore().cachePrivate())
+                .header(REFERRER_POLICY, NO_REFERRER)
+                .build();
     }
 }

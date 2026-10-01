@@ -28,7 +28,8 @@ public final class AuditKey {
 
     public static AuditKey of(String secret) {
         if (secret == null || secret.length() < MINIMUM_LENGTH) {
-            throw new IllegalArgumentException("FACTORY_AUDIT_KEY must contain at least " + MINIMUM_LENGTH + " characters");
+            throw new IllegalArgumentException(
+                    "FACTORY_AUDIT_KEY must contain at least " + MINIMUM_LENGTH + " characters");
         }
         return new AuditKey(secret.getBytes(StandardCharsets.UTF_8));
     }
@@ -41,9 +42,12 @@ public final class AuditKey {
         if (configured != null) return of(configured);
         Path file = projectRoot.resolve(".runs").resolve(LOCAL_KEY_FILE);
         if (!Files.isRegularFile(file)) create(file);
-        if (Files.isSymbolicLink(file)) throw new SecurityException("Audit key file cannot be a symbolic link: " + file);
+        if (Files.isSymbolicLink(file))
+            throw new SecurityException("Audit key file cannot be a symbolic link: " + file);
         String local = Files.readString(file, StandardCharsets.UTF_8).strip();
-        LOG.warn("FACTORY_AUDIT_KEY is not set; using the development audit key in {}. Set FACTORY_AUDIT_KEY for live runs.", file);
+        LOG.warn(
+                "FACTORY_AUDIT_KEY is not set; using the development audit key in {}. Set FACTORY_AUDIT_KEY for live runs.",
+                file);
         return of(local);
     }
 
@@ -51,8 +55,11 @@ public final class AuditKey {
         Files.createDirectories(file.getParent());
         byte[] random = new byte[GENERATED_BYTES];
         new SecureRandom().nextBytes(random);
-        Path temporary = Files.createTempFile(file.getParent(), LOCAL_KEY_FILE, ".tmp",
-            PosixFilePermissions.asFileAttribute(PosixFilePermissions.fromString("rw-------")));
+        Path temporary = Files.createTempFile(
+                file.getParent(),
+                LOCAL_KEY_FILE,
+                ".tmp",
+                PosixFilePermissions.asFileAttribute(PosixFilePermissions.fromString("rw-------")));
         try {
             Files.writeString(temporary, HexFormat.of().formatHex(random) + "\n", StandardCharsets.UTF_8);
             // Publish atomically and never replace a key another process created first.
@@ -64,5 +71,7 @@ public final class AuditKey {
         }
     }
 
-    byte[] secret() { return secret.clone(); }
+    byte[] secret() {
+        return secret.clone();
+    }
 }
