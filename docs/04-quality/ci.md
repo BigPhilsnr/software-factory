@@ -77,3 +77,5 @@ mvn -B -f factory/pom.xml -Pintegration clean verify
 - It runs on one JDK (21) and one operating system (Ubuntu).
 
 Whether the workflow has run on a hosted runner depends on the repository having a remote; this documentation makes no claim about past hosted runs. The numbers in the [scorecard](scorecard.md) come from local runs of the commands above.
+
+The verify job also runs `python3 -m unittest discover -s scripts/checks/tests`: missing/empty/skipped evaluation suites cannot report success, and the product launcher must strip control-plane and provider credentials. Browser suites remain local opt-in checks.

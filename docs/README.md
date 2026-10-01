@@ -18,6 +18,7 @@
 | 4 | [Testing strategy](04-quality/testing.md) | What each kind of test proves and how to run it. |
 | 4 | [Quality gate](04-quality/quality-gate.md) | The static checks that `mvn verify` enforces. |
 | 4 | [CI pipeline](04-quality/ci.md) | What runs on every push. |
+| 4 | [Assignment readiness](04-quality/assignment-readiness.md) | How requirements map to evidence, how to demonstrate the prototype, and what remains before a near-full score. |
 | 4 | [Scorecard](04-quality/scorecard.md) | Measured test counts and coverage, and evidence per quality criterion. |
 | 4 | [Security model](04-quality/security.md) | Assets, threats, controls and residual risk. |
 | 4 | [Risk register](04-quality/risks.md) | Delivery and operational risks that are not security threats. |

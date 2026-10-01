@@ -10,6 +10,7 @@ import dev.softwarefactory.validation.GeneratedTestPolicy;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.Optional;
+import java.util.regex.Pattern;
 
 /**
  * PATCH: an agent proposes a unified diff. It is kept as evidence, checked against the task's write scope
@@ -17,6 +18,9 @@ import java.util.Optional;
  * candidate.
  */
 final class PatchTask implements TaskExecutor {
+    /** An opening Markdown code-fence line, with or without a language tag (for example ```diff). */
+    private static final Pattern FENCE_OPEN = Pattern.compile("```[A-Za-z0-9_-]*");
+
     private final RunStore runs;
     private final TaskGeneration generation;
     private final RunEvidence evidence;
@@ -44,7 +48,12 @@ final class PatchTask implements TaskExecutor {
         boolean drafted = state.patchDrafts.containsKey(task.id());
         Optional<String> proposed = failures.produce(state, task, () -> draft(state, task, spec));
         if (proposed.isEmpty()) return false;
-        String patch = proposed.get();
+        // Prompts tell the agent to return a bare diff, but a model sometimes wraps it in a Markdown
+        // code fence anyway, or omits the file's final newline; either defect reads as a well-formed
+        // diff to a human but a malformed one to git. Normalize once, here, before anything hashes,
+        // stores or reviews this text, so the approval hash, the saved evidence and the applied bytes
+        // never diverge.
+        String patch = withTrailingNewline(withoutMarkdownFence(proposed.get()));
         if (!drafted) evidence.recordProposal(state, task.id(), patch);
         if (!failures.attempt(state, task, () -> requireWithinAuthority(state, task, patch))) return false;
         String hash = ApprovalGate.patchHash(state, patch);
@@ -86,5 +95,25 @@ final class PatchTask implements TaskExecutor {
         int version = evidence.snapshot(state, task.id(), patch);
         state.patchDrafts.put(task.id(), version);
         runs.record(state, EventTypes.PATCH_DRAFTED, task.id() + ":v" + version);
+    }
+
+    private static String withTrailingNewline(String patch) {
+        return patch.endsWith("\n") ? patch : patch + "\n";
+    }
+
+    /**
+     * Strips a single Markdown code fence wrapping the whole reply, if the first and last non-blank
+     * lines are fence markers. Leaves the text untouched otherwise, so a diff that legitimately starts
+     * or ends differently is never altered.
+     */
+    private static String withoutMarkdownFence(String patch) {
+        String trimmed = patch.strip();
+        int firstNewline = trimmed.indexOf('\n');
+        int lastNewline = trimmed.lastIndexOf('\n');
+        if (firstNewline < 0 || firstNewline == lastNewline) return patch;
+        String firstLine = trimmed.substring(0, firstNewline).strip();
+        String lastLine = trimmed.substring(lastNewline + 1).strip();
+        if (!FENCE_OPEN.matcher(firstLine).matches() || !"```".equals(lastLine)) return patch;
+        return trimmed.substring(firstNewline + 1, lastNewline);
     }
 }

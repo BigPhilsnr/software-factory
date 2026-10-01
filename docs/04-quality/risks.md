@@ -34,5 +34,5 @@
 | --- | --- |
 | Decide whether the shortener's metrics should be reachable | `application.yml` lists `metrics` under exposed endpoints, and `PublicApiSecurity` denies it. The meters exist but cannot be read over HTTP. |
 | Allow `SHORTENER_FORWARD_HEADERS_STRATEGY` in `.env` | `application.yml` reads it, but the launchers' `.env` allowlist rejects it, so it can only be exported in the shell. |
-| Move the feature-request baseline forward | `FeatureScenario` starts every feature run from the tag `url-v4`, which is 15 commits behind `HEAD` and has the previous shortener package layout. The sandbox's trusted POM mirrors the current `shortener/pom.xml`, not the one at that tag. |
+| Keep feature baselines reviewable | New feature requests pin committed `HEAD`; local uncommitted changes are excluded. `FeatureRequestGovernanceTest` verifies isolation and immutable baseline selection. Historical scenario tags remain unchanged. |
 | Demonstrate a live feature run end to end | Needed before claiming live delivery beyond the recorded bug fix. |

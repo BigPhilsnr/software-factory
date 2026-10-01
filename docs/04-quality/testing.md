@@ -44,7 +44,7 @@ flowchart TD
 | `AnalyticsPoolIntegrationTest` (shortener, 1) | The analytics pool inherits the primary pool's statement and lock timeouts |
 | `ControlRecordIntegrationTest` (factory, 5) | Adoption of a pre-Flyway schema without rewriting bytes; lease conflicts without leaking pooled sessions; persistent chat budget; stale-writer refusal and state bound to the keyed chain; legacy rows verifiable but no downgrade |
 | `RunEngineResilienceTest` (factory, 5) | Altered evidence safe-stops; missing evidence stays inspectable; tampering cannot be approved with the old hash; two concurrent advances cannot both hold a run; a recovered patch re-runs validation |
-| `FactoryHttpIntegrationTest` (factory, 6) | The real server on a random port with PostgreSQL, Git candidates and the Docker sandbox: operator boundary, typed errors and security headers, token required for run-changing chat commands, clarification and exact-hash approval, separate patch and release approvals, refusal of tampered evidence |
+| `FactoryHttpIntegrationTest` (factory, 7) | The real server on a random port with PostgreSQL, Git candidates and the Docker sandbox: operator boundary, typed errors and security headers, token required for run-changing chat commands, clarification and exact-hash approval, separate patch and release approvals, refusal of tampered evidence |
 
 Each suite creates its own database schema and removes it afterwards. The factory HTTP suite also works in a disposable Git clone under `.runs/http-integration-*`. Existing runs and source files are not modified. Running applications on ports 8000 and 8080 are not needed and are not disturbed.
 
@@ -101,3 +101,7 @@ Approvals made by these scripts are labelled `synthetic-fixture-test` or `synthe
 - **The browser UI in CI.** `browser_smoke.cjs` is a local, optional check.
 
 Current counts and coverage are in the [scorecard](scorecard.md).
+
+## Assignment readiness checks
+
+The [assignment guide](assignment-readiness.md) maps each criterion to evidence. The evaluator now uses fresh quality-gated integration reports and requires tests in both modules; its own failure-detection checks and the product credential boundary run with `python3 -m unittest discover -s scripts/checks/tests`. `FeatureRequestGovernanceTest` verifies current-commit pinning and the human scope checkpoint. `scripts/checks/adk_chat_smoke.cjs` covers actual ADK Markdown rendering, including the previously failing multiline shortener diagram.

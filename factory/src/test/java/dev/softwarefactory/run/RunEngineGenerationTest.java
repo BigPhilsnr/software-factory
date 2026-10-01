@@ -314,6 +314,33 @@ class RunEngineGenerationTest {
     }
 
     @Test
+    void aPatchMissingItsFinalNewlineStillApplies() throws Exception {
+        // A model reply that stops right after the last content line is a well-formed diff with no
+        // file-terminating newline. git rejects that as a corrupt patch; the engine must normalize it first.
+        fixture.fixture("no-trailing-newline.patch", PATCH.stripTrailing());
+        RunEngine engine = fixture.engine();
+        RunState state = fixture.start(
+                engine, RunMode.FIXTURE, List.of(patch("apply", List.of(), "no-trailing-newline.patch", false)));
+        state = engine.advance(state.id);
+        assertEquals(RunStatus.COMPLETED, state.status);
+        assertEquals("reviewed change\n", fixture.candidateFile(state, "README.md"));
+    }
+
+    @Test
+    void aPatchWrappedInAMarkdownFenceStillApplies() throws Exception {
+        // Despite being told not to, a model sometimes wraps its whole reply in a code fence. git apply
+        // does not reject that cleanly: it can silently stop partway through the hunk instead. The fence
+        // must come off before anything reaches git.
+        fixture.fixture("fenced.patch", "```diff\n" + PATCH + "```\n");
+        RunEngine engine = fixture.engine();
+        RunState state =
+                fixture.start(engine, RunMode.FIXTURE, List.of(patch("apply", List.of(), "fenced.patch", false)));
+        state = engine.advance(state.id);
+        assertEquals(RunStatus.COMPLETED, state.status);
+        assertEquals("reviewed change\n", fixture.candidateFile(state, "README.md"));
+    }
+
+    @Test
     void unfinishedValidationsAreReportedUntilTheyPass() throws Exception {
         RunEngine engine = fixture.engine();
         var tasks = List.of(patch("apply", List.of(), "change.patch", false), validate("validate", List.of("apply")));

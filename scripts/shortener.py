@@ -14,6 +14,9 @@ if not major or int(major.group(1)) < 21:
         values["JAVA_HOME"] = "/opt/homebrew/opt/openjdk@21"
     else:
         raise SystemExit("Set JAVA_HOME to a JDK 21 installation before starting the shortener")
-for name in ("ANTHROPIC_API_KEY", "CLAUDE_MODEL", "FACTORY_MAX_MODEL_CALLS", "FACTORY_CHAT_DAILY_REQUESTS"):
-    values.pop(name, None)
+for name in tuple(values):
+    if name.startswith(("FACTORY_", "CONTROL_DB_")) or name in {
+        "ANTHROPIC_API_KEY", "OPENAI_API_KEY", "GOOGLE_API_KEY", "CLAUDE_MODEL"
+    }:
+        values.pop(name, None)
 raise SystemExit(subprocess.call(["mvn", "-q", "-f", "shortener/pom.xml", "spring-boot:run"], cwd=ROOT, env=values))
