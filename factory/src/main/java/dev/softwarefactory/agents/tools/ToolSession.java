@@ -31,6 +31,24 @@ public final class ToolSession {
         requests++;
     }
 
+    /** A nested search must leave one provider request available to produce the final artifact. */
+    public synchronized void reserveSearchRequest() {
+        if (requests >= MAX_MODEL_REQUESTS - 1) {
+            throw new IllegalStateException("Web search would consume the reserved final response request");
+        }
+        reserveRequest();
+    }
+
+    /** Call after reserving the next main-model request; the last request must return a final answer. */
+    public synchronized boolean toolsAllowed() {
+        return requests < MAX_MODEL_REQUESTS && calls < MAX_TOOL_CALLS;
+    }
+
+    public synchronized void recordFinalization() {
+        try { audit.record("TOOL_BUDGET_FINALIZING", "request=" + requests + "/" + MAX_MODEL_REQUESTS + "; tools=" + calls + "/" + MAX_TOOL_CALLS); }
+        catch (Exception failure) { throw new IllegalStateException("Could not record tool budget finalization", failure); }
+    }
+
     public synchronized String invoke(String name, String input, Operation operation) throws Exception {
         if (++calls > MAX_TOOL_CALLS) throw new SecurityException("Tool call limit reached");
         long started = System.nanoTime();

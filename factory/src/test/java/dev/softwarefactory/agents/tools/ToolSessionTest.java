@@ -29,4 +29,25 @@ class ToolSessionTest {
         for (int i = 2; i < 12; i++) session.invoke("current_time", "", () -> "time");
         assertThrows(SecurityException.class, () -> session.invoke("current_time", "", () -> "time"));
     }
+
+    @Test void searchCannotConsumeTheFinalResponseRequest() {
+        AtomicInteger reservations = new AtomicInteger();
+        var session = new ToolSession(reservations::incrementAndGet, (event, detail) -> {});
+        for (int i = 0; i < 6; i++) session.reserveRequest();
+        session.reserveSearchRequest();
+        assertEquals(7, reservations.get());
+        assertThrows(IllegalStateException.class, session::reserveSearchRequest);
+        assertEquals(7, reservations.get());
+        session.reserveRequest();
+        assertFalse(session.toolsAllowed());
+        assertEquals(8, reservations.get());
+        assertThrows(SecurityException.class, session::reserveRequest);
+    }
+
+    @Test void toolLimitAlsoSwitchesTheModelToFinalResponse() throws Exception {
+        var session = new ToolSession(() -> {}, (event, detail) -> {});
+        for (int i = 0; i < ToolSession.MAX_TOOL_CALLS; i++) session.invoke("read_file", "path", () -> "source");
+        session.reserveRequest();
+        assertFalse(session.toolsAllowed());
+    }
 }

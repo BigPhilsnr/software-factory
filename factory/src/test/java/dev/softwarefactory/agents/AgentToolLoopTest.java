@@ -27,6 +27,57 @@ import static org.junit.jupiter.api.Assertions.*;
 class AgentToolLoopTest {
     @TempDir Path root;
 
+    @Test void repeatedReadsLeaveOneRequestToProduceTheArtifact() throws Exception {
+        Files.writeString(root.resolve("README.md"), "Repository evidence marker\n");
+        List<com.fasterxml.jackson.databind.JsonNode> requests = new ArrayList<>();
+        List<String> audit = new ArrayList<>();
+        HttpServer server = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
+        server.createContext("/v1/messages", exchange -> {
+            var request = Json.MAPPER.readTree(exchange.getRequestBody());
+            requests.add(request);
+            boolean finalizing = request.path("tool_choice").path("type").asText().equals("none");
+            int number = requests.size();
+            String blocks = finalizing ? "[{\"type\":\"text\",\"text\":\"Final engineering artifact\"}]"
+                : "[{\"type\":\"tool_use\",\"id\":\"read_" + number
+                    + "\",\"name\":\"read_file\",\"input\":{\"path\":\"README.md\",\"start_line\":1,\"line_count\":10}}]";
+            String response = "{\"id\":\"msg_" + number + "\",\"type\":\"message\",\"role\":\"assistant\",\"model\":\"test-model\",\"content\":"
+                + blocks + ",\"stop_reason\":\"" + (finalizing ? "end_turn" : "tool_use")
+                + "\",\"usage\":{\"input_tokens\":10,\"output_tokens\":10}}";
+            byte[] bytes = response.getBytes(StandardCharsets.UTF_8);
+            exchange.getResponseHeaders().set("Content-Type", "application/json");
+            exchange.sendResponseHeaders(200, bytes.length);
+            exchange.getResponseBody().write(bytes);
+            exchange.close();
+        });
+        server.start();
+        var client = AnthropicOkHttpClient.builder().apiKey("unit-test-key")
+            .baseUrl("http://127.0.0.1:" + server.getAddress().getPort()).maxRetries(0).build();
+        AtomicInteger reservations = new AtomicInteger();
+        var session = new ToolSession(reservations::incrementAndGet, (event, detail) -> audit.add(event));
+        try (var web = new PublicWebReader()) {
+            var tools = new EngineeringTools(new RepositoryReader(root), web, query -> "unused", session);
+            var agent = LlmAgent.builder().name("test_agent").model(new ThinkingAwareClaude("test-model", client, session))
+                .tools(tools.declarations()).build();
+            var runner = new InMemoryRunner(agent, "test");
+            try {
+                runner.sessionService().createSession("test", "user", Map.of(), "session").blockingGet();
+                StringBuilder answer = new StringBuilder();
+                for (var event : runner.runAsync("user", "session", Content.fromParts(Part.fromText("Inspect then implement"))).blockingIterable()) {
+                    if (event.finalResponse()) event.content().ifPresent(content -> answer.append(content.text()));
+                }
+                assertEquals("Final engineering artifact", answer.toString());
+                assertEquals(ToolSession.MAX_MODEL_REQUESTS, reservations.get());
+                assertEquals(8, requests.size());
+                assertTrue(requests.subList(0, 7).stream().allMatch(request -> request.path("tool_choice").path("type").asText().equals("auto")));
+                assertEquals("none", requests.getLast().path("tool_choice").path("type").asText());
+                assertTrue(requests.getLast().path("system").toString().contains("reserved for your final response"));
+                assertEquals(7, audit.stream().filter("TOOL_FINISHED"::equals).count());
+                assertTrue(audit.contains("TOOL_BUDGET_FINALIZING"));
+                assertThrows(SecurityException.class, session::reserveRequest);
+            } finally { runner.close().blockingAwait(); }
+        } finally { client.close(); server.stop(0); }
+    }
+
     @Test void adkExecutesRealReadToolAndPreservesSignedThinkingOnlyInProviderRoundTrip() throws Exception {
         Files.writeString(root.resolve("README.md"), "Repository evidence marker\n");
         List<String> requests = new ArrayList<>();

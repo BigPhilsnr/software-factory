@@ -22,6 +22,7 @@ import com.anthropic.models.messages.ToolResultBlockParam;
 import com.anthropic.models.messages.Tool;
 import com.anthropic.models.messages.ToolChoice;
 import com.anthropic.models.messages.ToolChoiceAuto;
+import com.anthropic.models.messages.ToolChoiceNone;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.google.genai.types.FunctionCall;
 import com.google.adk.JsonBaseModel;
@@ -70,10 +71,20 @@ final class ThinkingAwareClaude extends Claude {
                         .required(declaration.parameters().flatMap(schema -> schema.required()).orElse(List.of())).build()).build());
             });
         });
-        if (!request.tools().isEmpty()) {
-            params.toolChoice(ToolChoice.ofAuto(ToolChoiceAuto.builder().disableParallelToolUse(true).build()));
-        }
         session.reserveRequest();
+        boolean toolsAllowed = session.toolsAllowed();
+        if (!request.tools().isEmpty()) {
+            if (toolsAllowed) {
+                params.toolChoice(ToolChoice.ofAuto(ToolChoiceAuto.builder().disableParallelToolUse(true).build()));
+            } else {
+                params.toolChoice(ToolChoice.ofNone(ToolChoiceNone.builder().build()));
+                params.system(String.join("\n", request.getSystemInstructions())
+                    + "\nThe tool exploration budget is complete. This request is reserved for your final response. "
+                    + "Return the requested artifact using the supplied context and collected evidence. "
+                    + "No further tool calls are available. Preserve the requested output format; do not invent observations.");
+                session.recordFinalization();
+            }
+        }
         Message message = client.messages().create(params.build());
         if (message.stopReason().filter(StopReason.MAX_TOKENS::equals).isPresent()) {
             throw new IllegalStateException("Claude response exceeded the output token limit");
@@ -82,6 +93,7 @@ final class ThinkingAwareClaude extends Claude {
         for (ContentBlock block : message.content()) {
             if (block.isText()) parts.add(Part.fromText(block.asText().text()));
             else if (block.isToolUse()) {
+                if (!toolsAllowed) throw new SecurityException("Provider returned a tool call after tool access was disabled");
                 var call = block.asToolUse();
                 toolTurns.put(call.id(), message.toParam());
                 parts.add(Part.builder().functionCall(FunctionCall.builder().id(call.id()).name(call.name())
