@@ -1,37 +1,80 @@
 package dev.softwarefactory.operator.web;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import dev.softwarefactory.execution.InfrastructureException;
+import dev.softwarefactory.persistence.RunStore;
 import dev.softwarefactory.serialization.Json;
 import dev.softwarefactory.workflow.RunState;
-
+import dev.softwarefactory.workflow.WorkflowConflictException;
+import jakarta.servlet.ServletException;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
+import java.util.LinkedHashMap;
 import java.util.Map;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpStatusCode;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.web.ErrorResponse;
+import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/factory/api")
 public final class FactoryController {
+    private static final Logger LOG = LoggerFactory.getLogger(FactoryController.class);
     private final FactoryService factory;
     private final OperatorToken token;
-    public FactoryController(FactoryService factory, OperatorToken token) { this.factory = factory; this.token = token; }
 
-    @GetMapping("/config") public ResponseEntity<com.fasterxml.jackson.databind.JsonNode> config() throws Exception {
-        return json(Map.of("token", token.value(), "liveReady", System.getenv("ANTHROPIC_API_KEY") != null && !System.getenv("ANTHROPIC_API_KEY").isBlank(),
-            "model", System.getenv().getOrDefault("CLAUDE_MODEL", "claude-sonnet-4-5")));
+    public FactoryController(FactoryService factory, OperatorToken token) {
+        this.factory = factory;
+        this.token = token;
     }
-    @GetMapping("/metrics") public ResponseEntity<com.fasterxml.jackson.databind.JsonNode> metrics() throws Exception { return json(factory.metrics()); }
-    @GetMapping("/runs") public ResponseEntity<com.fasterxml.jackson.databind.JsonNode> runs() throws Exception { return json(factory.runs()); }
-    @GetMapping("/runs/{id}") public ResponseEntity<com.fasterxml.jackson.databind.JsonNode> run(@PathVariable("id") String id) throws Exception { return json(factory.detail(id)); }
-    @GetMapping("/runs/{id}/artifacts/{name}") public ResponseEntity<com.fasterxml.jackson.databind.JsonNode> artifact(@PathVariable("id") String id, @PathVariable("name") String name) throws Exception {
+
+    @GetMapping("/config") public ResponseEntity<JsonNode> config() {
+        var settings = factory.settings();
+        var validator = factory.validatorStatus();
+        Map<String, Object> body = new LinkedHashMap<>();
+        body.put("token", token.value());
+        body.put("liveReady", settings.liveReady());
+        body.put("liveBlocker", settings.liveBlocker());
+        body.put("model", settings.model());
+        body.put("validator", Map.of("ready", validator.ready(), "detail", validator.detail(), "checkedAt", validator.checkedAt().toString()));
+        return json(body);
+    }
+
+    @GetMapping("/metrics") public ResponseEntity<JsonNode> metrics() throws Exception { return json(factory.metrics()); }
+
+    @GetMapping("/runs") public ResponseEntity<JsonNode> runs() throws Exception { return json(factory.runs()); }
+
+    @GetMapping("/runs/{id}") public ResponseEntity<JsonNode> run(@PathVariable("id") String id) throws Exception {
+        return json(factory.detail(id));
+    }
+
+    @GetMapping("/runs/{id}/artifacts/{name}")
+    public ResponseEntity<JsonNode> artifact(@PathVariable("id") String id, @PathVariable("name") String name) throws Exception {
         return json(Map.of("name", name, "text", factory.artifact(id, name)));
     }
-    @PostMapping("/runs") public ResponseEntity<com.fasterxml.jackson.databind.JsonNode> create(@jakarta.validation.Valid @RequestBody CreateRunRequest body) throws Exception {
+
+    @PostMapping("/runs") public ResponseEntity<JsonNode> create(@Valid @RequestBody CreateRunRequest body) throws Exception {
         RunState state = "feature".equals(body.kind()) ? factory.feature(body.requirement())
             : factory.scenario(body.scenario(), body.mode() == null ? "fixture" : body.mode());
         return json(state);
     }
-    @PostMapping("/runs/{id}/actions") public ResponseEntity<com.fasterxml.jackson.databind.JsonNode> action(@PathVariable("id") String id, @jakarta.validation.Valid @RequestBody ActionRequest body) throws Exception {
-        String action = body.action();
-        switch (action) {
+
+    @PostMapping("/runs/{id}/actions")
+    public ResponseEntity<JsonNode> action(@PathVariable("id") String id, @Valid @RequestBody ActionRequest body) throws Exception {
+        switch (body.action()) {
             case "advance" -> factory.advance(id);
             case "approve" -> factory.approve(id, body.hash());
             case "reject" -> factory.reject(id, body.hash());
@@ -41,34 +84,60 @@ public final class FactoryController {
         }
         return json(Map.of("accepted", true));
     }
+
     public record CreateRunRequest(
-        @jakarta.validation.constraints.NotBlank @jakarta.validation.constraints.Pattern(regexp = "feature|scenario") String kind,
+        @NotBlank @Pattern(regexp = "feature|scenario") String kind,
         String requirement, String scenario,
-        @jakarta.validation.constraints.Pattern(regexp = "fixture|live") String mode) {}
+        @Pattern(regexp = "fixture|live") String mode) {}
+
     public record ActionRequest(
-        @jakarta.validation.constraints.NotBlank @jakarta.validation.constraints.Pattern(regexp = "advance|approve|reject|clarify|revise") String action,
+        @NotBlank @Pattern(regexp = "advance|approve|reject|clarify|revise") String action,
         String hash, String answer, String task, String feedback) {}
 
-    @ExceptionHandler(org.springframework.web.bind.MethodArgumentNotValidException.class)
-    public ResponseEntity<com.fasterxml.jackson.databind.JsonNode> invalidRequest() {
-        return ResponseEntity.badRequest().body(Json.MAPPER.valueToTree(Map.of("error", "Invalid request fields")));
+    @ExceptionHandler({MethodArgumentNotValidException.class, HttpMessageNotReadableException.class})
+    public ResponseEntity<JsonNode> invalidRequest() {
+        return error(HttpStatus.BAD_REQUEST, "Invalid request fields");
     }
 
-    @ExceptionHandler({IllegalArgumentException.class, IllegalStateException.class, org.springframework.http.converter.HttpMessageNotReadableException.class})
-    public ResponseEntity<com.fasterxml.jackson.databind.JsonNode> invalid(Exception failure) throws Exception {
-        return ResponseEntity.status(failure instanceof dev.softwarefactory.persistence.ControlRepository.RunNotFound ? 404 : failure instanceof IllegalStateException ? 409 : 400).contentType(org.springframework.http.MediaType.APPLICATION_JSON)
-            .body(Json.MAPPER.valueToTree(Map.of("error", String.valueOf(failure.getMessage()))));
+    @ExceptionHandler({RunStore.MissingRunException.class, NotFoundException.class})
+    public ResponseEntity<JsonNode> notFound(RuntimeException failure) {
+        return error(HttpStatus.NOT_FOUND, failure.getMessage());
     }
-    @ExceptionHandler(java.nio.file.NoSuchFileException.class)
-    public ResponseEntity<com.fasterxml.jackson.databind.JsonNode> missingArtifact() {
-        return ResponseEntity.status(404).body(Json.MAPPER.valueToTree(Map.of("error", "Artifact not found")));
+
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<JsonNode> invalid(IllegalArgumentException failure) {
+        return error(HttpStatus.BAD_REQUEST, String.valueOf(failure.getMessage()));
     }
-    @ExceptionHandler(Exception.class) public ResponseEntity<com.fasterxml.jackson.databind.JsonNode> failure(Exception failure) throws Exception {
-        System.getLogger(FactoryController.class.getName()).log(System.Logger.Level.ERROR, "Factory request failed: {0}", failure.getClass().getSimpleName());
-        return ResponseEntity.status(500).contentType(org.springframework.http.MediaType.APPLICATION_JSON)
-            .body(Json.MAPPER.valueToTree(Map.of("error", "Factory operation failed. Check the database and server logs; " + failure.getClass().getSimpleName())));
+
+    @ExceptionHandler(WorkflowConflictException.class)
+    public ResponseEntity<JsonNode> conflict(WorkflowConflictException failure) {
+        return error(HttpStatus.CONFLICT, failure.getMessage());
     }
-    private ResponseEntity<com.fasterxml.jackson.databind.JsonNode> json(Object value) throws Exception {
-        return ResponseEntity.ok().contentType(org.springframework.http.MediaType.APPLICATION_JSON).body(Json.MAPPER.valueToTree(value));
+
+    @ExceptionHandler({ServiceUnavailableException.class, InfrastructureException.class})
+    public ResponseEntity<JsonNode> unavailable(Exception failure) {
+        LOG.warn("Factory request deferred: {}", failure.getMessage());
+        return error(HttpStatus.SERVICE_UNAVAILABLE, failure.getMessage());
+    }
+
+    /** Spring MVC protocol errors (unsupported media type, method, ...) keep their own status. */
+    @ExceptionHandler(ServletException.class)
+    public ResponseEntity<JsonNode> protocol(ServletException failure) {
+        HttpStatusCode status = failure instanceof ErrorResponse response ? response.getStatusCode() : HttpStatus.BAD_REQUEST;
+        return error(status, failure.getMessage());
+    }
+
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<JsonNode> failure(Exception failure) {
+        LOG.error("Factory request failed", failure);
+        return error(HttpStatus.INTERNAL_SERVER_ERROR, "Factory operation failed. Check the database and server logs; " + failure.getClass().getSimpleName());
+    }
+
+    private static ResponseEntity<JsonNode> error(HttpStatusCode status, String message) {
+        return ResponseEntity.status(status).contentType(MediaType.APPLICATION_JSON).body(Json.MAPPER.valueToTree(Map.of("error", String.valueOf(message))));
+    }
+
+    private static ResponseEntity<JsonNode> json(Object value) {
+        return ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).body(Json.MAPPER.valueToTree(value));
     }
 }

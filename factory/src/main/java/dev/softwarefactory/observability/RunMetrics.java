@@ -7,11 +7,16 @@ import java.time.Instant;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /** Metrics derived from the complete event history, never from model-reported results. */
 public record RunMetrics(long elapsedMillis, boolean terminal, int retryOffers, int retryExecutions, int rollbacks,
                          int recoveredTasks, int unresolvedFailures, Long meanRecoveryMillis,
                          int parallelJoins, int replans, int approvalRequests) {
+    /** The only event types these metrics read; dashboards may load just these. */
+    public static final Set<String> EVENT_TYPES = Set.of("RETRY_AVAILABLE", "TASK_FAILED", "POLICY_SAFE_STOP", "REVISION_REQUIRED",
+        "TASK_STARTED", "VALIDATION_STARTED", "TASK_DONE", "RUN_RECOVERED", "PARTIAL_REPLAN", "PARALLEL_JOIN", "APPROVAL_REQUIRED");
+
     public static RunMetrics from(RunState state, List<AuditEvent> events, Instant now) {
         Map<String, Instant> failures = new HashMap<>();
         long recoveryMillis = 0;
@@ -20,7 +25,7 @@ public record RunMetrics(long elapsedMillis, boolean terminal, int retryOffers, 
             String task = event.detail().split(":", 2)[0];
             switch (event.type()) {
                 case "RETRY_AVAILABLE" -> { retries++; failures.putIfAbsent(task, event.at()); }
-                case "TASK_FAILED", "POLICY_SAFE_STOP" -> failures.putIfAbsent(task, event.at());
+                case "TASK_FAILED", "POLICY_SAFE_STOP", "REVISION_REQUIRED" -> failures.putIfAbsent(task, event.at());
                 case "TASK_STARTED", "VALIDATION_STARTED" -> { if (failures.containsKey(task)) retryExecutions++; }
                 case "TASK_DONE" -> {
                     Instant failedAt = failures.remove(task);

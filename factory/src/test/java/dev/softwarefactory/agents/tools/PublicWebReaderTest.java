@@ -2,6 +2,7 @@ package dev.softwarefactory.agents.tools;
 
 import java.net.InetAddress;
 import java.util.List;
+import okhttp3.HttpUrl;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -23,11 +24,24 @@ class PublicWebReaderTest {
         assertEquals("example.com", PublicWebReader.validateUrl("https://example.com/docs?q=java").getHost());
     }
 
-    @Test void htmlExtractionDoesNotExecuteOrReturnScriptsAndStyles() throws Exception {
+    @Test void redirectsStayOnTheApprovedOriginWithoutQueries() {
+        HttpUrl origin = HttpUrl.get("https://docs.example.org/guide");
+        assertEquals("https://docs.example.org/guide/v2",
+            PublicWebReader.sameOriginRedirect(origin, origin, "/guide/v2?session=abc#top").toString());
+        assertEquals("https://docs.example.org/other", PublicWebReader.sameOriginRedirect(origin, origin, "https://DOCS.example.org:443/other").toString());
+        for (String location : List.of("https://attacker.example/guide", "http://docs.example.org/guide", "https://docs.example.org:8443/guide",
+                "https://sub.docs.example.org/guide")) {
+            assertThrows(SecurityException.class, () -> PublicWebReader.sameOriginRedirect(origin, origin, location), location);
+        }
+        assertThrows(IllegalStateException.class, () -> PublicWebReader.sameOriginRedirect(origin, origin, null));
+    }
+
+    @Test void htmlExtractionDoesNotExecuteOrReturnScriptsAndStyles() {
         String text = PublicWebReader.htmlText("<html><head><style>secret-style</style></head><body><h1>Title</h1><script>secret-script</script><p>A &amp; B</p></body></html>");
         assertTrue(text.contains("Title"));
         assertTrue(text.contains("A & B"));
         assertFalse(text.contains("secret-script"));
         assertFalse(text.contains("secret-style"));
+        assertEquals("First\nSecond", PublicWebReader.htmlText("<p>First</p><noscript>hidden</noscript><div>Second</div>"));
     }
 }

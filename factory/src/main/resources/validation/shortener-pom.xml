@@ -1,4 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Trusted build definition for sandbox validation. It mirrors shortener/pom.xml (parent, dependencies
+  and test selection; ShortenerValidationPomDriftTest fails on drift) but fixes every build location so
+  candidate-supplied build logic cannot run. Reports go to a host-owned mount outside the candidate.
+-->
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
   <parent>
@@ -20,7 +25,11 @@
     <dependency><groupId>org.springframework.boot</groupId><artifactId>spring-boot-starter-flyway</artifactId></dependency>
     <dependency><groupId>org.flywaydb</groupId><artifactId>flyway-database-postgresql</artifactId></dependency>
     <dependency><groupId>org.postgresql</groupId><artifactId>postgresql</artifactId><scope>runtime</scope></dependency>
+    <dependency><groupId>com.github.ben-manes.caffeine</groupId><artifactId>caffeine</artifactId></dependency>
     <dependency><groupId>org.springframework.boot</groupId><artifactId>spring-boot-starter-test</artifactId><scope>test</scope></dependency>
+    <dependency><groupId>org.springframework.boot</groupId><artifactId>spring-boot-starter-webmvc-test</artifactId><scope>test</scope></dependency>
+    <dependency><groupId>org.springframework.boot</groupId><artifactId>spring-boot-starter-security-test</artifactId><scope>test</scope></dependency>
+    <dependency><groupId>com.atlassian.oai</groupId><artifactId>openapi-request-validator-mockmvc</artifactId><version>3.0.0</version><scope>test</scope></dependency>
   </dependencies>
   <build>
     <directory>/workspace/shortener/target</directory>
@@ -28,6 +37,19 @@
     <testSourceDirectory>/workspace/shortener/src/test/java</testSourceDirectory>
     <resources><resource><directory>/workspace/shortener/src/main/resources</directory></resource></resources>
     <testResources><testResource><directory>/workspace/shortener/src/test/resources</directory></testResource></testResources>
-    <plugins><plugin><groupId>org.apache.maven.plugins</groupId><artifactId>maven-surefire-plugin</artifactId><configuration><excludedGroups>${test.excludedGroups}</excludedGroups></configuration></plugin><plugin><groupId>org.springframework.boot</groupId><artifactId>spring-boot-maven-plugin</artifactId></plugin></plugins></build>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <configuration>
+          <excludedGroups>${test.excludedGroups}</excludedGroups>
+          <!-- Relative paths in tests resolve as they would from the module directory. -->
+          <workingDirectory>/workspace/shortener</workingDirectory>
+          <reportsDirectory>/reports</reportsDirectory>
+        </configuration>
+      </plugin>
+      <plugin><groupId>org.springframework.boot</groupId><artifactId>spring-boot-maven-plugin</artifactId></plugin>
+    </plugins>
+  </build>
   <profiles><profile><id>integration</id><properties><test.excludedGroups></test.excludedGroups></properties></profile></profiles>
 </project>

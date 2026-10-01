@@ -1,16 +1,19 @@
 package dev.softwarefactory.agents.tools;
 
-import java.net.URI;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import okhttp3.HttpUrl;
 
 /** Fetch targets come from provider search evidence, never from model-composed URLs. */
 public final class WebAccessPolicy {
     private final Set<String> sources = ConcurrentHashMap.newKeySet();
 
     public void registerSource(String source) {
-        try { sources.add(canonical(source)); }
-        catch (RuntimeException invalid) { /* Non-public/non-HTTPS search results are not fetch capabilities. */ }
+        try {
+            sources.add(canonical(source));
+        } catch (IllegalArgumentException | SecurityException notFetchable) {
+            // Non-public or non-HTTPS search results are not fetch capabilities.
+        }
     }
 
     public String approved(String requested) {
@@ -19,13 +22,14 @@ public final class WebAccessPolicy {
         return url;
     }
 
-    private static String canonical(String value) {
-        URI uri = PublicWebReader.validateUrl(value);
-        // Strip queries and fragments without decoding/re-encoding the path.
-        String raw = uri.toString();
-        int query = raw.indexOf('?'), fragment = raw.indexOf('#');
-        int end = query < 0 ? raw.length() : query;
-        if (fragment >= 0) end = Math.min(end, fragment);
-        return raw.substring(0, end);
+    /**
+     * Canonical form used for both registration and lookup: lower-case host, default port omitted,
+     * query and fragment removed so model-supplied parameters cannot carry data out.
+     */
+    static String canonical(String value) {
+        PublicWebReader.validateUrl(value);
+        HttpUrl url = HttpUrl.parse(value);
+        if (url == null) throw new IllegalArgumentException("Invalid URL");
+        return url.newBuilder().query(null).fragment(null).build().toString();
     }
 }

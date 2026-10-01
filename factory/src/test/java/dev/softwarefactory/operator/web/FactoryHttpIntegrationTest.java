@@ -99,6 +99,35 @@ class FactoryHttpIntegrationTest {
         http().get("/actuator/health/readiness").then().statusCode(200).body("status", equalTo("UP"));
     }
 
+    @Test void returnsTypedJsonErrorsAndSecurityHeaders() {
+        http().body(Map.of("kind", "scenario")).post("/factory/api/runs").then().statusCode(403)
+            .contentType("application/json").body("error", containsString("Reload the operator page"));
+        operator().contentType("text/plain").body("kind=scenario").post("/factory/api/runs").then().statusCode(415);
+        operator().body("{not json").post("/factory/api/runs").then().statusCode(400).body("error", equalTo("Invalid request fields"));
+        operator().body(Map.of("action", "approve", "hash", "0".repeat(64)))
+            .post("/factory/api/runs/{id}/actions", "00000000-0000-0000-0000-000000000000").then().statusCode(404);
+        http().get("/factory/api/runs/00000000-0000-0000-0000-000000000000/artifacts/plan-v1.txt").then().statusCode(404)
+            .body("error", containsString("Artifact not found"));
+        http().get("/factory/").then().statusCode(200)
+            .header("Content-Security-Policy", containsString("frame-ancestors 'none'"))
+            .header("Content-Security-Policy", containsString("script-src 'self'"))
+            .header("X-Content-Type-Options", "nosniff")
+            .header("X-Frame-Options", "DENY");
+        http().get("/factory/api/config").then().statusCode(200).body("validator.ready", notNullValue())
+            .body("liveBlocker", not(emptyString()));
+    }
+
+    @Test void chatCommandsThatChangeWorkflowStateRequireTheOperatorToken() {
+        String session = http().body(Map.of()).post("/apps/software_factory/users/tester/sessions").then().statusCode(200).extract().path("id");
+        Map<String, Object> approve = Map.of("appName", "software_factory", "userId", "tester", "sessionId", session,
+            "newMessage", Map.of("role", "user", "parts", java.util.List.of(Map.of("text", "/approve " + "0".repeat(64)))));
+        http().body(approve).post("/run").then().statusCode(403).body("error", containsString("operator token"));
+        operator().body(approve).post("/run").then().statusCode(200).body(containsString("Action not performed"));
+        Map<String, Object> help = Map.of("appName", "software_factory", "userId", "tester", "sessionId", session,
+            "newMessage", Map.of("role", "user", "parts", java.util.List.of(Map.of("text", "/help"))));
+        http().body(help).post("/run").then().statusCode(200).body(containsString("Software factory"));
+    }
+
     @Test void requiresClarificationAndExactHashBeforeRejectingProposal() {
         String run = start("ambiguous");
         action(run, Map.of("action", "advance"), 200);

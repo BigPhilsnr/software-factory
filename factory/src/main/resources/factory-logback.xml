@@ -1,7 +1,9 @@
 <configuration>
   <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
     <target>System.err</target>
-    <encoder><pattern>%d{HH:mm:ss} %-5level %logger{35} - %msg%n</pattern></encoder>
+    <encoder><pattern>%d{HH:mm:ss} %-5level %logger{35} [run=%X{runId:-} task=%X{taskId:-}] - %msg%n%ex</pattern></encoder>
   </appender>
+  <!-- Factory transitions at INFO; third-party libraries stay quiet unless they warn. -->
+  <logger name="dev.softwarefactory" level="INFO"/>
   <root level="WARN"><appender-ref ref="CONSOLE"/></root>
 </configuration>

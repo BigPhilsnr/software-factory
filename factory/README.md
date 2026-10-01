@@ -29,6 +29,14 @@ From the repository root, run `python3 scripts/factory_web.py`. See the [operato
 
 The web application has an explicit Spring Boot composition root in `operator/web/FactoryWebServer.java`. Spring owns the service lifecycle, ADK loader, control connection pool, migrations, security chain and health endpoints. See [platform decisions](../docs/architecture/spring-platform.md) for library choices and the local-only operator boundary.
 
+## Configuration and maintenance
+
+All environment settings are read once by `configuration/FactorySettings`. Live runs need `ANTHROPIC_API_KEY` and `FACTORY_AUDIT_KEY` (at least 32 characters); the audit key signs the audit chain (HMAC-SHA256) and is kept outside the control database. Without it, fixture runs use a development key generated in `.runs/audit.key`. Rows written before this scheme keep verifying with their recorded `hash_scheme`.
+
+Workflow commands in ADK chat (`/feature`, `/demo`, `/advance`, `/approve`, `/reject`, `/answer`, `/changes`) require the operator token; use the operator page for decisions.
+
+`python3 scripts/factory_cli.py prune [--days N]` lists candidate worktrees and evidence of terminal runs older than N days (default 30); add `--apply` to delete them. Database state and audit rows are kept.
+
 ## HTTP integration tests
 
 `operator/web/FactoryHttpIntegrationTest` uses REST Assured against a real Spring Boot server on a random port. It exercises MVC, security, the factory service, asynchronous orchestration, PostgreSQL audit/state persistence, Git candidates and actual Docker validation. Recorded fixtures replace only model generation; no approval, persistence or validator is mocked.

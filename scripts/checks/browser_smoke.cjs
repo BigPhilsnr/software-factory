@@ -8,7 +8,7 @@ const path = require('node:path');
 const {pathToFileURL} = require('node:url');
 const base = process.env.FACTORY_TEST_URL || 'http://localhost:8000';
 const output = path.resolve('.runs/browser', new Date().toISOString().replaceAll(':', '-'));
-const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
+const XSS_MARKER = '<img src=x onerror="window.__factoryXss=1">';
 
 (async () => {
   const modulePath = process.env.FACTORY_BROWSER_MODULE;
@@ -28,15 +28,25 @@ const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
     if (acceptDialog) await dialog.accept(); else await dialog.dismiss();
   });
   await fs.mkdir(output, {recursive: true});
+  // Awaits real events: the detail response triggered by Refresh, then the rendered condition.
   async function until(predicate, description) {
     const deadline = Date.now() + 240000;
     while (Date.now() < deadline) {
-      await page.click('#refresh');
-      await delay(500);
-      if (await page.evaluate(predicate)) return;
-      await delay(1000);
+      await Promise.all([
+        page.waitForResponse(response => /\/factory\/api\/runs\/[0-9a-f-]{36}$/.test(response.url())),
+        page.click('#refresh'),
+      ]);
+      try {
+        await page.waitForFunction(predicate, {timeout: 2000});
+        return;
+      } catch (error) {
+        if (error.name !== 'TimeoutError') throw error;
+      }
     }
     throw new Error('Timed out: ' + description);
+  }
+  function nextDialog() {
+    return new Promise(resolve => page.once('dialog', dialog => resolve(dialog.message())));
   }
   async function create(scenario) {
     const prior = await page.$eval('#run-id', e => e.textContent);
@@ -63,22 +73,26 @@ const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
     assert.equal((await page.goto(base + '/favicon.ico')).status(), 200);
     await page.goto(base + '/factory/', {waitUntil:'networkidle0'});
     checks.push('All required scenarios selectable; favicon available');
-    const beforePosts = posts;
-    await page.select('#mode', 'live');
-    await page.click('#scenario-form button');
-    await delay(300);
-    assert(dialogs.at(-1).includes('API charges'));
-    assert.equal(posts, beforePosts, 'Cancelling live creation must not create a run');
-    checks.push('Live creation cancellation sends no POST or paid call');
+    if (await page.$eval('#mode option[value="live"]', option => option.disabled)) {
+      checks.push('Live mode is disabled without a provider and audit key');
+    } else {
+      const beforePosts = posts;
+      await page.select('#mode', 'live');
+      const liveDialog = nextDialog();
+      await page.click('#scenario-form button');
+      assert((await liveDialog).includes('API charges'));
+      assert.equal(posts, beforePosts, 'Cancelling live creation must not create a run');
+      checks.push('Live creation cancellation sends no POST or paid call');
+    }
     // Exercise every dropdown option without injecting any DOM markup.
     for (const scenario of ['greenfield','brownfield']) await create(scenario);
     await create('bugfix');
     await page.click('#advance');
     await waitReview('release');
     const priorStatus = await page.$eval('#run-status', e => e.textContent);
+    const rejectDialog = nextDialog();
     await page.click('#reject');
-    await delay(300);
-    assert(dialogs.at(-1).includes('permanently'));
+    assert((await rejectDialog).includes('permanently'));
     assert.equal(await page.$eval('#run-status', e => e.textContent), priorStatus);
     assert.equal(await page.$eval('#revision-task', e => e.value), 'fix');
     assert(await page.$eval('#review-evidence', e => e.textContent.includes('green')));
@@ -97,9 +111,14 @@ const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
     await page.click('#advance');
     await until(() => !document.querySelector('#clarification').hidden, 'clarification');
     assert(await page.$eval('#clarification-context', e => !e.hidden && e.textContent.length > 50));
-    await page.type('#answer', 'Fixture test: one instance, immutable links, 60 second cache, 100 requests/second and 200ms p95; best-effort analytics.');
+    await page.type('#answer', 'Fixture test: one instance, immutable links, 60 second cache, 100 requests/second and 200ms p95; best-effort analytics. ' + XSS_MARKER);
     await page.click('#answer-form button');
     await waitReview('apply');
+    await page.select('#artifact', 'clarify-v1.txt');
+    await page.waitForFunction(() => !document.querySelector('#artifact-text').hidden);
+    assert(await page.$eval('#artifact-text', e => e.textContent.includes('onerror') && e.querySelector('img') === null));
+    assert.equal(await page.evaluate(() => window.__factoryXss), undefined, 'Operator text must never execute as markup');
+    checks.push('Operator-supplied markup is displayed as text, never executed');
     acceptDialog = true;
     await page.click('#reject');
     await until(() => document.querySelector('#run-status').textContent === 'NOT_APPROVED', 'confirmed rejection');

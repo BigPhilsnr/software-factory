@@ -1,19 +1,29 @@
 package dev.softwarefactory.operator.web;
 
 import dev.softwarefactory.agents.AgentRuntime;
+import dev.softwarefactory.agents.UntrustedText;
 
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayDeque;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
 /** Read-only, bounded conversation. Model text has no path to workflow actions. */
 final class ChatConversation {
+    private static final int MAX_QUESTION = 8000;
+    private static final int MAX_REMEMBERED_ANSWER = 6000;
+    private static final int MAX_TURNS = 6;
+    private static final int MAX_CONTEXT = 60_000;
+    private static final int MAX_FILE_EXCERPT = 12_000;
+    private static final List<String> CONTEXT_FILES = List.of("README.md", "docs/architecture/decisions.md",
+        "docs/operations/local-runbook.md", "docs/architecture/agent-system.md", "docs/operations/operator-guide.md",
+        "shortener/pom.xml", "shortener/openapi.yaml");
     private final Path root;
     private final AgentRuntime runtime;
-    private final Map<String, ArrayDeque<String>> sessions = new LinkedHashMap<>();
+    /** Least recently used conversations are forgotten first. */
+    private final Map<String, ArrayDeque<String>> sessions = LruMap.create(LruMap.DEFAULT_CAPACITY);
 
     ChatConversation(Path root, AgentRuntime runtime) {
         this.root = root.toAbsolutePath().normalize();
@@ -21,12 +31,8 @@ final class ChatConversation {
     }
 
     String answer(String session, String question, String runContext) throws Exception {
-        if (question.length() > 8000) throw new IllegalArgumentException("Keep chat messages within 8000 characters");
-        ArrayDeque<String> history;
-        synchronized (sessions) {
-            if (!sessions.containsKey(session) && sessions.size() >= 128) sessions.remove(sessions.keySet().iterator().next());
-            history = sessions.computeIfAbsent(session, ignored -> new ArrayDeque<>());
-        }
+        if (question.length() > MAX_QUESTION) throw new IllegalArgumentException("Keep chat messages within " + MAX_QUESTION + " characters");
+        ArrayDeque<String> history = sessions.computeIfAbsent(session, ignored -> new ArrayDeque<>());
         synchronized (history) {
             String prompt = """
                 Answer the user's conversational question about this software factory or URL shortener.
@@ -42,21 +48,19 @@ final class ChatConversation {
                 `/feature REQUIREMENT` command when the user wants implementation. Only that explicit
                 command creates a run; `/advance` starts it. Approvals require `/approve EXACT_HASH`.
                 Do not invent a run ID, approval hash, test result or file contents.
-                """ + dev.softwarefactory.agents.UntrustedText.block("SELECTED RUN", runContext) + dev.softwarefactory.agents.UntrustedText.block("CURRENT CHECKOUT", repositoryContext())
-                + dev.softwarefactory.agents.UntrustedText.block("RECENT CONVERSATION", String.join("\n", history)) + "\nUSER\n" + question;
+                """ + UntrustedText.block("SELECTED RUN", runContext) + UntrustedText.block("CURRENT CHECKOUT", repositoryContext())
+                + UntrustedText.block("RECENT CONVERSATION", String.join("\n", history)) + "\nUSER\n" + question;
             String answer = runtime.generate("project_chat", prompt);
             if (answer == null || answer.isBlank()) throw new IllegalStateException("Chat returned no answer; please retry");
-            history.addLast("USER: " + question + "\nASSISTANT: " + answer.substring(0, Math.min(answer.length(), 6000)));
-            while (history.size() > 6) history.removeFirst();
+            history.addLast("USER: " + question + "\nASSISTANT: " + answer.substring(0, Math.min(answer.length(), MAX_REMEMBERED_ANSWER)));
+            while (history.size() > MAX_TURNS) history.removeFirst();
             return answer;
         }
     }
 
-    private String repositoryContext() throws Exception {
+    private String repositoryContext() throws IOException {
         StringBuilder context = new StringBuilder();
-        for (String name : List.of("README.md", "docs/architecture/decisions.md", "docs/operations/local-runbook.md", "docs/architecture/agent-system.md", "docs/operations/operator-guide.md", "shortener/pom.xml", "shortener/openapi.yaml")) {
-            append(context, root.resolve(name));
-        }
+        for (String name : CONTEXT_FILES) append(context, root.resolve(name));
         Path sources = root.resolve("shortener/src/main");
         if (Files.isDirectory(sources)) {
             try (var paths = Files.walk(sources)) {
@@ -66,12 +70,12 @@ final class ChatConversation {
         return context.toString();
     }
 
-    private void append(StringBuilder context, Path file) throws Exception {
+    private void append(StringBuilder context, Path file) throws IOException {
         // Only allowlisted documentation/source files; never environment, credentials or run workspaces.
-        if (!Files.isRegularFile(file) || Files.isSymbolicLink(file) || !file.toRealPath().startsWith(root.toRealPath()) || context.length() >= 60000) return;
+        if (!Files.isRegularFile(file) || Files.isSymbolicLink(file) || !file.toRealPath().startsWith(root.toRealPath()) || context.length() >= MAX_CONTEXT) return;
         String content;
         try (var reader = Files.newBufferedReader(file)) {
-            char[] buffer = new char[Math.min(12000, 60000 - context.length())];
+            char[] buffer = new char[Math.min(MAX_FILE_EXCERPT, MAX_CONTEXT - context.length())];
             int count = reader.read(buffer);
             content = count < 0 ? "" : new String(buffer, 0, count);
         }

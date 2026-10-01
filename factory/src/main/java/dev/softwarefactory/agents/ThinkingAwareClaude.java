@@ -15,6 +15,7 @@ import io.reactivex.rxjava3.core.Flowable;
 import java.util.ArrayList;
 import java.util.List;
 import com.anthropic.core.JsonValue;
+import com.anthropic.core.RequestOptions;
 import com.anthropic.models.messages.ContentBlockParam;
 import com.anthropic.models.messages.MessageParam;
 import com.anthropic.models.messages.TextBlockParam;
@@ -33,14 +34,12 @@ import java.util.Locale;
 
 /** Bridges ADK function calls while retaining signed thinking privately for provider round trips. */
 final class ThinkingAwareClaude extends Claude {
+    /** Large enough for a complete patch artifact; longer output is rejected rather than truncated. */
+    private static final int MAX_OUTPUT_TOKENS = 32_768;
     private final AnthropicClient client;
     private final String modelName;
     private final ToolSession session;
     private final Map<String, MessageParam> toolTurns = new HashMap<>();
-
-    ThinkingAwareClaude(String modelName, AnthropicClient client) {
-        this(modelName, client, new ToolSession(() -> {}, (event, detail) -> {}));
-    }
 
     ThinkingAwareClaude(String modelName, AnthropicClient client, ToolSession session) {
         super(modelName, client);
@@ -55,7 +54,7 @@ final class ThinkingAwareClaude extends Claude {
         MessageCreateParams.Builder params = MessageCreateParams.builder()
             .model(request.model().orElse(modelName))
             .system(String.join("\n", request.getSystemInstructions()))
-            .maxTokens(32768);
+            .maxTokens(MAX_OUTPUT_TOKENS);
         for (Content content : request.contents()) params.addMessage(toMessage(content));
         request.config().flatMap(config -> config.tools()).orElse(List.of()).forEach(group -> {
             group.functionDeclarations().orElse(List.of()).forEach(declaration -> {
@@ -85,7 +84,8 @@ final class ThinkingAwareClaude extends Claude {
                 session.recordFinalization();
             }
         }
-        Message message = client.messages().create(params.build());
+        Message message = client.messages().create(params.build(),
+            RequestOptions.builder().timeout(session.requestTimeout()).build());
         if (message.stopReason().filter(StopReason.MAX_TOKENS::equals).isPresent()) {
             throw new IllegalStateException("Claude response exceeded the output token limit");
         }

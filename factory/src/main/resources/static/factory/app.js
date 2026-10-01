@@ -17,14 +17,21 @@ function updateHtml(id, html) {
   if (focused && id === 'runs') [...element.querySelectorAll('[data-run]')].find(node => node.dataset.run === focused)?.focus({preventScroll:true});
 }
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-function notice(text) { $('notice').textContent = text; $('notice').hidden = !text; }
+// Each source owns its notice, so a successful refresh never hides a configuration or action message.
+const notices = {config: '', action: '', run: '', refresh: ''};
+function notice(source, text) {
+  notices[source] = text || '';
+  const combined = Object.values(notices).filter(Boolean).join('\n');
+  $('notice').textContent = combined;
+  $('notice').hidden = !combined;
+}
 async function api(path, body) {
   const response = await fetch('/factory/api/' + path, body === undefined ? {} : {method:'POST',headers:{'Content-Type':'application/json','X-Factory-Token':token},body:JSON.stringify(body)});
   const data = await response.json().catch(() => ({error:'Server returned an invalid response'}));
   if (!response.ok) throw new Error(data.error || 'Request failed');
   return data;
 }
-async function perform(fn) { notice(''); try { await fn(); } catch(e) { notice(e.message); } }
+async function perform(fn) { notice('action', ''); try { await fn(); } catch(e) { notice('action', e.message); } }
 async function choose(id) {
   selected = id; current = null; reviewHash = null;
   $('run').hidden = true;
@@ -38,14 +45,14 @@ async function refresh() {
   fetching = true;
   try {
     const runs = await api('runs');
-    updateHtml('runs', runs.map(r => `<button class="run-item ${r.id===selected?'selected':''}" data-run="${esc(r.id)}">${esc(r.scenario)} <span>Saved: ${esc(r.status)} · ${esc(r.mode)}</span><span>${esc(r.id.slice(0,8))}</span></button>`).join('') || '<p>No runs yet.</p>');
+    updateHtml('runs', runs.map(r => `<button class="run-item ${r.id===selected?'selected':''}"${r.id===selected?' aria-current="true"':''} data-run="${esc(r.id)}">${esc(r.scenario)} <span>Saved: ${esc(r.status)} · ${esc(r.mode)}</span><span>${esc(r.id.slice(0,8))}</span></button>`).join('') || '<p>No runs yet.</p>');
     if (selected) {
       const requested = selected, data = await api('runs/' + encodeURIComponent(requested));
       if (requested === selected) render(data);
     }
     $('connection').textContent = 'Connected · local control plane';
-    if (!current?.error) notice('');
-  } catch(e) { notice(e.message); $('connection').textContent = 'Connection unavailable'; }
+    notice('refresh', '');
+  } catch(e) { notice('refresh', e.message); $('connection').textContent = 'Connection unavailable'; }
   finally {
     fetching = false;
     if (refreshPending) { refreshPending = false; queueMicrotask(refresh); }
@@ -70,15 +77,16 @@ function render(data) {
   $('audit').textContent = (data.auditValid ? 'Audit verified' : 'Audit verification failed') + (data.auditCheckedAt ? ' · ' + new Date(data.auditCheckedAt).toLocaleTimeString() : '');
   $('audit').title = 'Dashboard audit results are cached for at most 30 seconds. Workflow actions always verify the audit independently.';
   $('busy').textContent = data.busy ? 'Worker active on this server · refresh every 5 seconds' : 'No active worker on this server';
-  $('advance').disabled = ended || data.busy || !!s.pendingApprovalTask || !!s.pendingClarificationTask;
+  $('advance').disabled = ended || data.busy || !!s.pendingApprovalTask || !!s.pendingClarificationTask || !!s.revisionRequiredTask;
   const stop = ['SAFE_STOPPED','FAILED'].includes(s.status) ? data.events.find(e=>['POLICY_SAFE_STOP','TASK_FAILED','RUN_FAILED'].includes(e.type)) : null;
   $('action-hint').textContent = ended ? (stop ? `Stopped: ${stop.detail}. This run has ended; inspect its evidence before starting a new request.` : 'Run ended. Evidence remains available.') : s.pendingApprovalTask ? 'Review the exact proposal below.' : s.pendingClarificationTask ? 'Answer the question below.' : data.busy ? 'Generation and validation continue in the background.' : 'Live runs make paid model calls. Fixture runs use recorded artifacts.';
-  if (!ended && !data.busy && data.retryReason) $('action-hint').textContent = `Retry available: ${data.retryReason}\nResolve the failure, then select Start / resume. A repeated failure may exhaust the retry limit.`;
+  if (!ended && !data.busy && data.retryReason) $('action-hint').textContent = pauseHint(data.pauseKind, data.retryReason);
   else if (s.status === 'RUNNING' && !data.busy) $('action-hint').textContent = 'Saved RUNNING status, but no worker is active on this server. Start / resume recovers unfinished work when its database lease is available.';
-  if(data.error) notice(data.error);
+  notice('run', data.error);
   const m=data.metrics;
   $('reliability').textContent = m ? `Elapsed ${(m.elapsedMillis/1000).toFixed(1)}s · Retries ${m.retryExecutions} (${m.retryOffers} offered) · Rollbacks ${m.rollbacks} · Replans ${m.replans} · Parallel joins ${m.parallelJoins} · Mean recovery ${m.meanRecoveryMillis===null?'no samples':(m.meanRecoveryMillis/1000).toFixed(1)+'s'}` : '';
-  updateHtml('tasks', data.tasks.map(t=>`<div class="task"><div><strong>${esc(t.id)}</strong><small>${esc(t.stage)} · after ${esc(t.dependsOn.join(", ") || "run start")}</small></div><span class="badge ${esc(s.tasks[t.id].toLowerCase())}">${esc(s.tasks[t.id])}</span></div>`).join(''));
+  // A task missing from the saved state (specification drift) is shown rather than breaking the page.
+  updateHtml('tasks', data.tasks.map(t=>{const status = s.tasks[t.id] ?? 'UNKNOWN'; return `<div class="task"><div><strong>${esc(t.id)}</strong><small>${esc(t.stage)} · after ${esc(t.dependsOn.join(", ") || "run start")}</small></div><span class="badge ${esc(status.toLowerCase())}">${esc(status)}</span></div>`;}).join(''));
   $('clarification').hidden = !s.pendingClarificationTask;
   $('question').textContent = data.tasks.find(t=>t.id===s.pendingClarificationTask)?.prompt || '';
   const questions = (data.clarificationContext || []).map(a => a.text).join('\n\n');
@@ -105,6 +113,11 @@ function render(data) {
   updateOptions('artifact', data.artifacts, 'Select an artifact', artifactLabel);
   updateHtml('events', data.events.map(e=>`<div class="event"><b>${esc(e.type)}</b><small>${esc(e.at)}</small><p>${esc(e.detail)}</p></div>`).join(''));
 }
+function pauseHint(kind, reason) {
+  if (kind === 'revision') return `Validation failed for this exact candidate: ${reason}\nRe-running the same candidate cannot pass. Use Request changes on an upstream patch below.`;
+  if (kind === 'infrastructure') return `Paused because the local platform is unavailable: ${reason}\nStart Docker or pull the validator image, then select Start / resume. This does not use a retry.`;
+  return `Retry available: ${reason}\nResolve the failure, then select Start / resume. A repeated failure may exhaust the retry limit.`;
+}
 function confirmLiveCreation() {
   return confirm('Create a live run? Starting or resuming it sends context to the configured model provider and incurs API charges. Creation alone makes no model calls.');
 }
@@ -121,10 +134,16 @@ async function action(body) {
   await refresh();
 }
 $('runs').addEventListener('click', e => {const b=e.target.closest('[data-run]');if(b)perform(()=>choose(b.dataset.run));});
-$('refresh').onclick = () => perform(refresh);
+$('refresh').onclick = () => refresh();
 $('feature-form').onsubmit = e => {e.preventDefault(); perform(async()=>{if(!confirmLiveCreation())return;const s=await api('runs',{kind:'feature',requirement:$('requirement').value});await choose(s.id);});};
 $('scenario-form').onsubmit = e => {e.preventDefault();perform(async()=>{if($('mode').value==='live'&&!confirmLiveCreation())return;const s=await api('runs',{kind:'scenario',scenario:$('scenario').value,mode:$('mode').value});await choose(s.id);});};
 $('advance').onclick = () => perform(()=>action({action:'advance'}));
+$('copy-hash').onclick = () => perform(async()=>{
+  if (!reviewHash) return;
+  await navigator.clipboard.writeText(reviewHash);
+  $('copy-hash').textContent = 'Copied';
+  setTimeout(() => { $('copy-hash').textContent = 'Copy hash'; }, 1500);
+});
 $('reviewed').onchange = () => {$('approve').disabled=!$('reviewed').checked;};
 $('approve').onclick = () => perform(async()=>{if(!$('reviewed').checked || !reviewHash)return;const hash=reviewHash;$('approve').disabled=true;try { await action({action:'approve',hash}); } finally { $('approve').disabled=!$('reviewed').checked || !reviewHash; }});
 $('reject').onclick = () => perform(async()=>{
@@ -136,6 +155,16 @@ $('revision-form').onsubmit = e => {e.preventDefault();perform(()=>action({actio
 $('artifact').onchange = () => perform(async()=>{const name=$('artifact').value;if(!name){$('artifact-text').hidden=true;return;}const requested=selected;const a=await api('runs/'+encodeURIComponent(requested)+'/artifacts/'+encodeURIComponent(name));if(selected!==requested)return;$('artifact-text').textContent=a.text;$('artifact-text').hidden=false;});
 document.addEventListener('visibilitychange', () => {
   clearTimeout(refreshTimer);
-  if (!document.hidden) perform(refresh);
+  if (!document.hidden) refresh();
 });
-perform(async()=>{const c=await api('config');token=c.token;$('feature-form').querySelector('button').disabled=!c.liveReady; if(!c.liveReady)notice('Add ANTHROPIC_API_KEY to .env and restart for live features. Fixture demonstrations are available.');await refresh();});
+perform(async()=>{
+  const c = await api('config');
+  token = c.token;
+  $('feature-form').querySelector('button').disabled = !c.liveReady;
+  $('mode').querySelector('option[value="live"]').disabled = !c.liveReady;
+  const messages = [];
+  if (!c.liveReady) messages.push(`${c.liveBlocker} Fixture demonstrations are available.`);
+  if (!c.validator.ready) messages.push(`Sandbox validation unavailable: ${c.validator.detail}`);
+  notice('config', messages.join('\n'));
+  await refresh();
+});

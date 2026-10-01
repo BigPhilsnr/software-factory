@@ -22,5 +22,15 @@ class SourceContextTest {
         assertFalse(context.contains("CONTROL_PLANE_SENTINEL"));
         assertFalse(context.contains("SECRET_SENTINEL"));
         assertFalse(context.contains("BUILD_SENTINEL"));
+        assertFalse(context.contains("OMITTED"));
+    }
+
+    @Test void namesFilesDroppedForSizeOrBudget() throws Exception {
+        Files.createDirectories(root.resolve("shortener/src"));
+        Files.writeString(root.resolve("shortener/src/Huge.java"), "x".repeat(SourceContext.MAX_FILE_BYTES + 1));
+        Files.writeString(root.resolve("shortener/src/Small.java"), "class Small {}");
+        String context = SourceContext.read(root);
+        assertTrue(context.contains("class Small {}"));
+        assertTrue(context.contains("OMITTED (size/budget): shortener/src/Huge.java"));
     }
 }

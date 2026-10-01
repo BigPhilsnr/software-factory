@@ -1,11 +1,14 @@
 #!/usr/bin/env python3
 """Exercise local operator APIs against real fixture runs. No paid model calls."""
 import json
+import os
 import time
 from urllib.request import Request, urlopen
 from urllib.error import HTTPError
 
-BASE = 'http://localhost:8000'
+BASE = os.environ.get('FACTORY_TEST_URL', 'http://localhost:8000').rstrip('/')
+POLL_SECONDS = 0.5
+IDLE_TIMEOUT_SECONDS = 180
 TOKEN = None
 
 def request(path, body=None, status=200, origin=None, include_token=True):
@@ -24,11 +27,12 @@ def request(path, body=None, status=200, origin=None, include_token=True):
 def action(run, **body): return request(f'/factory/api/runs/{run}/actions', body)
 def detail(run): return request(f'/factory/api/runs/{run}')
 def idle(run):
-    deadline = time.monotonic() + 180
+    # The API has no push channel; poll the worker flag the operator page also uses.
+    deadline = time.monotonic() + IDLE_TIMEOUT_SECONDS
     while time.monotonic() < deadline:
         data = detail(run)
         if not data['busy']: return data
-        time.sleep(1)
+        time.sleep(POLL_SECONDS)
     raise AssertionError('Run did not become idle')
 
 def main():
@@ -41,6 +45,9 @@ def main():
     request('/factory/api/runs/not-a-uuid', status=400)
     request('/factory/api/runs/00000000-0000-0000-0000-000000000000', status=404)
     request('/factory/api/runs', {'kind':'feature','requirement':'x'*70000}, status=413)
+    chat = {'appName': 'software_factory', 'userId': 'smoke', 'sessionId': 'unused',
+            'newMessage': {'role': 'user', 'parts': [{'text': '/approve ' + '0' * 64}]}}
+    request('/run', chat, status=403, include_token=False)
     state = request('/factory/api/runs', {'kind':'scenario','scenario':'ambiguous','mode':'fixture'})
     run = state['id']
     action(run, action='advance')

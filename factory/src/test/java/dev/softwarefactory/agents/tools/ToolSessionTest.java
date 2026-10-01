@@ -1,5 +1,6 @@
 package dev.softwarefactory.agents.tools;
 
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.jupiter.api.Test;
@@ -42,6 +43,29 @@ class ToolSessionTest {
         assertFalse(session.toolsAllowed());
         assertEquals(8, reservations.get());
         assertThrows(SecurityException.class, session::reserveRequest);
+    }
+
+    @Test void requestTimeoutsNeverExceedTheInvocationDeadline() {
+        Instant now = Instant.parse("2026-01-01T00:00:00Z");
+        var clock = java.time.Clock.fixed(now, java.time.ZoneOffset.UTC);
+        var soon = new ToolSession(() -> {}, (event, detail) -> {}, now.plusSeconds(30), clock);
+        assertEquals(java.time.Duration.ofSeconds(30), soon.requestTimeout());
+        var later = new ToolSession(() -> {}, (event, detail) -> {}, now.plusSeconds(3600), clock);
+        assertEquals(ToolSession.MAX_REQUEST_TIMEOUT, later.requestTimeout());
+        var expired = new ToolSession(() -> {}, (event, detail) -> {}, now.minusSeconds(1), clock);
+        assertThrows(IllegalStateException.class, expired::requestTimeout);
+    }
+
+    @Test void lateCallbacksAfterCloseNeitherReserveNorAudit() {
+        AtomicInteger reservations = new AtomicInteger();
+        var events = new ArrayList<String>();
+        var session = new ToolSession(reservations::incrementAndGet, (event, detail) -> events.add(event));
+        session.close();
+        assertThrows(IllegalStateException.class, session::reserveRequest);
+        assertThrows(IllegalStateException.class, () -> session.invoke("read_file", "path", () -> "source"));
+        session.recordFinalization();
+        assertEquals(0, reservations.get());
+        assertTrue(events.isEmpty());
     }
 
     @Test void toolLimitAlsoSwitchesTheModelToFinalResponse() throws Exception {

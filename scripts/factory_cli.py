@@ -9,6 +9,8 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 ALLOWED = {"ANTHROPIC_API_KEY", "CLAUDE_MODEL", "FACTORY_MAX_MODEL_CALLS", "FACTORY_CHAT_DAILY_REQUESTS",
+           "FACTORY_AUDIT_KEY", "FACTORY_OPERATOR", "FACTORY_CHAT_DEADLINE_SECONDS", "FACTORY_RUN_DEADLINE_SECONDS",
+           "FACTORY_MAVEN_REPOSITORY",
            "CONTROL_DB_URL", "CONTROL_DB_USER", "CONTROL_DB_PASSWORD",
            "SHORTENER_DB_URL", "SHORTENER_DB_USER", "SHORTENER_DB_PASSWORD",
            "SHORTENER_PORT", "SHORTENER_BASE_URL"}
@@ -42,7 +44,10 @@ def main():
     if "live" in sys.argv[1:] and (not key or key.startswith("replace-")):
         raise SystemExit("Set ANTHROPIC_API_KEY in .env before starting a live run")
     command = ["mvn", "-q", "-f", "factory/pom.xml", "exec:java", "-Dexec.args=" + " ".join(sys.argv[1:])]
-    raise SystemExit(subprocess.call(command, cwd=ROOT, env=values))
+    try:
+        raise SystemExit(subprocess.call(command, cwd=ROOT, env=values))
+    except FileNotFoundError:
+        raise SystemExit("Maven (mvn) was not found on PATH. Install Maven 3.9+ and JDK 21, then retry.") from None
 
 
 if __name__ == "__main__":
