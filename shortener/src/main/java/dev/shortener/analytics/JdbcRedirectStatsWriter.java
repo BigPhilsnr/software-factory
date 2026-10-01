@@ -3,10 +3,10 @@ package dev.shortener.analytics;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.List;
-import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.JdbcOperations;
 
 /** One batched UPDATE per flush; rows are locked in link order so concurrent instances cannot deadlock. */
-public final class JdbcRedirectStatsWriter implements RedirectStatsWriter {
+final class JdbcRedirectStatsWriter implements RedirectStatsWriter {
     private static final String APPLY = """
         UPDATE link_stats
         SET redirect_count = redirect_count + ?,
@@ -18,10 +18,10 @@ public final class JdbcRedirectStatsWriter implements RedirectStatsWriter {
     private static final int TIMESTAMP = 3;
     private static final int LINK_ID = 4;
 
-    private final JdbcTemplate jdbc;
+    private final JdbcOperations jdbc;
     private final int batchSize;
 
-    public JdbcRedirectStatsWriter(JdbcTemplate jdbc, int batchSize) {
+    JdbcRedirectStatsWriter(JdbcOperations jdbc, int batchSize) {
         this.jdbc = jdbc;
         this.batchSize = batchSize;
     }

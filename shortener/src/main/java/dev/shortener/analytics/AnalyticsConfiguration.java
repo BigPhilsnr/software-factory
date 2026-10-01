@@ -2,7 +2,7 @@ package dev.shortener.analytics;
 
 import com.zaxxer.hikari.HikariDataSource;
 import com.zaxxer.hikari.metrics.micrometer.MicrometerMetricsTrackerFactory;
-import dev.shortener.ShortenerProperties;
+import dev.shortener.platform.ShortenerProperties;
 import io.micrometer.core.instrument.MeterRegistry;
 import java.time.Clock;
 import org.springframework.boot.jdbc.autoconfigure.DataSourceProperties;
@@ -15,11 +15,21 @@ import org.springframework.jdbc.core.JdbcTemplate;
  * stops (and flushes) during lifecycle shutdown, before Spring destroys this pool.
  */
 @Configuration(proxyBeanMethods = false)
-public class AnalyticsConfiguration {
+class AnalyticsConfiguration {
     private static final String POOL_NAME = "analytics-pool";
 
     /** A wrapper keeps this bulkhead out of Boot's primary DataSource candidate selection. */
-    public record AnalyticsPool(HikariDataSource source) implements AutoCloseable {
+    static final class AnalyticsPool implements AutoCloseable {
+        private final HikariDataSource source;
+
+        AnalyticsPool(HikariDataSource source) {
+            this.source = source;
+        }
+
+        HikariDataSource source() {
+            return source;
+        }
+
         @Override
         public void close() {
             source.close();
@@ -48,12 +58,12 @@ public class AnalyticsConfiguration {
     }
 
     @Bean
-    BoundedAnalyticsRecorder analyticsRecorder(
+    CoalescingVisitRecorder analyticsRecorder(
             AnalyticsPool pool, Clock clock, ShortenerProperties shortener, MeterRegistry meters) {
         ShortenerProperties.Analytics settings = shortener.analytics();
         var jdbc = new JdbcTemplate(pool.source());
         jdbc.setQueryTimeout(Math.toIntExact(settings.queryTimeout().toSeconds()));
-        return new BoundedAnalyticsRecorder(
+        return new CoalescingVisitRecorder(
                 new JdbcRedirectStatsWriter(jdbc, settings.flushBatchSize()), clock, settings, meters);
     }
 }
