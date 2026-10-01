@@ -2,7 +2,28 @@
 
 **In one paragraph.** This page states what was measured, on which commit and how, and maps each quality criterion to the evidence for it and to what is still missing. The numbers come from running the commands shown here; they are not estimates. Anything about live model runs comes from recorded evidence of earlier commits and is labelled as such.
 
-## Measured results
+For the current assignment-to-evidence map and the remaining 95–100% readiness conditions, see [assignment readiness](assignment-readiness.md). The latest local measurement and the earlier committed-code measurement are recorded separately below.
+
+## Verified working-tree evaluation (2026-10-01)
+
+The latest evaluation of the updated working tree passed. Base commit: `2dce61b`; uncommitted changes were included. Source snapshot: `fab0e0bb16b4158c1aef525aaf299eff30ce103641cc7f11983f0f21c2bcd7bd`. The evaluator confirmed that its 344 hashed source/configuration/scenario files did not change during the run. This is local working-tree evidence, not a clean-commit submission claim.
+
+| Check | Result |
+| --- | --- |
+| Java tests, full `clean verify` integration profile | 439 passed: shortener 150, factory 289; zero failures/errors/skips |
+| Python evaluation/credential-boundary tests | 4 passed |
+| Quality checks | Spotless, PMD, SpotBugs/FindSecBugs, coverage floors and enforcer passed; zero PMD/SpotBugs findings |
+| Shortener coverage | 95.90% lines; 82.65% branches |
+| Factory coverage | 93.07% lines; 81.21% branches |
+| Scenario replay | Greenfield, brownfield, ambiguous and bug fix completed; policy violation safe-stopped and retry exhaustion failed as required; all six audits verified |
+| Product and operator HTTP checks | Passed |
+| Browser checks (separate run, unchanged UI sources) | Operator controls/mobile layout and ADK diagrams/history passed; no paid calls |
+
+The [machine-readable snapshot](validation-2026-10-01.json) contains commands, exit codes, timings, test/coverage totals and source-file hashes. Raw local logs remain in `.runs/evaluation/20261001T151150681966Z/` and are not committed. Reproduce with `python3 scripts/checks/evaluate.py`; add `--browser` for browser checks. The earlier browser run’s overall report was invalidated by backend edits during that run; only its independently successful browser checks are retained after matching the UI source hashes.
+
+No live model generation or performance benchmark was performed. The [assignment readiness guide](assignment-readiness.md) records the remaining live-delivery and clean-submission evidence required before claiming near-full marks.
+
+## Historical measurement (1628f63)
 
 Measured on commit `1628f63` (branch `refactor/production-grade`), 2026-10-01, on macOS with OpenJDK 24.0.2 and Maven 3.9.16, PostgreSQL 16 from `compose.yaml`, and the pinned sandbox image.
 

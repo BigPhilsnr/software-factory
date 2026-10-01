@@ -20,9 +20,10 @@ All three read `.env` through the same parser. It accepts a fixed list of variab
 | `checks/agent_smoke.py` | All six scenarios replayed through the CLI reach their expected end state with a valid audit chain | `control-db`, Docker, the sandbox image, a warm `~/.m2` | none |
 | `checks/web_smoke.py` | The operator API: request protections, clarification, stale-hash refusal, revision, approval, validation evidence, rejection | Factory running (`FACTORY_TEST_URL`, default `http://localhost:8000`), sandbox ready | none |
 | `checks/browser_smoke.cjs` | The operator page in real Chrome, desktop and mobile; saves screenshots under `.runs/browser/` | Both applications, Node 22.12+, `puppeteer-core`, `CHROME_PATH` | none |
+| `checks/adk_chat_smoke.cjs` | ADK diagrams, malformed/unsafe content, source toggles, streaming updates and history reload through the bundled UI | Factory, Node, Chrome and puppeteer-core; responses are intercepted fixtures | none |
 | `checks/clean_checkout.py` | `mvn clean test` passes in a fresh clone of the committed `HEAD`; writes `.runs/clean-checkout/<revision>/result.json` | JDK, Maven | none |
 | `checks/verify_evidence.py` | Files under `docs/evaluation/samples/` match `manifest.json` exactly | Python | none |
-| `checks/evaluate.py` | Runs `mvn -Pintegration test`, `agent_smoke.py`, `web_smoke.py` and `acceptance.py` in order; stores logs and `results.json` under `.runs/evaluation/<timestamp>/` | Everything above | none |
+| `checks/evaluate.py` | Runs script tests, `mvn -Pintegration clean verify`, evidence checksums, six scenario replays and HTTP checks; records source hashes, coverage and logs under `.runs/evaluation/<timestamp>/`. `--browser` adds both browser suites | Everything above | none |
 | `checks/live_tools_smoke.py --live` | All seven agent tools through the chat endpoint; saves a result under `.runs/tool-checks/` | Factory running with `ANTHROPIC_API_KEY` | **paid** |
 
 Approvals made by `agent_smoke.py` and `evaluate.py` are recorded with the operator names `synthetic-fixture-test` and `synthetic-evaluation-test`.

@@ -49,7 +49,7 @@ Approving the release marks the run `COMPLETED`. It does not merge, push or depl
 
 ### Create a run
 
-- **New feature:** describe the feature (up to 8,000 characters) and select **Create request**. This saves a live run that starts from the Git tag `url-v4`. Nothing is generated and nothing is charged until you select **Start / resume**. The page asks for confirmation before creating a live run and before resuming one.
+- **New feature:** describe the feature (up to 8,000 characters) and select **Create request**. This saves a live run that starts from committed `HEAD`, pinned to its exact SHA at creation. Nothing is generated and nothing is charged until you select **Start / resume**. The page asks for confirmation before creating a live run and before resuming one.
 - **Try a scenario:** choose one of the four recorded scenarios and an execution mode. **Fixture demo** makes no model calls. **Live model** runs the same task graph with paid calls.
 
 Live runs need `ANTHROPIC_API_KEY` and `FACTORY_AUDIT_KEY`; the page says which is missing.
@@ -71,7 +71,9 @@ flowchart LR
 
 `implementation` may only change `shortener/src/main` and `shortener/openapi.yaml`. `tests` may only change `shortener/src/test`.
 
-The tag `url-v4` is a pinned earlier version of the shortener, not the current `HEAD`: it has the previous package layout (`links/`, `redirects/`, `bootstrap/` and so on). A feature run therefore produces a diff against that baseline. Moving the baseline means creating a new tag and changing `FeatureScenario`.
+New feature requests use the current committed product. Uncommitted edits are excluded; commit intended product changes before creating a request. The run pins its baseline SHA, so later commits cannot change its candidate. Historical scenario replays continue using their own baseline tags.
+
+After requirements generation, feature requests pause for scope confirmation. Review the requirements artifact, answer open questions and confirm or correct the acceptance criteria before design proceeds. Architecture and risk branches receive both the requirements and your recorded answer.
 
 ### Watch a run
 

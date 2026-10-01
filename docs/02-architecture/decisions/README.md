@@ -22,6 +22,7 @@
 | [0014](0014-spring-boot-platform-and-deferred-libraries.md) | Spring Boot as the platform, and which libraries were left out | Both |
 | [0015](0015-agents-propose-deterministic-code-decides.md) | Agents propose inert text; deterministic code decides and acts | Factory |
 | [0016](0016-separate-control-database-and-worktree-candidates.md) | A separate control database, and Git worktrees as candidates | Factory |
+| [0017](0017-current-feature-baseline-and-scope-confirmation.md) | Pin current feature baselines and confirm scope before design | Factory |
 
 ## Format
 

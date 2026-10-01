@@ -44,6 +44,8 @@ jobs:
         run: mvn --non-recursive spotless:check
       - name: Verify committed evidence checksums
         run: python3 scripts/checks/verify_evidence.py
+      - name: Evaluation evidence and launcher boundaries
+        run: python3 -m unittest discover -s scripts/checks/tests
 
   # Real PostgreSQL, HTTP, Git candidates and the Docker sandbox validator; no model calls
   # (the factory test JVM blanks ANTHROPIC_API_KEY and FACTORY_AUDIT_KEY; tests use their own audit key).

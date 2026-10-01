@@ -9,6 +9,7 @@ import java.util.List;
  */
 public final class FeatureScenario {
     private static final String UNDERSTAND = "understand";
+    private static final String CLARIFY = "clarify";
     private static final String ARCHITECTURE = "architecture";
     private static final String DOCUMENTATION = "documentation";
 
@@ -21,7 +22,7 @@ public final class FeatureScenario {
         return new ScenarioSpec(
                 "feature-request",
                 requirement.strip(),
-                "url-v4",
+                "HEAD",
                 List.of(
                         task(
                                 UNDERSTAND,
@@ -29,13 +30,22 @@ public final class FeatureScenario {
                                 List.of(),
                                 TaskKind.ARTIFACT,
                                 "requirements",
-                                "Inspect the existing Java 21 Spring Boot shortener. Define measurable criteria for the requested feature. Preserve existing behavior and APIs unless explicitly requested. Keep the prototype scope small; state assumptions. Maximum 800 words.",
+                                "Inspect the existing Java 21 Spring Boot shortener. Define numbered measurable acceptance criteria for the requested feature. Preserve existing behavior and APIs unless explicitly requested. Keep the prototype scope small; state assumptions and explicit questions for the operator. Separate unresolved decisions from agreed facts. Maximum 800 words.",
                                 List.of(),
                                 false),
                         task(
+                                CLARIFY,
+                                Stage.REQUIREMENTS,
+                                List.of(UNDERSTAND),
+                                TaskKind.CLARIFY,
+                                "operator",
+                                "Review the requirements artifact. Answer its open questions and confirm or correct the acceptance criteria and scope before design or code generation. If no questions remain, explicitly confirm the proposed scope.",
+                                List.of(),
+                                true),
+                        task(
                                 ARCHITECTURE,
                                 Stage.ARCHITECTURE,
-                                List.of(UNDERSTAND),
+                                List.of(UNDERSTAND, CLARIFY),
                                 TaskKind.ARTIFACT,
                                 ARCHITECTURE,
                                 "Map impacted files, public APIs, schema, data flow and compatibility. Explain alternatives and the smallest defensible design. Maximum 700 words.",
@@ -44,7 +54,7 @@ public final class FeatureScenario {
                         task(
                                 "risk",
                                 Stage.ARCHITECTURE,
-                                List.of(UNDERSTAND),
+                                List.of(UNDERSTAND, CLARIFY),
                                 TaskKind.ARTIFACT,
                                 "risk",
                                 "Identify security, failure, concurrency, data-loss and performance risks. Give likelihood, impact, mitigation, test and residual limitation for each. Flag ambiguity requiring operator review. Maximum 700 words.",
@@ -98,10 +108,10 @@ public final class FeatureScenario {
                         task(
                                 DOCUMENTATION,
                                 Stage.DOCUMENTATION,
-                                List.of("validate"),
+                                List.of(UNDERSTAND, CLARIFY, ARCHITECTURE, "risk", "plan", "test-plan", "validate"),
                                 TaskKind.ARTIFACT,
                                 DOCUMENTATION,
-                                "Summarize the feature, test evidence and limitations in at most 500 words. Do not claim release approval.",
+                                "Write the final engineering summary in at most 700 words: requirement and accepted assumptions; design rationale and alternatives; changed files and API/schema impact; acceptance-criterion-to-test evidence; validation results; risks, failure modes and residual limitations; local setup and rollback guidance. Distinguish measured outcomes from untested claims. Do not claim release approval, deployment or performance measurements without evidence.",
                                 List.of(),
                                 false),
                         task(

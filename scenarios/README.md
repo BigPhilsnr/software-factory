@@ -45,4 +45,4 @@ Prerequisites and the full CLI are in the [runbook](../docs/03-operations/runboo
 - Runs created before the folders were introduced refer to `scenarios/NAME.json`. `ScenarioFiles` resolves that to `scenarios/NAME/scenario.json` without changing the stored hash.
 - In the ambiguous scenario the operator's answer is recorded and changes the approval hashes, but the replayed patch is the same whatever the answer says. Fixtures prove the control flow, not the model.
 
-Feature requests made through the operator page do not use these folders. They use the fixed workflow in `FeatureScenario`, start from the tag `url-v4`, and store their generated scenario under `.runs/requests/`.
+Feature requests made through the operator page do not use these folders. They use the fixed workflow in `FeatureScenario`, start from committed `HEAD` (resolved to an immutable commit SHA at creation), and store their generated scenario under `.runs/requests/`.
