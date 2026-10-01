@@ -1,9 +1,7 @@
-package dev.shortener.storage;
+package dev.shortener.links;
 
 import dev.shortener.analytics.RedirectStats;
 
-import dev.shortener.links.Link;
-import dev.shortener.links.LinkRepository;
 
 import java.util.Optional;
 import org.springframework.jdbc.core.JdbcTemplate;

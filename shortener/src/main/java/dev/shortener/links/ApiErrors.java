@@ -1,6 +1,5 @@
-package dev.shortener.http;
+package dev.shortener.links;
 
-import dev.shortener.links.ShortenerService;
 
 import java.util.Map;
 import org.springframework.dao.DataAccessException;

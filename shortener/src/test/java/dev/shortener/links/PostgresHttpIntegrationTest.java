@@ -1,4 +1,4 @@
-package dev.shortener.http;
+package dev.shortener.links;
 
 import java.net.URI;
 import java.net.http.HttpClient;

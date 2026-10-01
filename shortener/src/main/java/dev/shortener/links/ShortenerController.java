@@ -1,8 +1,6 @@
-package dev.shortener.http;
+package dev.shortener.links;
 
 import dev.shortener.analytics.AnalyticsRecorder;
-import dev.shortener.links.Link;
-import dev.shortener.links.ShortenerService;
 import dev.shortener.ratelimit.CreationRateLimiter;
 
 import java.net.URI;
