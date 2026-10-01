@@ -1,43 +1,50 @@
 package dev.shortener.redirects;
 
+import com.github.benmanes.caffeine.cache.Cache;
+import com.github.benmanes.caffeine.cache.Caffeine;
+import com.github.benmanes.caffeine.cache.Ticker;
+import dev.shortener.ShortenerProperties;
 import dev.shortener.links.Link;
-
-import java.time.Clock;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.binder.cache.CaffeineCacheMetrics;
 import java.util.Optional;
-import java.util.LinkedHashMap;
-import java.util.Map;
 
-/** Bounded local acceleration for immutable links; PostgreSQL remains authoritative. */
+/**
+ * Bounded local acceleration for immutable links; PostgreSQL remains authoritative. Misses live in a
+ * separate, smaller, short-lived cache so a scan of unknown codes can never evict hot links.
+ */
 public final class LinkCache {
-    private final Clock clock;
-    private final Map<String, Entry> entries = new LinkedHashMap<>(16, 0.75f, true);
+    private final Cache<String, Link> links;
+    private final Cache<String, Boolean> misses;
 
-    public LinkCache(Clock clock) { this.clock = clock; }
-
-    public synchronized Optional<Link> get(String code) {
-        Entry entry = entries.get(code);
-        if (entry == null) return Optional.empty();
-        if (entry.expiresAt <= clock.millis()) {
-            entries.remove(code, entry);
-            return Optional.empty();
-        }
-        return Optional.ofNullable(entry.link);
+    public LinkCache(ShortenerProperties.Cache settings, Ticker ticker) {
+        this.links = Caffeine.newBuilder().ticker(ticker).maximumSize(settings.maxLinks())
+            .expireAfterWrite(settings.linkTtl()).recordStats().build();
+        this.misses = Caffeine.newBuilder().ticker(ticker).maximumSize(settings.maxMisses())
+            .expireAfterWrite(settings.missTtl()).recordStats().build();
     }
 
-    public synchronized void put(Link link) {
-        entries.put(link.code(), new Entry(link, clock.millis() + 60_000));
-        if (entries.size() > 10_000) entries.remove(entries.keySet().iterator().next());
+    public Optional<Link> get(String code) {
+        return Optional.ofNullable(links.getIfPresent(code));
     }
 
-    public synchronized boolean containsMiss(String code) {
-        Entry entry = entries.get(code);
-        return entry != null && entry.link == null && entry.expiresAt > clock.millis();
+    /** A known link always wins over an earlier recorded miss. */
+    public void put(Link link) {
+        links.put(link.code(), link);
+        misses.invalidate(link.code());
     }
 
-    public synchronized void putMiss(String code) {
-        entries.putIfAbsent(code, new Entry(null, clock.millis() + 2000));
-        if (entries.size() > 10_000) entries.remove(entries.keySet().iterator().next());
+    public boolean isKnownMissing(String code) {
+        return misses.getIfPresent(code) != null;
     }
 
-    private record Entry(Link link, long expiresAt) {}
+    public void putMiss(String code) {
+        if (links.getIfPresent(code) == null) misses.put(code, Boolean.TRUE);
+    }
+
+    /** Publishes hit, miss, eviction and size meters for both caches. */
+    public void bindTo(MeterRegistry registry) {
+        CaffeineCacheMetrics.monitor(registry, links, "shortener.links");
+        CaffeineCacheMetrics.monitor(registry, misses, "shortener.link-misses");
+    }
 }

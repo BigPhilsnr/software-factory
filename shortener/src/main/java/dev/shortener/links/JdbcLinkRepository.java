@@ -1,47 +1,51 @@
 package dev.shortener.links;
 
-
-
+import java.time.OffsetDateTime;
 import java.util.Optional;
-import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
-import org.springframework.jdbc.support.GeneratedKeyHolder;
+import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Repository;
-import org.springframework.transaction.annotation.Transactional;
 
 @Repository
 public class JdbcLinkRepository implements LinkRepository {
-    private static final RowMapper<Link> MAPPER = (rs, row) -> new Link(
-        rs.getLong("id"), rs.getString("code"), rs.getString("target_url"), rs.getTimestamp("created_at").toInstant());
-    private final JdbcTemplate jdbc;
+    private static final String CREATE = """
+        WITH created AS (
+            INSERT INTO links(code, target_url) VALUES (:code, :targetUrl)
+            RETURNING id, code, target_url, created_at
+        ), stats AS (
+            INSERT INTO link_stats(link_id) SELECT id FROM created
+        )
+        SELECT id, code, target_url, created_at FROM created
+        """;
+    private static final String FIND_BY_CODE = "SELECT id, code, target_url, created_at FROM links WHERE code = :code";
+    private static final String STATISTICS = """
+        SELECT COALESCE(s.redirect_count, 0) AS redirect_count, s.last_redirect_at
+        FROM links l LEFT JOIN link_stats s ON s.link_id = l.id
+        WHERE l.id = :id
+        """;
+    private static final RowMapper<Link> LINK = (rs, row) -> new Link(rs.getLong("id"), rs.getString("code"),
+        rs.getString("target_url"), rs.getObject("created_at", OffsetDateTime.class).toInstant());
+    private static final RowMapper<RedirectStats> STATS = (rs, row) -> {
+        OffsetDateTime last = rs.getObject("last_redirect_at", OffsetDateTime.class);
+        return new RedirectStats(rs.getLong("redirect_count"), last == null ? null : last.toInstant());
+    };
 
-    public JdbcLinkRepository(JdbcTemplate jdbc) { this.jdbc = jdbc; }
+    private final JdbcClient jdbc;
+
+    public JdbcLinkRepository(JdbcClient jdbc) { this.jdbc = jdbc; }
 
     @Override
-    @Transactional
     public Link create(String code, String targetUrl) {
-        GeneratedKeyHolder key = new GeneratedKeyHolder();
-        jdbc.update(connection -> {
-            var statement = connection.prepareStatement(
-                "INSERT INTO links(code, target_url) VALUES (?, ?)", new String[]{"id"});
-            statement.setString(1, code);
-            statement.setString(2, targetUrl);
-            return statement;
-        }, key);
-        long id = key.getKey().longValue();
-        jdbc.update("INSERT INTO link_stats(link_id) VALUES (?)", id);
-        return findByCode(code).orElseThrow();
+        return jdbc.sql(CREATE).param("code", code).param("targetUrl", targetUrl).query(LINK).single();
     }
 
     @Override
     public Optional<Link> findByCode(String code) {
-        return jdbc.query("SELECT id, code, target_url, created_at FROM links WHERE code = ?", MAPPER, code).stream().findFirst();
+        return jdbc.sql(FIND_BY_CODE).param("code", code).query(LINK).optional();
     }
 
-    @Override public RedirectStats statistics(long linkId) {
-        return jdbc.queryForObject("SELECT redirect_count, last_redirect_at FROM link_stats WHERE link_id = ?",
-            (row, number) -> new RedirectStats(row.getLong("redirect_count"),
-                row.getTimestamp("last_redirect_at") == null ? null : row.getTimestamp("last_redirect_at").toInstant()), linkId);
+    @Override
+    public Optional<RedirectStats> statistics(long linkId) {
+        return jdbc.sql(STATISTICS).param("id", linkId).query(STATS).optional();
     }
-
 }

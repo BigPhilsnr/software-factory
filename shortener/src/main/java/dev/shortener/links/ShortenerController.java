@@ -1,12 +1,15 @@
 package dev.shortener.links;
 
+import dev.shortener.ShortenerProperties;
 import dev.shortener.analytics.AnalyticsRecorder;
+import dev.shortener.ratelimit.CreationRateLimitExceededException;
 import dev.shortener.ratelimit.CreationRateLimiter;
-
-import java.net.URI;
 import jakarta.servlet.http.HttpServletRequest;
-import org.springframework.beans.factory.annotation.Value;
+import jakarta.validation.Valid;
+import java.net.URI;
+import org.springframework.http.CacheControl;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -18,55 +21,59 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 public class ShortenerController {
+    private static final String REFERRER_POLICY = "Referrer-Policy";
+    /** Where a short link was clicked is not the target's business. */
+    private static final String NO_REFERRER = "no-referrer";
+
     private final ShortenerService service;
-    private final String baseUrl;
-    private final AnalyticsRecorder recorder;
     private final CreationRateLimiter limiter;
+    private final AnalyticsRecorder recorder;
+    private final String baseUrl;
 
     public ShortenerController(ShortenerService service, CreationRateLimiter limiter, AnalyticsRecorder recorder,
-                               @Value("${shortener.base-url}") String baseUrl) {
+                               ShortenerProperties properties) {
         this.service = service;
         this.limiter = limiter;
         this.recorder = recorder;
-        this.baseUrl = baseUrl.replaceAll("/$", "");
+        this.baseUrl = properties.baseUrl().toString();
     }
 
-    @PostMapping("/api/shorten")
-    public ResponseEntity<CreateResponse> create(@jakarta.validation.Valid @RequestBody CreateRequest request, HttpServletRequest http) {
+    /** Only requests that pass validation consume quota; see openapi.yaml. */
+    @PostMapping(path = "/api/shorten", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<CreateLinkResponse> create(@Valid @RequestBody CreateLinkRequest request, HttpServletRequest http) {
+        LinkDraft draft = service.prepare(request.url(), request.alias());
         CreationRateLimiter.Result rate = limiter.admit(http.getRemoteAddr());
-        if (!rate.allowed()) {
-            return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
-                .header("Retry-After", Long.toString(rate.retryAfterSeconds())).build();
-        }
-        if (request == null) throw new InvalidLinkException("Request body is required");
-        Link link = service.create(request.url(), request.alias());
-        return ResponseEntity.status(HttpStatus.CREATED).body(new CreateResponse(link.code(), baseUrl + "/" + link.code()));
+        if (!rate.allowed()) throw new CreationRateLimitExceededException(rate.retryAfterSeconds());
+        Link link = service.create(draft);
+        return ResponseEntity.status(HttpStatus.CREATED).body(new CreateLinkResponse(link.code(), baseUrl + "/" + link.code()));
     }
 
     @GetMapping("/{code}")
     public ResponseEntity<Void> redirect(@PathVariable String code) {
-        Link link = service.find(code).orElseThrow(NotFoundException::new);
+        Link link = service.find(code).orElseThrow(LinkNotFoundException::new);
         recorder.record(link.id());
-        return ResponseEntity.status(HttpStatus.FOUND).location(URI.create(link.targetUrl())).build();
+        return redirectTo(link);
     }
 
+    /** Lets clients inspect a target without it counting as a redirect. */
     @RequestMapping(value = "/{code}", method = RequestMethod.HEAD)
     public ResponseEntity<Void> preview(@PathVariable String code) {
-        Link link = service.find(code).orElseThrow(NotFoundException::new);
-        return ResponseEntity.status(HttpStatus.FOUND).location(URI.create(link.targetUrl())).build();
+        return redirectTo(service.find(code).orElseThrow(LinkNotFoundException::new));
     }
 
-    @GetMapping("/api/urls/{code}/analytics")
-    public AnalyticsResponse analytics(@PathVariable String code) {
-        Link link = service.find(code).orElseThrow(NotFoundException::new);
-        var stats = service.statistics(link);
-        return new AnalyticsResponse(link.code(), stats.redirectCount(), stats.lastRedirectAt());
+    @GetMapping(path = "/api/urls/{code}/analytics", produces = MediaType.APPLICATION_JSON_VALUE)
+    public LinkAnalyticsResponse analytics(@PathVariable String code) {
+        Link link = service.find(code).orElseThrow(LinkNotFoundException::new);
+        RedirectStats stats = service.statistics(link);
+        return new LinkAnalyticsResponse(link.code(), stats.redirectCount(), stats.lastRedirectAt());
     }
 
-    public record AnalyticsResponse(String code, long redirectCount, java.time.Instant lastRedirectAt) {}
-    public record CreateRequest(
-        @jakarta.validation.constraints.NotBlank @jakarta.validation.constraints.Size(max = 2048) String url,
-        @jakarta.validation.constraints.Pattern(regexp = "[A-Za-z0-9-]{4,32}") String alias) {}
-    public record CreateResponse(String code, String shortUrl) {}
-    static final class NotFoundException extends RuntimeException {}
+    /** Redirects are never cached so every GET is observed and counted. */
+    private static ResponseEntity<Void> redirectTo(Link link) {
+        return ResponseEntity.status(HttpStatus.FOUND)
+            .location(URI.create(link.targetUrl()))
+            .cacheControl(CacheControl.noStore().cachePrivate())
+            .header(REFERRER_POLICY, NO_REFERRER)
+            .build();
+    }
 }

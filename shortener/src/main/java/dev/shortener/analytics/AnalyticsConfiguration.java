@@ -1,49 +1,49 @@
 package dev.shortener.analytics;
 
-import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
+import com.zaxxer.hikari.metrics.micrometer.MicrometerMetricsTrackerFactory;
+import dev.shortener.ShortenerProperties;
 import io.micrometer.core.instrument.MeterRegistry;
-import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
-import org.springframework.beans.factory.annotation.Value;
+import java.time.Clock;
+import org.springframework.boot.jdbc.autoconfigure.DataSourceProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.jdbc.core.JdbcTemplate;
 
-/** Spring destroys the recorder before its dedicated pool, draining bounded writes first. */
+/**
+ * Analytics writes use their own small pool so a slow flush can never starve link lookups. The recorder
+ * stops (and flushes) during lifecycle shutdown, before Spring destroys this pool.
+ */
 @Configuration(proxyBeanMethods = false)
 public class AnalyticsConfiguration {
-    // A wrapper keeps this bulkhead out of Boot's primary DataSource candidate selection.
+    private static final String POOL_NAME = "analytics-pool";
+
+    /** A wrapper keeps this bulkhead out of Boot's primary DataSource candidate selection. */
     public record AnalyticsPool(HikariDataSource source) implements AutoCloseable {
         @Override public void close() { source.close(); }
     }
 
+    /** Same URL, credentials and driver properties (socket and statement timeouts) as the primary pool. */
     @Bean(destroyMethod = "close")
-    AnalyticsPool analyticsPool(@Value("${spring.datasource.url}") String url,
-            @Value("${spring.datasource.username}") String username,
-            @Value("${spring.datasource.password}") String password) {
-        var config = new HikariConfig();
-        config.setJdbcUrl(url);
-        config.setUsername(username);
-        config.setPassword(password);
-        config.setMaximumPoolSize(2);
-        config.setMinimumIdle(1);
-        config.setConnectionTimeout(250);
-        config.setPoolName("analytics-pool");
-        return new AnalyticsPool(new HikariDataSource(config));
+    AnalyticsPool analyticsPool(DataSourceProperties properties, HikariDataSource primary, ShortenerProperties shortener,
+                                MeterRegistry meters) {
+        ShortenerProperties.Analytics settings = shortener.analytics();
+        HikariDataSource pool = properties.initializeDataSourceBuilder().type(HikariDataSource.class).build();
+        pool.setDataSourceProperties(primary.getDataSourceProperties());
+        pool.setPoolName(POOL_NAME);
+        pool.setMaximumPoolSize(settings.poolSize());
+        pool.setMinimumIdle(1);
+        pool.setConnectionTimeout(settings.connectionTimeout().toMillis());
+        pool.setMetricsTrackerFactory(new MicrometerMetricsTrackerFactory(meters));
+        return new AnalyticsPool(pool);
     }
 
     @Bean
-    BoundedAnalyticsRecorder analyticsRecorder(AnalyticsPool pool, MeterRegistry meters) {
+    BoundedAnalyticsRecorder analyticsRecorder(AnalyticsPool pool, Clock clock, ShortenerProperties shortener,
+                                               MeterRegistry meters) {
+        ShortenerProperties.Analytics settings = shortener.analytics();
         var jdbc = new JdbcTemplate(pool.source());
-        jdbc.setQueryTimeout(5);
-        var workers = new ThreadPoolExecutor(2, 2, 0L, TimeUnit.MILLISECONDS,
-            new ArrayBlockingQueue<>(128), runnable -> {
-                var thread = new Thread(runnable, "analytics-writer");
-                thread.setDaemon(true);
-                return thread;
-            }, new ThreadPoolExecutor.AbortPolicy());
-        return new BoundedAnalyticsRecorder(jdbc, workers, meters.counter("shortener.analytics.failures"));
+        jdbc.setQueryTimeout(Math.toIntExact(settings.queryTimeout().toSeconds()));
+        return new BoundedAnalyticsRecorder(new JdbcRedirectStatsWriter(jdbc, settings.flushBatchSize()), clock, settings, meters);
     }
 }

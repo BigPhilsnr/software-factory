@@ -1,14 +1,13 @@
 package dev.shortener.links;
 
-
 import dev.shortener.redirects.LinkCache;
-
 import java.util.Optional;
-import java.util.Locale;
-import java.util.Set;
 import org.springframework.dao.DuplicateKeyException;
 
 public final class ShortenerService {
+    /** Generated-code collisions are astronomically rare; repeated ones signal a broken generator or keyspace. */
+    private static final int MAX_GENERATION_ATTEMPTS = 4;
+
     private final LinkRepository links;
     private final CodeGenerator codes;
     private final UrlPolicy urls;
@@ -21,54 +20,60 @@ public final class ShortenerService {
         this.cache = cache;
     }
 
-    public Link create(String url) {
-        return create(url, null);
+    /** Applies every creation rule without side effects, so only valid requests consume quota. */
+    public LinkDraft prepare(String url, String alias) {
+        String target = urls.validate(url);
+        if (alias == null) return new LinkDraft(target, null);
+        String canonical = LinkCodes.canonical(alias)
+            .orElseThrow(() -> new InvalidLinkException("Alias must be 4-32 letters, digits or hyphens and not a reserved word"));
+        return new LinkDraft(target, canonical);
     }
 
-    public Link create(String url, String alias) {
-        String target = urls.validate(url);
-        if (alias != null) {
-            String normalized = alias.toLowerCase(Locale.ROOT);
-            if (!normalized.matches("[a-z0-9-]{4,32}") || Set.of("api", "actuator", "health").contains(normalized)) {
-                throw new InvalidLinkException("Invalid alias");
-            }
+    public Link create(LinkDraft draft) {
+        if (draft.alias() != null) {
             try {
-                Link created = links.create(normalized, target);
-                cache.put(created);
-                return created;
+                return remember(links.create(draft.alias(), draft.targetUrl()));
             } catch (DuplicateKeyException conflict) {
-                throw new AliasConflictException();
+                throw new AliasConflictException(conflict);
             }
         }
-        for (int attempt = 0; attempt < 4; attempt++) {
+        for (int attempt = 0; attempt < MAX_GENERATION_ATTEMPTS; attempt++) {
+            String code = codes.next();
+            if (LinkCodes.RESERVED.contains(code)) continue;
             try {
-                Link created = links.create(codes.next(), target);
-                cache.put(created);
-                return created;
+                return remember(links.create(code, draft.targetUrl()));
             } catch (DuplicateKeyException collision) {
-                // A unique constraint is the final authority under concurrent creation.
+                // The unique constraint is the final authority under concurrent creation; retry with a new code.
             }
         }
         throw new CapacityException("Unable to allocate a short code");
     }
 
     public Optional<Link> find(String code) {
-        if (code == null) return Optional.empty();
-        code = code.toLowerCase(Locale.ROOT);
-        if (!code.matches("[a-z0-9-]{4,32}")) return Optional.empty();
-        Optional<Link> hit = cache.get(code);
-        if (hit.isPresent()) return hit;
-        if (cache.containsMiss(code)) return Optional.empty();
-        Optional<Link> found = links.findByCode(code);
-        if (found.isPresent()) cache.put(found.get()); else cache.putMiss(code);
+        Optional<String> canonical = LinkCodes.canonical(code);
+        if (canonical.isEmpty()) return Optional.empty();
+        String key = canonical.get();
+        Optional<Link> hit = cache.get(key);
+        if (hit.isPresent() || cache.isKnownMissing(key)) return hit;
+        Optional<Link> found = links.findByCode(key);
+        found.ifPresentOrElse(cache::put, () -> cache.putMiss(key));
         return found;
     }
 
-    public RedirectStats statistics(Link link) { return links.statistics(link.id()); }
+    public RedirectStats statistics(Link link) {
+        return links.statistics(link.id()).orElseThrow(LinkNotFoundException::new);
+    }
+
+    private Link remember(Link created) {
+        cache.put(created);
+        return created;
+    }
 
     public static final class CapacityException extends RuntimeException {
         public CapacityException(String message) { super(message); }
     }
 
-    public static final class AliasConflictException extends RuntimeException {}
+    public static final class AliasConflictException extends RuntimeException {
+        public AliasConflictException(Throwable cause) { super("Alias already exists", cause); }
+    }
 }

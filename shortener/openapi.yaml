@@ -1,15 +1,31 @@
 openapi: 3.1.0
 info:
   title: Local URL Shortener
-  version: 0.1.0
-  description: Local prototype with immutable short links and aggregate redirect counts.
+  version: 0.2.0
+  description: |
+    Immutable short links with best-effort aggregate redirect counts.
+
+    Every error response is an RFC 9457 problem document (`application/problem+json`) with a stable
+    machine-readable `error` code. Clients should branch on `error`, never on `title` or `detail`.
+    Any operation can also answer `405` (method not allowed, with an `Allow` header) and unknown paths answer `404`.
+    Responses carry an `X-Request-Id` header: the caller's value when it matches `[A-Za-z0-9._:-]{1,64}`,
+    otherwise a generated UUID.
 servers:
   - url: http://localhost:8080
 paths:
   /api/shorten:
     post:
       summary: Create a short link
-      description: Creation requests are limited to 30 per socket peer IP per fixed 60-second window.
+      description: |
+        Creation is limited per client network (IPv4 address or IPv6 /64) to 30 requests per fixed
+        60-second UTC window (configurable via `shortener.rate-limit.*`). Only requests that pass validation
+        count against the quota: malformed JSON, schema violations and rejected URLs or aliases (400) do not;
+        alias conflicts (409) do. Fixed windows allow a burst of up to twice the limit across a window
+        boundary. When the limiter's client table is full, new clients share a coarser IPv4 /16 or IPv6 /48
+        quota. The client is the socket peer unless the deployment enables trusted forwarded headers
+        (`SHORTENER_FORWARD_HEADERS_STRATEGY`).
+      parameters:
+        - $ref: '#/components/parameters/RequestId'
       requestBody:
         required: true
         content:
@@ -21,118 +37,202 @@ paths:
                 url:
                   type: string
                   format: uri
-                  description: Absolute HTTP or HTTPS URL without credentials. Local hostnames, private IP literals, and the configured shortener host are rejected. No DNS resolution or destination fetch is performed; DNS names that resolve privately are not detected.
+                  minLength: 1
+                  maxLength: 2048
+                  description: |
+                    Absolute HTTP or HTTPS URL without credentials, at most 2048 bytes once percent-encoded; it is
+                    stored and redirected to in normalized ASCII form. Rejected hosts: single-label names;
+                    `localhost`, `local`, `internal`, `intranet`, `lan`, `home.arpa` and their subdomains;
+                    the configured shortener host and its subdomains; any numeric-looking host other than a
+                    public dotted-decimal IPv4 literal (so octal, hex and shortened forms are rejected); and
+                    private, loopback, link-local, multicast, documentation, benchmarking or otherwise reserved
+                    IPv4/IPv6 literals. No DNS resolution or destination fetch is performed, so DNS names that
+                    resolve to private addresses are not detected.
                 alias:
                   type: string
                   pattern: '^[A-Za-z0-9-]{4,32}$'
-                  description: Optional custom code; stored lowercase and resolved case-insensitively.
+                  description: |
+                    Optional custom code; stored lowercase and resolved case-insensitively. Reserved words
+                    (case-insensitive) are rejected: error, logout, login, actuator, health, favicon, robots, info.
       responses:
         '201':
           description: Link created
+          headers:
+            X-Request-Id: {$ref: '#/components/headers/RequestId'}
           content:
             application/json:
               schema:
                 type: object
                 required: [code, shortUrl]
                 properties:
-                  code: {type: string}
+                  code:
+                    type: string
+                    pattern: '^[a-z0-9-]{4,32}$'
+                    description: Canonical lowercase code.
                   shortUrl: {type: string, format: uri}
         '400': {$ref: '#/components/responses/Invalid'}
-        '413':
-          description: Request body exceeds 64 KiB (including chunked bodies).
         '409': {$ref: '#/components/responses/Conflict'}
-        '429':
-          description: Creation rate limit exceeded
-          headers:
-            Retry-After:
-              description: Seconds until the fixed window resets.
-              schema: {type: integer, minimum: 1}
+        '413': {$ref: '#/components/responses/TooLarge'}
+        '415': {$ref: '#/components/responses/UnsupportedMediaType'}
+        '429': {$ref: '#/components/responses/RateLimited'}
+        '500': {$ref: '#/components/responses/InternalError'}
         '503': {$ref: '#/components/responses/Unavailable'}
   /{code}:
+    parameters:
+      - $ref: '#/components/parameters/Code'
+      - $ref: '#/components/parameters/RequestId'
     head:
       summary: Preview a redirect without recording analytics
-      parameters:
-        - name: code
-          in: path
-          required: true
-          description: Case-insensitive short code.
-          schema: {type: string}
       responses:
         '302':
           description: Redirect headers with no body; does not increment counts or update the last redirect timestamp.
           headers:
-            Location:
-              required: true
-              schema: {type: string, format: uri}
+            Location: {$ref: '#/components/headers/Location'}
+            Cache-Control: {$ref: '#/components/headers/NoStore'}
+            Referrer-Policy: {$ref: '#/components/headers/ReferrerPolicy'}
+            X-Request-Id: {$ref: '#/components/headers/RequestId'}
         '404': {$ref: '#/components/responses/Missing'}
+        '500': {$ref: '#/components/responses/InternalError'}
         '503': {$ref: '#/components/responses/Unavailable'}
     get:
       summary: Redirect to the original URL
-      description: Case-insensitive lookup. Records a best-effort GET redirect, including automated GET requests; counts are not unique human clicks.
-      parameters:
-        - name: code
-          in: path
-          required: true
-          schema: {type: string}
+      description: |
+        Records a best-effort GET redirect, including automated GET requests; counts are not unique human clicks.
+        Redirects are never cacheable, so every GET reaches the service.
       responses:
         '302':
           description: Redirect
           headers:
-            Location:
-              required: true
-              schema: {type: string, format: uri}
+            Location: {$ref: '#/components/headers/Location'}
+            Cache-Control: {$ref: '#/components/headers/NoStore'}
+            Referrer-Policy: {$ref: '#/components/headers/ReferrerPolicy'}
+            X-Request-Id: {$ref: '#/components/headers/RequestId'}
         '404': {$ref: '#/components/responses/Missing'}
+        '500': {$ref: '#/components/responses/InternalError'}
         '503': {$ref: '#/components/responses/Unavailable'}
   /api/urls/{code}/analytics:
+    parameters:
+      - $ref: '#/components/parameters/Code'
+      - $ref: '#/components/parameters/RequestId'
     get:
       summary: Get aggregate GET redirect count and last recorded timestamp
-      parameters:
-        - name: code
-          in: path
-          required: true
-          schema: {type: string}
+      description: |
+        Redirects are coalesced in memory and written in batches about once per second
+        (`shortener.analytics.flush-interval`), so counts lag redirects by roughly that interval. Analytics
+        are best-effort: under overload or a prolonged database outage some redirects may be dropped
+        (observable via the `shortener.analytics.dropped` metric). HEAD previews are never counted.
       responses:
         '200':
           description: Current recorded count
+          headers:
+            X-Request-Id: {$ref: '#/components/headers/RequestId'}
           content:
             application/json:
               schema:
                 type: object
                 required: [code, redirectCount, lastRedirectAt]
                 properties:
-                  code: {type: string}
+                  code: {type: string, pattern: '^[a-z0-9-]{4,32}$'}
                   redirectCount: {type: integer, format: int64, minimum: 0}
                   lastRedirectAt:
                     type: [string, 'null']
                     format: date-time
-                    description: Last recorded GET redirect in UTC; null before any recorded redirect. Analytics are best-effort.
+                    description: Last recorded GET redirect in UTC; null before any recorded redirect.
         '404': {$ref: '#/components/responses/Missing'}
+        '500': {$ref: '#/components/responses/InternalError'}
         '503': {$ref: '#/components/responses/Unavailable'}
 components:
+  parameters:
+    Code:
+      name: code
+      in: path
+      required: true
+      description: |
+        Short code, matched case-insensitively (canonical codes are lowercase). Values that can never be a
+        code (wrong characters or length, reserved words) answer 404.
+      schema: {type: string}
+    RequestId:
+      name: X-Request-Id
+      in: header
+      required: false
+      description: Optional correlation id echoed on the response and included in server logs.
+      schema: {type: string, maxLength: 64}
+  headers:
+    Location:
+      required: true
+      schema: {type: string, format: uri}
+    NoStore:
+      description: Always `no-store, private`.
+      schema: {type: string}
+    ReferrerPolicy:
+      description: Always `no-referrer`.
+      schema: {type: string, const: no-referrer}
+    RequestId:
+      description: Correlation id for this request.
+      schema: {type: string}
+    RetryAfter:
+      description: Seconds after which the request may be retried.
+      required: true
+      schema: {type: integer, minimum: 1}
   responses:
     Invalid:
-      description: Invalid input
+      description: 'Malformed JSON, schema violation, or rejected URL or alias. `error`: `invalid_request`.'
       content:
-        application/json:
-          schema: {$ref: '#/components/schemas/Error'}
-    Conflict:
-      description: Alias already exists
-      content:
-        application/json:
-          schema: {$ref: '#/components/schemas/Error'}
+        application/problem+json:
+          schema: {$ref: '#/components/schemas/Problem'}
     Missing:
-      description: Unknown short code
+      description: 'Unknown short code. `error`: `not_found`.'
       content:
-        application/json:
-          schema: {$ref: '#/components/schemas/Error'}
+        application/problem+json:
+          schema: {$ref: '#/components/schemas/Problem'}
+    Conflict:
+      description: 'Alias already exists. `error`: `alias_conflict`.'
+      content:
+        application/problem+json:
+          schema: {$ref: '#/components/schemas/Problem'}
+    TooLarge:
+      description: 'Request body exceeds 64 KiB (declared or chunked). `error`: `request_too_large`.'
+      content:
+        application/problem+json:
+          schema: {$ref: '#/components/schemas/Problem'}
+    UnsupportedMediaType:
+      description: 'Request body is not `application/json`. `error`: `unsupported_media_type`.'
+      content:
+        application/problem+json:
+          schema: {$ref: '#/components/schemas/Problem'}
+    RateLimited:
+      description: 'Creation quota exhausted for the current window. `error`: `rate_limited`.'
+      headers:
+        Retry-After:
+          $ref: '#/components/headers/RetryAfter'
+          description: Seconds until the fixed window resets.
+      content:
+        application/problem+json:
+          schema: {$ref: '#/components/schemas/Problem'}
+    InternalError:
+      description: 'Unexpected server failure. `error`: `internal_error`.'
+      content:
+        application/problem+json:
+          schema: {$ref: '#/components/schemas/Problem'}
     Unavailable:
-      description: Service dependency or capacity unavailable
+      description: 'Database temporarily unreachable, timed out, or code space exhausted. `error`: `temporarily_unavailable`.'
+      headers:
+        Retry-After: {$ref: '#/components/headers/RetryAfter'}
       content:
-        application/json:
-          schema: {$ref: '#/components/schemas/Error'}
+        application/problem+json:
+          schema: {$ref: '#/components/schemas/Problem'}
   schemas:
-    Error:
+    Problem:
       type: object
-      required: [error]
+      description: RFC 9457 problem details with a stable `error` extension member.
+      required: [title, status, error]
       properties:
-        error: {type: string}
+        type: {type: string, format: uri-reference, description: 'Problem type; absent means `about:blank` (plain HTTP semantics).'}
+        title: {type: string}
+        status: {type: integer, minimum: 400, maximum: 599}
+        detail: {type: string}
+        instance: {type: string, format: uri-reference}
+        error:
+          type: string
+          enum: [invalid_request, not_found, method_not_allowed, not_acceptable, alias_conflict, request_too_large,
+                 unsupported_media_type, rate_limited, internal_error, temporarily_unavailable]

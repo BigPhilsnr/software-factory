@@ -1,5 +1,9 @@
 server:
   port: ${SHORTENER_PORT:8080}
+  # Peer address used for rate limiting. Keep "none" unless a trusted reverse proxy that overwrites
+  # X-Forwarded-For sits in front; then set SHORTENER_FORWARD_HEADERS_STRATEGY=native (or framework).
+  forward-headers-strategy: ${SHORTENER_FORWARD_HEADERS_STRATEGY:none}
+  shutdown: graceful
 spring:
   autoconfigure:
     exclude: org.springframework.boot.security.autoconfigure.UserDetailsServiceAutoConfiguration
@@ -9,19 +13,54 @@ spring:
     password: ${SHORTENER_DB_PASSWORD:shortener}
     hikari:
       maximum-pool-size: 8
+      # Fail fast (503) instead of queueing request threads behind an exhausted or unreachable pool.
+      connection-timeout: 1000
+      # Driver properties apply whatever SHORTENER_DB_URL is; the analytics pool reuses them.
+      data-source-properties:
+        connectTimeout: 2
+        socketTimeout: 5
+        options: "-c statement_timeout=2000 -c lock_timeout=1000"
+  jdbc:
+    template:
+      query-timeout: 2s
   flyway:
     enabled: true
 management:
   endpoints:
     web:
       exposure:
-        include: health,info
+        # Only health and info are reachable over HTTP; PublicApiSecurity denies the rest.
+        include: health,info,metrics
   endpoint:
     health:
+      show-details: never
       probes:
         enabled: true
       group:
         readiness:
           include: readinessState,db
+logging:
+  pattern:
+    level: "%5p [%X{requestId:-}]"
 shortener:
   base-url: ${SHORTENER_BASE_URL:http://localhost:8080}
+  rate-limit:
+    requests-per-window: 30
+    window: 60s
+    max-tracked-clients: 10000
+  cache:
+    max-links: 10000
+    link-ttl: 60s
+    max-misses: 2000
+    miss-ttl: 2s
+  analytics:
+    flush-interval: 1s
+    max-pending-links: 10000
+    flush-batch-size: 500
+    failure-log-interval: 30s
+    pool-size: 2
+    connection-timeout: 1s
+    query-timeout: 2s
+  http:
+    max-request-body: 64KB
+    unavailable-retry-after: 5s
