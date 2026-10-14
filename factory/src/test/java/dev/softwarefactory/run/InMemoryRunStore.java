@@ -1,5 +1,6 @@
 package dev.softwarefactory.run;
 
+import dev.softwarefactory.audit.AuditEvent;
 import dev.softwarefactory.platform.Json;
 import dev.softwarefactory.platform.WorkflowConflictException;
 import java.io.IOException;
@@ -8,12 +9,14 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 /** Copies on read/write to model persistence, rather than sharing a mutable RunState with the engine. */
 final class InMemoryRunStore implements RunStore {
     private final Map<String, String> states = new HashMap<>();
     private final Set<String> leases = new HashSet<>();
+    private final Map<String, AuditEvent> latest = new HashMap<>();
     private final List<String> events = new ArrayList<>();
 
     @Override
@@ -27,6 +30,7 @@ final class InMemoryRunStore implements RunStore {
     public synchronized void record(RunState state, String type, String detail) throws IOException {
         states.put(state.id, Json.MAPPER.writeValueAsString(state));
         events.add(type + ":" + detail);
+        latest.put(state.id, new AuditEvent(events.size(), java.time.Instant.now(), type, detail));
     }
 
     @Override
@@ -42,6 +46,11 @@ final class InMemoryRunStore implements RunStore {
                 leases.remove(id);
             }
         };
+    }
+
+    @Override
+    public synchronized Optional<AuditEvent> latestEvent(String id) {
+        return Optional.ofNullable(latest.get(id));
     }
 
     synchronized boolean has(String event) {

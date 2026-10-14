@@ -160,3 +160,7 @@ What this does and does not prove is discussed in [ADR 0007](decisions/0007-hmac
 ## Retention
 
 Nothing is deleted automatically. `python3 scripts/factory_cli.py prune` removes the worktree and evidence folder of finished runs older than a cut-off; database rows and the audit chain are always kept. See the [runbook](../03-operations/runbook.md#prune-old-runs).
+
+## Draft progress and diagnostic relevance
+
+`RunState.drafting` maps task IDs to `DraftCheckpoint(directory, baseCommit, inputHash, diffHash)`. Each successful draft edit updates signed state and emits `DRAFT_CHECKPOINT`. `activeDiagnostics` tracks the relevant diagnostic version; zero explicitly clears relevance after revision, while `diagnosticVersions` retains monotonically increasing evidence versions. These are JSON state fields with empty-map defaults for older runs; no relational migration is required.

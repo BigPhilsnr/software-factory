@@ -31,6 +31,7 @@ docker-compose up -d shortener-db control-db
 # First time, and after dependency changes: build and fill ~/.m2 for the offline sandbox
 mvn -q test
 docker pull maven@sha256:99e61abcff91a9b1333463bd8451fb18495d6eba9250ac66a338b518f8278320
+docker pull postgres@sha256:721873c34ceb9f8d8fc265984940dc982404c105f19ad51be9fdc5970a6080ea
 
 # Shortener (foreground)
 python3 scripts/shortener.py
@@ -258,3 +259,14 @@ Validator containers are named `factory-validator-<uuid>`. Leftovers from a cras
 | `shortUrl` has the wrong host or port | `SHORTENER_BASE_URL` not set for this deployment | Set it and restart. |
 | Startup fails: "shortener.base-url must be an absolute http(s) URL with a host" | Invalid base URL | Fix `SHORTENER_BASE_URL`. |
 | Readiness is `DOWN` | Product database unreachable | `docker-compose ps`; start `shortener-db`. |
+
+## Draft recovery failures
+
+| Symptom | Meaning and action |
+| --- | --- |
+| Output token limit; incomplete artifact discarded | Truncated text/tool calls were rejected. One recovery request is attempted if budget permits; saved earlier draft edits survive. Resume uses the checkpoint instead of restarting the whole patch. |
+| Repeated failed draft / repair limit | The bounded repair loop made no progress or exhausted three passes/checks. Inspect the diagnostic and revise requirements or feedback before resuming. |
+| Model-call budget exhausted | Increase the run ceiling explicitly only if additional paid requests are authorized; the system does not increase it itself. |
+| Draft checkpoint mismatch | Files or base commit differ from saved state. Do not approve or overwrite hashes to bypass the check. Investigate local edits/storage failures; revise or start a fresh run from trusted inputs. |
+
+Drafts are retained under `.runs/drafts/`; they are not deployed features. A crash between a file write and checkpoint persistence fails closed. Old runs without draft state start a new draft when live PATCH generation is next invoked. Already reviewed proposal artifacts and fixtures retain their existing approval path.

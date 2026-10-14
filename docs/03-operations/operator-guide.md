@@ -95,7 +95,11 @@ The page refreshes every 5 seconds while a worker is active and every 15 seconds
 3. Tick the review acknowledgement.
 4. Choose **Approve & resume**, **Request changes & resume** (pick the task to revise and say what to change), or **Reject run** (asks for confirmation).
 
-When a run pauses after a failure, the page shows the recorded diagnostic. Decide whether resuming is worthwhile: each task gets one retry.
+When a run pauses after a failure, the page shows the recorded diagnostic. Candidate-generation failures get one retry. Empty provider responses receive one bounded recovery request using the existing conversation and collected tool results; that request is counted against both the task and run limits. If recovery still cannot produce an artifact, generation pauses without consuming the candidate retry allowance.
+
+The factory reserves capacity for a final answer and one empty-response recovery call within the eight-request task cap and the remaining run budget. `MODEL_RESPONSE` audit events record request/message IDs, stop reason, content block kinds and token usage, never prompts, source text or thinking. `MODEL_EMPTY_RESPONSE_RETRY` records recovery attempts.
+
+Exhausting the model-call allowance pauses the run with its approved work preserved. To authorize more paid requests, select it in Dev UI chat with `/select RUN_ID`, then send `/budget NEW_TOTAL` (an increased total, at most 100), followed by `/advance`. Increasing the allowance is audited and does not itself run the model. Policy violations still safe-stop. For older runs safe-stopped by the exact `Model call budget exhausted` event, **Increase call budget** performs an audited recovery to PAUSED and preserves approved work. The action verifies the audit and refuses policy violations or other terminal failures. Then select **Start / resume**. No run is reopened automatically.
 
 ## ADK chat
 
@@ -120,13 +124,14 @@ Slash commands go straight to the engine and never pass through the model:
 | `/review` | Show the pending task and its exact hash, with a link to the full diff | no |
 | `/feature REQUIREMENT` | Save a new live run and select it | yes |
 | `/demo SCENARIO` | Create and start a fixture run (`greenfield`, `brownfield`, `ambiguous`, `bugfix`) | yes |
+| `/budget NEW_TOTAL` | Increase a paused live run’s total paid-call allowance, without starting it (maximum 100) | yes |
 | `/advance` | Start or resume the selected run | yes |
 | `/approve EXACT_HASH` | Approve and resume | yes |
 | `/changes TASK_ID feedback` | Request changes and resume | yes |
 | `/answer text` | Answer a clarification and resume | yes |
 | `/reject EXACT_HASH` | Reject the run | yes |
 
-The commands marked "yes" are refused unless the HTTP request carries the `X-Factory-Token` header. The stock chat UI does not send it, so in practice you read and inspect in chat and decide on the operator page. The reason is in [ADR 0010](../02-architecture/decisions/0010-operator-token-on-state-changing-chat-commands.md).
+The commands marked "yes" are refused unless the HTTP request carries the `X-Factory-Token` header. The factory-served Dev UI supplies it automatically for same-origin chat requests. Reload the page after restarting the server to refresh the token. The reason is in [ADR 0010](../02-architecture/decisions/0010-operator-token-on-state-changing-chat-commands.md).
 
 Chat has its own budget: `FACTORY_CHAT_DAILY_REQUESTS` provider requests per UTC day (default 80), stored in the control database, separate from every run's budget. Each answer has a deadline (`FACTORY_CHAT_DEADLINE_SECONDS`, default 180). Chat requests and tool outcomes are recorded in the `chat_audit` table without the chat text. An answer that used tools ends with a "Tool activity" line.
 
@@ -179,3 +184,29 @@ The launcher refuses to start a live run when `ANTHROPIC_API_KEY` is missing or 
 | Operator API: clarification, revision, exact-hash approval, stale-hash refusal, rejection, audit verification, request protections | `python3 scripts/checks/web_smoke.py` | Factory running, sandbox ready |
 | Real browser: page controls, approval, revision, rejection, mobile layout | `node scripts/checks/browser_smoke.cjs` | Node 22.12+, `puppeteer-core`, Chrome (`CHROME_PATH`), both applications running |
 | All seven agent tools through chat (paid calls) | `python3 scripts/checks/live_tools_smoke.py --live` | Factory running with a provider key |
+
+Generated unified diffs are recounted before scope checks and exact-hash review. Only
+hunk line counts change; paths, offsets and patch bodies stay intact. The original
+model response remains in `TASK-proposal-vN.txt`. Git applicability, write-scope and
+generated-test policy checks still run against the exact patch presented for approval.
+
+For a historical run that failed specifically on inaccurate hunk counts, an authenticated
+`POST /factory/api/runs/ID/patch-recovery` with `task`, `version` and `hash` (the SHA-256
+of the saved proposal bytes) validates and recounts that proposal, then pauses for fresh
+approval. It makes no model calls and applies no code. This recovery refuses policy
+stops, unrelated failures, changed scenario inputs and proposals that fail the normal
+patch checks. Previous diagnostics and attempt counts remain in the audit history.
+
+Conversational chat receives fresh evidence from the selected run, or the three most
+recent runs when none is selected. It includes bounded, hash-checked documentation,
+validation and patch artifacts. Use `/select RUN_ID` to discuss an older or specific
+candidate. `COMPLETED` means the isolated candidate finished validation and release
+review; it does not merge the candidate into the main checkout or deploy it. Chat's
+repository search still inspects the main checkout and uses the supplied run evidence
+to describe candidate-only features.
+
+## Resume incremental drafts
+
+PATCH workers save successful file edits under `.runs/drafts/` and store an integrity checkpoint in the run state. An output-limit or empty-response failure receives at most one budgeted retry; continued failure pauses the run with progress intact. Resume reopens the verified draft and includes the relevant diagnostic. Do not edit checkpointed files manually: a mismatch fails closed.
+
+Review the generated Git diff before approval. Draft checks do not mean the candidate has been applied, released or deployed. Full checks may be deferred until downstream patches are present; the final validation gate still runs. `DRAFT_CHECKPOINT`, `DRAFT_CHECK_STARTED/PASSED/FAILED` and `MODEL_OUTPUT_LIMIT_RETRY` explain activity. Three repair passes/checks and repeated-failure detection prevent endless repair loops. Request limits are 32 provider calls/64 tools per drafting invocation, bounded by the shared run ceiling. Resume never raises that ceiling automatically; use the explicit budget action when more calls are authorized.

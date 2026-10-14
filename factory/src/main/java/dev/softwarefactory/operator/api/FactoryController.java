@@ -98,10 +98,19 @@ public final class FactoryController {
         return json(state);
     }
 
+    @PostMapping("/runs/{id}/patch-recovery")
+    public ResponseEntity<JsonNode> recoverPatch(
+            @PathVariable("id") String id, @Valid @RequestBody PatchRecoveryRequest body)
+            throws IOException, InterruptedException {
+        factory.recoverPatch(id, body.task(), body.version(), body.hash());
+        return json(Map.of("accepted", true));
+    }
+
     @PostMapping("/runs/{id}/actions")
     public ResponseEntity<JsonNode> action(@PathVariable("id") String id, @Valid @RequestBody ActionRequest body)
             throws IOException, InterruptedException {
         switch (body.action()) {
+            case "budget" -> factory.increaseBudget(id, body.requiredBudget());
             case "advance" -> factory.advance(id);
             case "approve" -> factory.approve(id, body.hash());
             case "reject" -> factory.reject(id, body.hash());

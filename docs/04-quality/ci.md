@@ -65,6 +65,7 @@ python3 scripts/checks/verify_evidence.py
 # Job: integration
 docker-compose up -d shortener-db control-db
 docker pull maven@sha256:99e61abcff91a9b1333463bd8451fb18495d6eba9250ac66a338b518f8278320
+docker pull postgres@sha256:721873c34ceb9f8d8fc265984940dc982404c105f19ad51be9fdc5970a6080ea
 mvn -B -f shortener/pom.xml -Pintegration clean verify
 mvn -B -f factory/pom.xml -Pintegration clean verify
 ```

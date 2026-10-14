@@ -141,6 +141,17 @@ public final class FactoryService implements AutoCloseable {
         workers.start(id, () -> engine.advance(id));
     }
 
+    public synchronized void recoverPatch(String id, String task, int version, String hash)
+            throws IOException, InterruptedException {
+        workers.requireCapacity(id);
+        engine.recoverPatch(id, task, version, hash);
+    }
+
+    public synchronized void increaseBudget(String id, int total) throws IOException, InterruptedException {
+        workers.requireCapacity(id);
+        engine.increaseBudget(id, total);
+    }
+
     public synchronized void approve(String id, String hash) throws IOException, InterruptedException {
         workers.requireCapacity(id);
         engine.approve(id, hash, true);

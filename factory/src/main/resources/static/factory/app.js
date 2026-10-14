@@ -77,11 +77,19 @@ function render(data) {
   $('audit').textContent = (data.auditValid ? 'Audit verified' : 'Audit verification failed') + (data.auditCheckedAt ? ' · ' + new Date(data.auditCheckedAt).toLocaleTimeString() : '');
   $('audit').title = 'Dashboard audit results are cached for at most 30 seconds. Workflow actions always verify the audit independently.';
   $('busy').textContent = data.busy ? 'Worker active on this server · refresh every 5 seconds' : 'No active worker on this server';
-  $('advance').disabled = ended || data.busy || !!s.pendingApprovalTask || !!s.pendingClarificationTask || !!s.revisionRequiredTask;
+  $('advance').disabled = (s.mode === 'live' && s.modelCalls >= s.maxModelCalls) || ended || data.busy || !!s.pendingApprovalTask || !!s.pendingClarificationTask || !!s.revisionRequiredTask;
+  const last = data.events[0];
+  const legacyBudgetStop = s.status === 'SAFE_STOPPED' && s.modelCalls >= s.maxModelCalls
+    && last?.type === 'POLICY_SAFE_STOP' && Object.entries(s.tasks).some(([task, status]) =>
+      status === 'FAILED' && last.detail === task + ':Model call budget exhausted');
+  $('budget').hidden = s.mode !== 'live' || (!legacyBudgetStop && s.status !== 'PAUSED');
+  $('budget').disabled = data.busy || !data.auditValid || s.maxModelCalls >= 100;
   const stop = ['SAFE_STOPPED','FAILED'].includes(s.status) ? data.events.find(e=>['POLICY_SAFE_STOP','TASK_FAILED','RUN_FAILED'].includes(e.type)) : null;
   $('action-hint').textContent = ended ? (stop ? `Stopped: ${stop.detail}. This run has ended; inspect its evidence before starting a new request.` : 'Run ended. Evidence remains available.') : s.pendingApprovalTask ? 'Review the exact proposal below.' : s.pendingClarificationTask ? 'Answer the question below.' : data.busy ? 'Generation and validation continue in the background.' : 'Live runs make paid model calls. Fixture runs use recorded artifacts.';
   if (!ended && !data.busy && data.retryReason) $('action-hint').textContent = pauseHint(data.pauseKind, data.retryReason);
   else if (s.status === 'RUNNING' && !data.busy) $('action-hint').textContent = 'Saved RUNNING status, but no worker is active on this server. Start / resume recovers unfinished work when its database lease is available.';
+  if (legacyBudgetStop) $('action-hint').textContent = 'This older run stopped because its call budget ran out. Increase call budget to recover the saved work, then Start / resume.';
+  else if (s.status === 'PAUSED' && s.modelCalls >= s.maxModelCalls) $('action-hint').textContent = 'Call budget exhausted. Increase call budget, then Start / resume.';
   notice('run', data.error);
   const m=data.metrics;
   $('reliability').textContent = m ? `Elapsed ${(m.elapsedMillis/1000).toFixed(1)}s · Retries ${m.retryExecutions} (${m.retryOffers} offered) · Rollbacks ${m.rollbacks} · Replans ${m.replans} · Parallel joins ${m.parallelJoins} · Mean recovery ${m.meanRecoveryMillis===null?'no samples':(m.meanRecoveryMillis/1000).toFixed(1)+'s'}` : '';
@@ -134,6 +142,15 @@ async function action(body) {
   await refresh();
 }
 $('runs').addEventListener('click', e => {const b=e.target.closest('[data-run]');if(b)perform(()=>choose(b.dataset.run));});
+$('budget').onclick = () => perform(async () => {
+  const state = current?.state;
+  if (!state) return;
+  const input = prompt(`Authorize a new total paid model-call allowance, greater than ${state.maxModelCalls} and at most 100. This preserves work and does not start generation.`, String(Math.min(100, state.maxModelCalls + 16)));
+  if (input === null) return;
+  const budget = Number(input);
+  if (!Number.isInteger(budget) || budget <= state.maxModelCalls || budget > 100) throw new Error('Enter a whole-number total above the current limit and at most 100.');
+  await action({action:'budget', budget});
+});
 $('refresh').onclick = () => refresh();
 $('feature-form').onsubmit = e => {e.preventDefault(); perform(async()=>{if(!confirmLiveCreation())return;const s=await api('runs',{kind:'feature',requirement:$('requirement').value});await choose(s.id);});};
 $('scenario-form').onsubmit = e => {e.preventDefault();perform(async()=>{if($('mode').value==='live'&&!confirmLiveCreation())return;const s=await api('runs',{kind:'scenario',scenario:$('scenario').value,mode:$('mode').value});await choose(s.id);});};

@@ -1,6 +1,6 @@
 # ADR 0015: Agents propose inert text; deterministic code decides and acts
 
-**Status:** accepted
+**Status:** partially superseded by [ADR 0018](0018-incremental-drafting-and-bounded-repair.md) for PATCH generation. The original decision below records the earlier text-only design; approval and deterministic enforcement still apply.
 
 **In one paragraph.** A model never performs an action. It returns a document or a unified diff as text. Java code that does not depend on model output checks the diff, applies it, runs the tests, counts the budget and records the result. Authorisation never comes from something a model wrote.
 

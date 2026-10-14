@@ -6,4 +6,16 @@
   <Class>/<Method>) rather than by widening a pattern here.
 -->
 <FindBugsFilter xmlns="https://github.com/spotbugs/filter/3.0.0">
+    <!-- These constructors intentionally share scoped service collaborators. Copying them would break
+         checkpoint persistence and the per-run Git service; neither exposes a mutable data collection. -->
+    <Match>
+        <Class name="dev.softwarefactory.candidate.DraftWorkspace"/>
+        <Method name="&lt;init&gt;"/>
+        <Bug pattern="EI_EXPOSE_REP2"/>
+    </Match>
+    <Match>
+        <Class name="dev.softwarefactory.generation.tools.DraftTools"/>
+        <Method name="&lt;init&gt;"/>
+        <Bug pattern="EI_EXPOSE_REP2"/>
+    </Match>
 </FindBugsFilter>

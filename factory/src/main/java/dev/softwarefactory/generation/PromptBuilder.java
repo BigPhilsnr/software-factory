@@ -65,7 +65,7 @@ public final class PromptBuilder {
                 "\n\nRequired stack: Java 21, Spring Boot, PostgreSQL, Maven. Preserve this stack even on an empty baseline.");
         if (task.kind() == TaskKind.PATCH) {
             prompt.append(
-                            "\n\nReturn only a git apply-compatible unified diff with diff --git headers. Do not include markdown or prose. Stay within these paths: ")
+                            "\n\nUse the scoped draft tools to implement small file edits in the drafting workspace. Do not return source code or a unified diff in your final response; Git will produce the review diff. Stay within these paths: ")
                     .append(task.writeScope())
                     .append(". Make the smallest complete change that meets the requirement and existing tests.");
         }

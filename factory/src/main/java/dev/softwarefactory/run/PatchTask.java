@@ -2,6 +2,7 @@ package dev.softwarefactory.run;
 
 import dev.softwarefactory.audit.EventTypes;
 import dev.softwarefactory.candidate.GitWorkspace;
+import dev.softwarefactory.governance.PatchHunks;
 import dev.softwarefactory.governance.PatchPolicy;
 import dev.softwarefactory.governance.PatchScope;
 import dev.softwarefactory.scenario.ScenarioSpec;
@@ -53,8 +54,15 @@ final class PatchTask implements TaskExecutor {
         // diff to a human but a malformed one to git. Normalize once, here, before anything hashes,
         // stores or reviews this text, so the approval hash, the saved evidence and the applied bytes
         // never diverge.
-        String patch = withTrailingNewline(withoutMarkdownFence(proposed.get()));
-        if (!drafted) evidence.recordProposal(state, task.id(), patch);
+        if (!drafted) evidence.recordProposal(state, task.id(), proposed.get());
+        Optional<String> normalized = failures.produce(
+                state,
+                task,
+                () -> drafted
+                        ? proposed.get()
+                        : PatchHunks.recount(withTrailingNewline(withoutMarkdownFence(proposed.get()))));
+        if (normalized.isEmpty()) return false;
+        String patch = normalized.get();
         if (!failures.attempt(state, task, () -> requireWithinAuthority(state, task, patch))) return false;
         String hash = ApprovalGate.patchHash(state, patch);
         if (PatchPolicy.requiresApproval(task.requiresApproval(), patch) && !ApprovalGate.approved(state, task, hash)) {
@@ -65,12 +73,12 @@ final class PatchTask implements TaskExecutor {
     }
 
     /** The draft an operator already reviewed, or a newly generated patch. */
-    private String draft(RunState state, TaskSpec task, ScenarioSpec spec) throws IOException {
+    private String draft(RunState state, TaskSpec task, ScenarioSpec spec) throws IOException, InterruptedException {
         Integer version = state.patchDrafts.get(task.id());
         if (version != null) return evidence.readOutput(state, task.id(), version);
         state.tasks.put(task.id(), TaskStatus.RUNNING);
         runs.record(state, EventTypes.TASK_STARTED, task.id());
-        return generation.generate(state, task, generation.prepare(state, task, spec));
+        return generation.generatePatch(state, task, spec);
     }
 
     private void requireWithinAuthority(RunState state, TaskSpec task, String patch)

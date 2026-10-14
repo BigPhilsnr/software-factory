@@ -13,7 +13,7 @@ class ToolSessionTest {
         AtomicInteger calls = new AtomicInteger();
         var session = new ToolSession(calls::incrementAndGet, (event, detail) -> {});
         for (int i = 0; i < 8; i++) session.reserveRequest();
-        assertThrows(SecurityException.class, session::reserveRequest);
+        assertThrows(dev.softwarefactory.platform.GenerationUnavailableException.class, session::reserveRequest);
         assertEquals(8, calls.get());
         var exhaustedRun = new ToolSession(
                 () -> {
@@ -44,15 +44,37 @@ class ToolSessionTest {
     void searchCannotConsumeTheFinalResponseRequest() {
         AtomicInteger reservations = new AtomicInteger();
         var session = new ToolSession(reservations::incrementAndGet, (event, detail) -> {});
-        for (int i = 0; i < 6; i++) session.reserveRequest();
+        for (int i = 0; i < 5; i++) session.reserveRequest();
         session.reserveSearchRequest();
-        assertEquals(7, reservations.get());
+        assertEquals(6, reservations.get());
         assertThrows(IllegalStateException.class, session::reserveSearchRequest);
-        assertEquals(7, reservations.get());
+        assertEquals(6, reservations.get());
         session.reserveRequest();
         assertFalse(session.toolsAllowed());
+        session.reserveRequest();
         assertEquals(8, reservations.get());
-        assertThrows(SecurityException.class, session::reserveRequest);
+        assertThrows(dev.softwarefactory.platform.GenerationUnavailableException.class, session::reserveRequest);
+    }
+
+    @Test
+    void sharedBudgetForcesFinalizationBeforeExplorationConsumesRecovery() {
+        AtomicInteger remaining = new AtomicInteger(2);
+        var budget = new ToolSession.BeforeRequest() {
+            @Override
+            public void reserve() {
+                remaining.decrementAndGet();
+            }
+
+            @Override
+            public int remaining() {
+                return remaining.get();
+            }
+        };
+        var session = new ToolSession(budget, (event, detail) -> {});
+        assertThrows(IllegalStateException.class, session::reserveSearchRequest);
+        session.reserveRequest();
+        assertFalse(session.toolsAllowed());
+        assertEquals(1, session.remainingRequests());
     }
 
     @Test

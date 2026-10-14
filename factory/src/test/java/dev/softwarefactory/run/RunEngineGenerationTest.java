@@ -124,7 +124,7 @@ class RunEngineGenerationTest {
     }
 
     @Test
-    void anExhaustedModelBudgetSafeStopsTheRun() throws Exception {
+    void exhaustedBudgetPausesAndAnExplicitIncreaseAllowsResumption() throws Exception {
         AgentRuntimes agents = (checkout, beforeRequest, audit) -> (role, prompt) -> {
             beforeRequest.reserve();
             beforeRequest.reserve();
@@ -136,9 +136,49 @@ class RunEngineGenerationTest {
         RunState state = fixture.start(
                 engine, RunMode.LIVE, List.of(live("understand", List.of(), "requirements", "Define the criteria")));
         state = engine.advance(state.id);
-        assertEquals(RunStatus.SAFE_STOPPED, state.status);
+        assertEquals(RunStatus.PAUSED, state.status);
         assertEquals(1, state.modelCalls);
-        assertEquals(List.of("understand:Model call budget exhausted"), store.details("POLICY_SAFE_STOP"));
+        assertEquals(TaskStatus.PENDING, state.tasks.get("understand"));
+        assertTrue(state.attempts.isEmpty());
+        assertEquals(1, store.details("MODEL_GENERATION_PAUSED").size());
+        assertTrue(store.details("POLICY_SAFE_STOP").isEmpty());
+        String id = state.id;
+        assertThrows(IllegalArgumentException.class, () -> engine.increaseBudget(id, 1));
+        assertThrows(IllegalArgumentException.class, () -> engine.increaseBudget(id, 101));
+        state = engine.increaseBudget(id, 3);
+        assertEquals(RunStatus.PAUSED, state.status);
+        assertEquals(1, state.modelCalls);
+        assertEquals(List.of("1->3"), store.details("MODEL_BUDGET_INCREASED"));
+        state = engine.advance(id);
+        assertEquals(RunStatus.COMPLETED, state.status);
+        assertEquals(3, state.modelCalls);
+        assertThrows(IllegalArgumentException.class, () -> engine.increaseBudget(id, 4));
+    }
+
+    @Test
+    void onlyVerifiedLegacyBudgetStopsCanBeRecoveredWithoutGenerating() throws Exception {
+        RunEngine engine = fixture.engine(store, LIVE_ENVIRONMENT, RunEngineFixture.unusedAgents());
+        RunState state =
+                fixture.start(engine, RunMode.LIVE, List.of(live("tests", List.of(), "tester", "Write tests")));
+        state.status = RunStatus.SAFE_STOPPED;
+        state.modelCalls = state.maxModelCalls;
+        state.tasks.put("tests", TaskStatus.FAILED);
+        state.finishedAt = RunEngineFixture.NOW;
+        state.approvals.put("implementation", "approved-hash");
+        String id = state.id;
+        store.record(state, "POLICY_SAFE_STOP", "tests:Patch outside approved scope");
+        assertThrows(IllegalArgumentException.class, () -> engine.increaseBudget(id, 40));
+        store.record(state, "TASK_FAILED", "tests:Model call budget exhausted");
+        assertThrows(IllegalArgumentException.class, () -> engine.increaseBudget(id, 40));
+        store.record(state, "POLICY_SAFE_STOP", "tests:Model call budget exhausted");
+        state = engine.increaseBudget(id, 40);
+        assertEquals(RunStatus.PAUSED, state.status);
+        assertEquals(TaskStatus.PENDING, state.tasks.get("tests"));
+        assertEquals(null, state.finishedAt);
+        assertEquals(24, state.modelCalls);
+        assertEquals(40, state.maxModelCalls);
+        assertEquals("approved-hash", state.approvals.get("implementation"));
+        assertTrue(store.details("MODEL_BUDGET_INCREASED").getLast().contains("recovered legacy budget stop:tests"));
     }
 
     @Test
@@ -171,9 +211,10 @@ class RunEngineGenerationTest {
         String prompt = prompts.get("implementer");
         assertTrue(prompt.contains("Operator review feedback to address:\nKeep it to one line."));
         assertFalse(prompt.contains("Previous attempt failed"), "A revision starts from a clean retry budget");
-        assertTrue(prompt.contains("Return only a git apply-compatible unified diff"));
+        assertTrue(prompt.contains("Use the scoped draft tools"));
         assertTrue(prompt.contains("[README.md]"));
-        assertEquals(PATCH, Files.readString(fixture.evidence(state, "apply-proposal-v1")));
+        assertTrue(
+                Files.readString(fixture.evidence(state, "apply-proposal-v1")).contains("+reviewed change"));
     }
 
     @Test

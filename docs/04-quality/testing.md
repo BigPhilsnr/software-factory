@@ -61,6 +61,7 @@ mvn -f factory/pom.xml test
 # Everything, including integration tests
 docker-compose up -d shortener-db control-db
 docker pull maven@sha256:99e61abcff91a9b1333463bd8451fb18495d6eba9250ac66a338b518f8278320
+docker pull postgres@sha256:721873c34ceb9f8d8fc265984940dc982404c105f19ad51be9fdc5970a6080ea
 mvn -q test                      # once, to fill ~/.m2 for the offline sandbox
 mvn -Pintegration test
 
@@ -105,3 +106,13 @@ Current counts and coverage are in the [scorecard](scorecard.md).
 ## Assignment readiness checks
 
 The [assignment guide](assignment-readiness.md) maps each criterion to evidence. The evaluator now uses fresh quality-gated integration reports and requires tests in both modules; its own failure-detection checks and the product credential boundary run with `python3 -m unittest discover -s scripts/checks/tests`. `FeatureRequestGovernanceTest` verifies current-commit pinning and the human scope checkpoint. `scripts/checks/adk_chat_smoke.cjs` covers actual ADK Markdown rendering, including the previously failing multiline shortener diagram.
+
+## Incremental drafting regressions
+
+`DraftWorkspaceTest` verifies scoped atomic edits, stale-hash refusal, permission preservation, candidate isolation, symlink/credential denial and checkpoint tampering. `PatchDraftingTest` verifies validation-feedback repair, exact proposal approval, resume after provider failure and no-progress pausing. `TokenLimitRecoveryTest` runs a real ADK tool loop against a local fake HTTP provider, asserting truncated tool calls never execute and completed edits survive. `EmptyResponseRecoveryTest` verifies bounded recovery and exhausted-budget behavior. Run the full gate without paid provider calls:
+
+```sh
+mvn -q -pl factory spotless:check verify
+```
+
+Recovery is bounded, not a guarantee that arbitrary generated code eventually passes. Live paid runs are separate from these deterministic regressions.

@@ -6,7 +6,7 @@
 
 A language model is useful for writing code and unreliable as an authority. So the system splits the two roles:
 
-- **Agents propose.** An agent returns text: a document or a unified diff. It has read-only tools and nothing else.
+- **Agents propose.** Document agents return text. PATCH agents incrementally edit an isolated draft; Git produces the review diff. Only deterministic code applies an approved proposal to the candidate.
 - **Deterministic code decides.** Java code owns the task order, the path rules, patch application, test execution, budgets and the record of what happened.
 - **A human approves.** Sensitive patches and every release wait for the operator, who approves a hash of exactly what was reviewed.
 

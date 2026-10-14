@@ -52,7 +52,7 @@ class SandboxValidatorTest {
                 root,
                 (directory, args, timeout) -> {
                     commands.add(args);
-                    if (!args.contains("run")) return "";
+                    if (!args.contains("mvn")) return "";
                     maven.run(reportsMount(args));
                     return "";
                 },
@@ -107,7 +107,7 @@ class SandboxValidatorTest {
                 .runSuite(candidate, Set.of());
         assertTrue(result.contains("executed=2"));
         List<String> run = commands.stream()
-                .filter(args -> args.contains("run"))
+                .filter(args -> args.contains("mvn"))
                 .findFirst()
                 .orElseThrow();
         Path reports = reportsMount(run);
@@ -115,6 +115,34 @@ class SandboxValidatorTest {
         assertFalse(Files.exists(reports));
         assertTrue(run.contains("--label"));
         assertTrue(run.contains(SandboxValidator.IMAGE));
+        assertTrue(run.contains("-Pintegration"));
+        assertTrue(run.contains("SHORTENER_TEST_DB_URL=jdbc:postgresql://127.0.0.1:5432/shortener"));
+        List<String> database = commands.stream()
+                .filter(args -> args.contains(ValidationDatabase.IMAGE) && args.contains("run"))
+                .findFirst()
+                .orElseThrow();
+        String databaseName = database.get(database.indexOf("--name") + 1);
+        assertEquals("none", database.get(database.indexOf("--network") + 1));
+        assertEquals("container:" + databaseName, run.get(run.indexOf("--network") + 1));
+        assertTrue(database.contains("--read-only"));
+        assertTrue(database.contains("--cap-drop"));
+        assertFalse(database.contains("--publish"));
+        assertTrue(commands.stream().anyMatch(args -> args.equals(List.of("docker", "rm", "-f", databaseName))));
+    }
+
+    @Test
+    void databaseStartupFailurePausesAsInfrastructureAndCleansUp() {
+        var validator = new SandboxValidator(
+                root,
+                (directory, args, timeout) -> {
+                    commands.add(args);
+                    if (args.contains("exec")) throw new CommandRunner.Failed(1, "database not ready");
+                    return "";
+                },
+                Clock.systemUTC());
+        assertThrows(InfrastructureException.class, () -> validator.runSuite(candidate, Set.of()));
+        assertFalse(commands.stream().anyMatch(args -> args.contains("mvn")));
+        assertTrue(commands.stream().anyMatch(args -> args.contains("rm")));
     }
 
     @Test

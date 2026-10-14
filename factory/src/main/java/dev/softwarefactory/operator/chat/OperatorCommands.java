@@ -18,7 +18,7 @@ import java.util.regex.Pattern;
 public final class OperatorCommands {
     /** Prefixes of commands that create, advance or decide runs. */
     private static final List<String> STATE_CHANGING =
-            List.of("/feature", "/demo", "/advance", "/approve", "/reject", "/answer", "/changes");
+            List.of("/feature", "/demo", "/advance", "/approve", "/reject", "/answer", "/changes", "/budget");
 
     private static final Pattern AMBIGUOUS_DECISION = Pattern.compile("(?i)(yes|no|approve|approved|reject|continue)");
     private static final Pattern WHITESPACE = Pattern.compile("\\s+");
@@ -41,7 +41,16 @@ public final class OperatorCommands {
             Map.of("/status", this::status, "/advance", this::advance, "/review", this::review);
 
     private final Map<String, RunCommand> runCommandsWithArgument = Map.of(
-            "/approve", this::approve, REJECT, this::reject, "/answer", this::answer, "/changes", this::requestChanges);
+            "/approve",
+            this::approve,
+            REJECT,
+            this::reject,
+            "/answer",
+            this::answer,
+            "/changes",
+            this::requestChanges,
+            "/budget",
+            this::increaseBudget);
 
     public OperatorCommands(FactoryService factory) {
         this(factory, new ChatConversation(factory.workspaceRoot(), factory.chatRuntime()));
@@ -115,7 +124,7 @@ public final class OperatorCommands {
             return "Use `/approve EXACT_HASH`, `/reject EXACT_HASH`, or `/advance` for run actions. Type `/help` for commands.";
         }
         String id = selected.get(session);
-        String context = id == null ? "No run selected." : describe(factory.state(id));
+        String context = new ChatRunContext(factory).read(id);
         return chat.answer(session, text, context);
     }
 
@@ -186,6 +195,17 @@ public final class OperatorCommands {
         return "Review feedback recorded; affected tasks are being regenerated.";
     }
 
+    private String increaseBudget(String id, String argument) throws IOException, InterruptedException {
+        final int total;
+        try {
+            total = Integer.parseInt(argument);
+        } catch (NumberFormatException invalid) {
+            throw new IllegalArgumentException("Use /budget NEW_TOTAL (maximum 100)", invalid);
+        }
+        factory.increaseBudget(id, total);
+        return "Total paid model-call allowance increased to " + total + ". Use `/advance` to resume.";
+    }
+
     private String review(String id, String ignoredArgument) throws IOException {
         Map<String, Object> detail = factory.detail(id);
         if (!detail.containsKey("review")) return "No approval is pending. " + describe(factory.state(id));
@@ -215,13 +235,14 @@ public final class OperatorCommands {
                 + "- `/demo bugfix` — start a fixture demonstration without model charges\n"
                 + "- `/tools` — show web browsing and engineering tools\n"
                 + "- `/runs` and `/select RUN_ID` — find an existing run\n"
+                + "- `/budget NEW_TOTAL` — explicitly increase a paused live run’s paid call allowance (maximum 100); does not start it\n"
                 + "- `/status` — refresh selected run\n"
                 + "- `/review` — show pending approval details\n"
                 + "- `/approve EXACT_HASH` — approve the reviewed proposal and resume\n"
                 + "- `/changes TASK_ID feedback` — request revision\n"
                 + "- `/answer answer` — answer a clarification\n"
                 + "- `/reject EXACT_HASH` — reject the reviewed proposal\n\n"
-                + "Commands that create, advance or decide runs require the operator token (sent by the operator page or the "
+                + "Commands that create, advance or decide runs require the operator token (sent automatically by the Dev UI and operator page, or supplied through the "
                 + "`X-Factory-Token` header); without it they are refused.\n\n"
                 + "[Open the operator page for live progress, artifact inspection and approval buttons](/factory/).";
     }

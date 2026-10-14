@@ -91,6 +91,26 @@ class FactoryControllerTest {
     }
 
     @Test
+    void patchRecoveryRequiresProposalIdentityAndDoesNotAdvance() throws Exception {
+        String endpoint = "/factory/api/runs/" + ID + "/patch-recovery";
+        api.perform(json(post(endpoint), "{}")).andExpect(status().isBadRequest());
+        String hash = "a".repeat(64);
+        api.perform(json(post(endpoint), "{\"task\":\"tests\",\"version\":1,\"hash\":\"" + hash + "\"}"))
+                .andExpect(status().isOk());
+        verify(factory).recoverPatch(ID, "tests", 1, hash);
+        org.mockito.Mockito.verify(factory, org.mockito.Mockito.never()).advance(any());
+    }
+
+    @Test
+    void budgetActionRequiresATotalAndDoesNotAdvanceTheRun() throws Exception {
+        api.perform(json(post(ACTIONS), "{\"action\":\"budget\"}")).andExpect(status().isBadRequest());
+        api.perform(json(post(ACTIONS), "{\"action\":\"budget\",\"budget\":40}"))
+                .andExpect(status().isOk());
+        verify(factory).increaseBudget(ID, 40);
+        org.mockito.Mockito.verify(factory, org.mockito.Mockito.never()).advance(any());
+    }
+
+    @Test
     void runsAreCreatedFromAFeatureRequestOrANamedScenario() throws Exception {
         var state = new RunState(ID, "demo", "hash");
         when(factory.feature("Add expiry")).thenReturn(state);

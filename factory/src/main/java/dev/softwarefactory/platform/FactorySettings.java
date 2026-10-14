@@ -25,7 +25,7 @@ public record FactorySettings(
         String auditKey) {
     public static final String DEFAULT_MODEL = "claude-sonnet-4-5";
     static final int DEFAULT_MAX_MODEL_CALLS = 24;
-    static final int MAX_MODEL_CALLS_LIMIT = 100;
+    public static final int MAX_MODEL_CALLS_LIMIT = 100;
     static final int DEFAULT_CHAT_DAILY_REQUESTS = 80;
     static final int CHAT_DAILY_REQUESTS_LIMIT = 10_000;
     static final int DEFAULT_CHAT_DEADLINE_SECONDS = 180;

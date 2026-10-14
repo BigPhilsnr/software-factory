@@ -124,7 +124,7 @@ public final class EngineeringTools {
                 + "- `list_files`, `read_file`, `search_repository` — inspect source and documentation\n"
                 + "- `inspect_git` — status, diff and recent history\n- `current_time` — UTC time\n\n"
                 + "Example: ‘Search official Spring documentation for rate limiting and find the relevant code in this project.’\n\n"
-                + "Each answer/task allows up to 8 provider requests and 12 tool calls. Search adds provider charges. "
+                + "Chat/document invocations allow up to 8 provider requests and 12 tool calls. PATCH workers have scoped draft tools and limits of 32 requests/64 tools within the run budget. Search adds provider charges. "
                 + "Code changes, sandbox tests and approvals continue through `/feature`, `/advance` and `/review`.";
     }
 }

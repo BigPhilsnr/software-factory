@@ -2,6 +2,7 @@ package dev.softwarefactory.generation.tools;
 
 import dev.softwarefactory.generation.UntrustedText;
 import dev.softwarefactory.governance.Hashes;
+import dev.softwarefactory.platform.GenerationUnavailableException;
 import java.io.IOException;
 import java.time.Clock;
 import java.time.Duration;
@@ -32,6 +33,9 @@ public final class ToolSession implements AutoCloseable {
     private final Clock clock;
     private final AtomicBoolean closed = new AtomicBoolean();
     private final List<String> outcomes = new ArrayList<>();
+    private final boolean drafting;
+    private final int requestLimit;
+    private final int callLimit;
     private int requests;
     private int calls;
 
@@ -39,6 +43,11 @@ public final class ToolSession implements AutoCloseable {
     @FunctionalInterface
     public interface BeforeRequest {
         void reserve() throws IOException;
+
+        /** Remaining shared budget; implementations without a shared cap use the invocation limit. */
+        default int remaining() {
+            return Integer.MAX_VALUE;
+        }
     }
 
     @FunctionalInterface
@@ -56,6 +65,13 @@ public final class ToolSession implements AutoCloseable {
     }
 
     public ToolSession(BeforeRequest beforeRequest, Audit audit, Instant deadline, Clock clock) {
+        this(beforeRequest, audit, deadline, clock, false);
+    }
+
+    public ToolSession(BeforeRequest beforeRequest, Audit audit, Instant deadline, Clock clock, boolean drafting) {
+        this.drafting = drafting;
+        this.requestLimit = drafting ? 32 : MAX_MODEL_REQUESTS;
+        this.callLimit = drafting ? 64 : MAX_TOOL_CALLS;
         this.beforeRequest = beforeRequest;
         this.audit = audit;
         this.deadline = deadline;
@@ -64,7 +80,8 @@ public final class ToolSession implements AutoCloseable {
 
     public synchronized void reserveRequest() {
         requireOpen();
-        if (requests >= MAX_MODEL_REQUESTS) throw new SecurityException("Per-answer/task model request limit reached");
+        if (requests >= requestLimit)
+            throw new GenerationUnavailableException("Per-answer/task model request limit reached");
         try {
             beforeRequest.reserve();
         } catch (IOException failure) {
@@ -75,7 +92,7 @@ public final class ToolSession implements AutoCloseable {
 
     /** A nested search must leave one provider request available to produce the final artifact. */
     public synchronized void reserveSearchRequest() {
-        if (requests >= MAX_MODEL_REQUESTS - 1) {
+        if (remainingRequests() <= 2) {
             throw new IllegalStateException("Web search would consume the reserved final response request");
         }
         reserveRequest();
@@ -83,7 +100,31 @@ public final class ToolSession implements AutoCloseable {
 
     /** Call after reserving the next main-model request; the last request must return a final answer. */
     public synchronized boolean toolsAllowed() {
-        return requests < MAX_MODEL_REQUESTS && calls < MAX_TOOL_CALLS;
+        return remainingRequests() > 1 && calls < callLimit;
+    }
+
+    /** Leave a final answer and one empty-response recovery request within both caps. */
+    public synchronized int remainingRequests() {
+        return Math.max(0, Math.min(requestLimit - requests, beforeRequest.remaining()));
+    }
+
+    /** Safe metadata only; never pass prompts, tool results, or thinking text here. */
+    public void recordResponse(String detail) {
+        record("MODEL_RESPONSE", detail);
+    }
+
+    public boolean drafting() {
+        return drafting;
+    }
+
+    public void recordOutputRecovery() {
+        record(
+                "MODEL_OUTPUT_LIMIT_RETRY",
+                "Discarded incomplete response; retrying once with reduced reasoning and a smaller step");
+    }
+
+    public void recordRecovery() {
+        record("MODEL_EMPTY_RESPONSE_RETRY", "Retrying with existing context and tools disabled");
     }
 
     /** Provider timeout for the next request: never beyond the invocation deadline. */
@@ -99,7 +140,7 @@ public final class ToolSession implements AutoCloseable {
     public synchronized void recordFinalization() {
         record(
                 "TOOL_BUDGET_FINALIZING",
-                "request=" + requests + "/" + MAX_MODEL_REQUESTS + "; tools=" + calls + "/" + MAX_TOOL_CALLS);
+                "request=" + requests + "/" + requestLimit + "; tools=" + calls + "/" + callLimit);
     }
 
     /**
@@ -110,7 +151,7 @@ public final class ToolSession implements AutoCloseable {
     public synchronized String invoke(String name, String input, Operation operation) {
         requireOpen();
         calls++;
-        if (calls > MAX_TOOL_CALLS) throw new SecurityException("Tool call limit reached");
+        if (calls > callLimit) throw new SecurityException("Tool call limit reached");
         long started = System.nanoTime();
         record("TOOL_STARTED", name + ":inputSha256=" + Hashes.sha256(input));
         String result;

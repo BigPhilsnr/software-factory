@@ -1,11 +1,14 @@
 package dev.softwarefactory.run;
 
 import dev.softwarefactory.audit.EventTypes;
+import dev.softwarefactory.generation.AgentRuntime;
 import dev.softwarefactory.generation.AgentRuntimes;
 import dev.softwarefactory.generation.FixtureRuntime;
 import dev.softwarefactory.generation.PromptBuilder;
 import dev.softwarefactory.generation.SourceContext;
+import dev.softwarefactory.generation.tools.ToolSession;
 import dev.softwarefactory.governance.PolicyViolationException;
+import dev.softwarefactory.platform.GenerationUnavailableException;
 import dev.softwarefactory.scenario.ScenarioFiles;
 import dev.softwarefactory.scenario.ScenarioSpec;
 import dev.softwarefactory.scenario.TaskSpec;
@@ -17,11 +20,13 @@ final class TaskGeneration {
     private final RunStore runs;
     private final RunEvidence evidence;
     private final AgentRuntimes agents;
+    private final PatchDrafting drafts;
 
-    TaskGeneration(RunStore runs, RunEvidence evidence, AgentRuntimes agents) {
+    TaskGeneration(RunStore runs, RunEvidence evidence, AgentRuntimes agents, PatchDrafting drafts) {
         this.runs = runs;
         this.evidence = evidence;
         this.agents = agents;
+        this.drafts = drafts;
     }
 
     /** Captures the task's inputs. Must not run concurrently with changes to the same run state. */
@@ -58,17 +63,47 @@ final class TaskGeneration {
                 throw new PolicyViolationException("Fixture escapes scenario directory");
             return new FixtureRuntime(file).generate(generation.role(), generation.prompt());
         }
-        return agents.live(generation.candidate(), () -> reserveModelCall(state, task), (event, detail) -> {
+        return runtime(state, task, generation.candidate()).generate(generation.role(), generation.prompt());
+    }
+
+    String generatePatch(RunState state, TaskSpec task, ScenarioSpec spec) throws IOException, InterruptedException {
+        Generation generation = prepare(state, task, spec);
+        if (RunMode.FIXTURE.equals(state.mode)) return generate(state, task, generation);
+        return drafts.generate(state, task, spec, generation, checkout -> runtime(state, task, checkout));
+    }
+
+    private AgentRuntime runtime(RunState state, TaskSpec task, Path checkout) {
+        return agents.live(
+                checkout,
+                new ToolSession.BeforeRequest() {
+                    @Override
+                    public void reserve() throws IOException {
+                        reserveModelCall(state, task);
+                    }
+
+                    @Override
+                    public int remaining() {
+                        return remainingModelCalls(state);
+                    }
+                },
+                (event, detail) -> {
                     synchronized (state) {
                         runs.record(state, event, task.id() + ":" + detail);
                     }
-                })
-                .generate(generation.role(), generation.prompt());
+                });
+    }
+
+    private static int remainingModelCalls(RunState state) {
+        synchronized (state) {
+            return state.maxModelCalls - state.modelCalls;
+        }
     }
 
     private void reserveModelCall(RunState state, TaskSpec task) throws IOException {
         synchronized (state) {
-            if (state.modelCalls >= state.maxModelCalls) throw new SecurityException("Model call budget exhausted");
+            if (state.modelCalls >= state.maxModelCalls)
+                throw new GenerationUnavailableException(
+                        "Model call budget exhausted; explicitly increase the run budget before resuming");
             state.modelCalls++;
             runs.record(
                     state,

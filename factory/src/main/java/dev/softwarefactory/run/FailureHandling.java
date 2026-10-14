@@ -1,6 +1,7 @@
 package dev.softwarefactory.run;
 
 import dev.softwarefactory.audit.EventTypes;
+import dev.softwarefactory.platform.GenerationUnavailableException;
 import dev.softwarefactory.platform.InfrastructureException;
 import dev.softwarefactory.platform.LogText;
 import dev.softwarefactory.scenario.TaskSpec;
@@ -86,6 +87,13 @@ final class FailureHandling {
         }
         String message = String.valueOf(cause.getMessage());
         if (message.length() > MAX_DIAGNOSTIC) message = message.substring(0, MAX_DIAGNOSTIC);
+        if (cause instanceof GenerationUnavailableException) {
+            evidence.recordDiagnostic(state, task.id(), cause, message);
+            state.tasks.put(task.id(), TaskStatus.PENDING);
+            state.status = RunStatus.PAUSED;
+            runs.record(state, EventTypes.MODEL_GENERATION_PAUSED, task.id() + ":" + message);
+            return;
+        }
         if (cause instanceof InfrastructureException) {
             pauseForPlatform(state, task, message, cause);
             return;

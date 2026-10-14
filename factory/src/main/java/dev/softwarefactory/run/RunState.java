@@ -1,6 +1,7 @@
 package dev.softwarefactory.run;
 
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import dev.softwarefactory.candidate.DraftCheckpoint;
 import java.time.Instant;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -60,6 +61,13 @@ public final class RunState {
     @JsonDeserialize(as = ConcurrentHashMap.class)
     public Map<String, String> reviewFeedback = new ConcurrentHashMap<>();
 
+    @JsonDeserialize(as = ConcurrentHashMap.class)
+    public Map<String, DraftCheckpoint> drafting = new ConcurrentHashMap<>();
+
+    /** Zero means explicitly cleared by revision; absent preserves compatibility with older runs. */
+    @JsonDeserialize(as = ConcurrentHashMap.class)
+    public Map<String, Integer> activeDiagnostics = new ConcurrentHashMap<>();
+
     public RunState() {
         // Jackson and persistence adapters populate fields.
     }
@@ -82,7 +90,9 @@ public final class RunState {
         tasks.put(task, status);
         artifactHashes.remove(task);
         patchDrafts.remove(task);
+        drafting.remove(task);
         approvals.remove(task);
         attempts.remove(task);
+        activeDiagnostics.put(task, 0);
     }
 }

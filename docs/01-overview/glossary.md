@@ -15,9 +15,9 @@
 | **Mode** | `fixture` replays recorded output. `live` calls the model. | `run/RunMode` |
 | **Baseline** | The Git tag a run starts from, resolved to a commit when the run is created so it cannot drift. | `RunState.baselineCommit` |
 | **Candidate** | The run's private copy of the code: a detached Git worktree at `.runs/<run-id>/`. Patches are applied here and nowhere else. | `candidate/GitWorkspace` |
-| **Agent** | A model invocation that produces the output of one task. It can call read-only tools. It returns text only. | `generation/AgentRuntime` |
+| **Agent** | A model invocation that produces task output. Document/chat agents have read-only tools; PATCH agents also have scoped draft-edit and validation tools. | `generation/AgentRuntime` |
 | **Artifact** | The text output of a task, for example a plan or a test report. | `run/ArtifactTask` |
-| **Patch** | A unified diff proposed by an agent. It is inert text until the factory checks and applies it. | `run/PatchTask` |
+| **Patch** | A unified diff computed by Git from a live draft (or supplied by a fixture). It is inert text until the factory checks and applies it. | `run/PatchTask` |
 | **Write scope** | The path prefixes a patch task is allowed to change. A patch that touches anything else stops the run. | `governance/PatchScope` |
 | **Evidence** | An immutable file holding a task output, a reviewed proposal or a failure diagnostic: `evidence/<run-id>/<task>-v<N>.txt`. Once written it can never be replaced with different content. | `audit/EvidenceStore`, `run/RunEvidence` |
 | **Approval gate** | A point where the run pauses until the operator approves. The approval names a hash, and is valid only for exactly that content. | `run/ApprovalGate`, `run/ApproveStep` |
@@ -64,3 +64,7 @@
 | **Alias** | A code chosen by the client instead of generated. | `shorten/ShortenLink` |
 | **Visit** | One `GET /{code}` redirect. `HEAD` is a preview and is not counted. | `redirect/ResolveLink` |
 | **Coalescing** | Adding visits up in memory and writing one update per link per flush, instead of one database write per visit. | `analytics/CoalescingVisitRecorder` |
+
+## Draft workspace and checkpoint
+
+A **draft workspace** is a separate Git snapshot used for incremental PATCH edits before approval. A **draft checkpoint** records its base commit, input fingerprint and diff hash for integrity-checked Resume. See [ADR 0018](../02-architecture/decisions/0018-incremental-drafting-and-bounded-repair.md).
