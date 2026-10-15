@@ -162,12 +162,27 @@ final class DockerSandbox {
                 "HOME=/tmp",
                 ENVIRONMENT,
                 "MAVEN_CONFIG=/tmp/.m2",
+                // The tmpfs above is deliberately non-executable (candidate test code must not gain exec
+                // there), so jansi's native terminal library cannot load and logs one harmless warning per
+                // build; Maven proceeds past it either way. Disabling color stops that warning's raw ANSI
+                // escape codes from polluting the real error text, which this diagnostic is fed back to the
+                // model verbatim as the next prompt's "previous attempt failed" context.
+                ENVIRONMENT,
+                "MAVEN_OPTS=-Dstyle.color=never",
                 ENVIRONMENT,
                 "SHORTENER_TEST_DB_URL=jdbc:postgresql://127.0.0.1:5432/shortener",
                 ENVIRONMENT,
                 "SHORTENER_TEST_DB_USER=shortener",
                 ENVIRONMENT,
-                "SHORTENER_TEST_DB_PASSWORD=shortener");
+                "SHORTENER_TEST_DB_PASSWORD=shortener",
+                ENVIRONMENT,
+                "SPRING_DATASOURCE_URL=jdbc:postgresql://127.0.0.1:5432/shortener",
+                ENVIRONMENT,
+                "SPRING_DATASOURCE_USERNAME=shortener",
+                ENVIRONMENT,
+                "SPRING_DATASOURCE_PASSWORD=shortener",
+                ENVIRONMENT,
+                "SPRING_DATASOURCE_DRIVER_CLASS_NAME=org.postgresql.Driver");
     }
 
     private List<String> mounts(Path candidate, Path build, Path reports, Path trustedPom) {

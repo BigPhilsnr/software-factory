@@ -62,7 +62,13 @@ public final class PromptBuilder {
                     .append(previousFailure);
         }
         prompt.append(
-                "\n\nRequired stack: Java 21, Spring Boot, PostgreSQL, Maven. Preserve this stack even on an empty baseline.");
+                "\n\nRequired stack: Java 21, Spring Boot 4.1.x, PostgreSQL, Maven. Preserve this stack even on an empty baseline."
+                        + " Spring Boot 4 split several packages by web stack; do not use pre-4.0 paths from memory."
+                        + " Test-support annotations moved under the stack-specific package, for example"
+                        + " @WebMvcTest is now org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest"
+                        + " (not org.springframework.boot.test.autoconfigure.web.servlet). If unsure of a Boot 4"
+                        + " package, search for it rather than assume an older layout.");
+        prompt.append(ValidationContract.INSTRUCTIONS);
         if (task.kind() == TaskKind.PATCH) {
             prompt.append(
                             "\n\nUse the scoped draft tools to implement small file edits in the drafting workspace. Do not return source code or a unified diff in your final response; Git will produce the review diff. Stay within these paths: ")
