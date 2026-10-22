@@ -1,13 +1,13 @@
 # Data model
 
-**In one paragraph.** There are two PostgreSQL databases with nothing shared between them. The shortener database has two tables: links and their counters. The control database has four: the current state of every run, the append-only audit events that explain each state change, and two small tables for the chat budget and chat audit. Run outputs are files on disk, not rows; the database stores only their hashes. Both schemas are created and changed by Flyway migrations ([ADR 0005](decisions/0005-flyway-for-both-databases.md)).
+**In one paragraph.** There are two PostgreSQL databases with nothing shared between them. The shortener database has two tables: links and their counters. The control database has four: the current state of every run, the append-only audit events that explain each state change, and two small tables for chat usage counters and chat audit. Run outputs are files on disk, not rows; the database stores only their hashes. Both schemas are created and changed by Flyway migrations ([ADR 0005](decisions/0005-flyway-for-both-databases.md)).
 
 ## Where data lives
 
 | Store | Location | Written by | Contents |
 | --- | --- | --- | --- |
 | Shortener DB | `localhost:5433`, database `shortener` | Shortener | Links, redirect counters |
-| Control DB | `localhost:5434`, database `control` | Factory | Run state, audit events, chat budget, chat audit |
+| Control DB | `localhost:5434`, database `control` | Factory | Run state, audit events, chat usage, chat audit |
 | Candidates | `.runs/<run-id>/` | Factory (Git) | One detached Git worktree per run |
 | Feature requests | `.runs/requests/<uuid>.json` | Factory | The scenario generated for each feature request |
 | Evidence | `evidence/<run-id>/` | Factory | Immutable task outputs, reviewed proposals, diagnostics |
@@ -80,6 +80,8 @@ erDiagram
 
 *A run row is the latest snapshot; its audit events are the full history. The two chat tables are independent of runs.*
 
+`chat_budget` retains its historical table name but now records usage only; no request-count ceiling is enforced.
+
 Migrations: [`V1__control_authority.sql`](../../factory/src/main/resources/db/migration/V1__control_authority.sql), [`V2__audit_scheme_and_indexes.sql`](../../factory/src/main/resources/db/migration/V2__audit_scheme_and_indexes.sql). V1 uses `IF NOT EXISTS` throughout and Flyway baselines at version 0, so a database created before Flyway was introduced is adopted without rewriting any stored state or audit bytes.
 
 ### The run state document
@@ -97,7 +99,7 @@ Migrations: [`V1__control_authority.sql`](../../factory/src/main/resources/db/mi
 | `pendingApprovalTask`, `pendingApprovalHash`, `pendingClarificationTask`, `revisionRequiredTask` | What the run is waiting for |
 | `validatedCandidateHash` | Hash of the candidate diff that last passed validation |
 | `attempts`, `diagnosticVersions`, `patchDrafts`, `reviewFeedback` | Retry counts, diagnostic file versions, saved patch drafts, operator feedback per task |
-| `modelCalls`, `maxModelCalls` | Budget used and its ceiling |
+| `modelCalls`, `maxModelCalls` | Usage counter; `maxModelCalls` is a legacy snapshot field only and is not enforced |
 | `startedAt`, `finishedAt` | ISO-8601 instants |
 
 The `audit` package stores this document as opaque text. Only the `run` package knows its shape.
@@ -153,7 +155,7 @@ What this does and does not prove is discussed in [ADR 0007](decisions/0007-hmac
 | One process changes a run at a time | `pg_try_advisory_lock(0x46414354, hash(run id))` held on a dedicated connection for the transition (`RunLeases`). No waiting: the second caller gets a conflict. |
 | A stale writer cannot overwrite | `SELECT revision ... FOR UPDATE`, compare with the revision the writer loaded, then update (`RunJournal.record`) |
 | State and its explanation never diverge | The audit event insert and the run update are one transaction |
-| The chat budget cannot be overspent by a race | A single `INSERT ... ON CONFLICT DO UPDATE ... WHERE requests < limit RETURNING` (`ChatLedger`) |
+| Concurrent chat requests do not lose usage increments | A transactional `INSERT ... ON CONFLICT DO UPDATE SET requests = chat_budget.requests + 1` with a corresponding audit event; no limit predicate (`ChatLedger`) |
 | Two requests cannot both claim an alias | The unique constraint on `links.code` |
 | Concurrent analytics flushes cannot deadlock | Batches update rows in link-id order |
 

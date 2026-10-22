@@ -9,18 +9,37 @@ import org.junit.jupiter.api.Test;
 
 class ToolSessionTest {
     @Test
-    void countsEveryRequestAndStopsBeforeProviderWhenBudgetExhausted() {
+    void generationStopBlocksFurtherToolsAndProviderReservationsWithoutLeakingTheDiagnostic() {
+        var reservations = new AtomicInteger();
+        var events = new ArrayList<String>();
+        var session = new ToolSession(reservations::incrementAndGet, (event, detail) -> events.add(detail));
+        var exhausted = new dev.softwarefactory.platform.GenerationUnavailableException("Compiler diagnostic");
+        String result = session.invoke("check_draft", "", () -> {
+            throw exhausted;
+        });
+        assertTrue(result.contains("stopped"));
+        assertFalse(result.contains("Compiler diagnostic"));
+        assertSame(exhausted, assertThrows(exhausted.getClass(), session::reserveRequest));
+        assertSame(exhausted, assertThrows(exhausted.getClass(), session::reserveSearchRequest));
+        assertSame(
+                exhausted,
+                assertThrows(
+                        exhausted.getClass(),
+                        () -> session.invoke("write_draft_file", "", () -> {
+                            throw new AssertionError("No edits after a terminal stop");
+                        })));
+        assertEquals(0, reservations.get());
+        assertTrue(events.getLast().contains("check_draft:STOPPED"));
+        assertEquals(2, events.size());
+    }
+
+    @Test
+    void countsRequestsWithoutACallLimit() {
         AtomicInteger calls = new AtomicInteger();
         var session = new ToolSession(calls::incrementAndGet, (event, detail) -> {});
-        for (int i = 0; i < 8; i++) session.reserveRequest();
-        assertThrows(dev.softwarefactory.platform.GenerationUnavailableException.class, session::reserveRequest);
-        assertEquals(8, calls.get());
-        var exhaustedRun = new ToolSession(
-                () -> {
-                    throw new SecurityException("run budget");
-                },
-                (event, detail) -> {});
-        assertThrows(SecurityException.class, exhaustedRun::reserveRequest);
+        for (int i = 0; i < 150; i++) session.reserveRequest();
+        assertEquals(150, calls.get());
+        assertTrue(session.toolsAllowed());
     }
 
     @Test
@@ -41,40 +60,12 @@ class ToolSessionTest {
     }
 
     @Test
-    void searchCannotConsumeTheFinalResponseRequest() {
+    void searchesAreCountedWithoutReservingAFinalCallSlot() {
         AtomicInteger reservations = new AtomicInteger();
         var session = new ToolSession(reservations::incrementAndGet, (event, detail) -> {});
-        for (int i = 0; i < 5; i++) session.reserveRequest();
-        session.reserveSearchRequest();
-        assertEquals(6, reservations.get());
-        assertThrows(IllegalStateException.class, session::reserveSearchRequest);
-        assertEquals(6, reservations.get());
-        session.reserveRequest();
-        assertFalse(session.toolsAllowed());
-        session.reserveRequest();
-        assertEquals(8, reservations.get());
-        assertThrows(dev.softwarefactory.platform.GenerationUnavailableException.class, session::reserveRequest);
-    }
-
-    @Test
-    void sharedBudgetForcesFinalizationBeforeExplorationConsumesRecovery() {
-        AtomicInteger remaining = new AtomicInteger(2);
-        var budget = new ToolSession.BeforeRequest() {
-            @Override
-            public void reserve() {
-                remaining.decrementAndGet();
-            }
-
-            @Override
-            public int remaining() {
-                return remaining.get();
-            }
-        };
-        var session = new ToolSession(budget, (event, detail) -> {});
-        assertThrows(IllegalStateException.class, session::reserveSearchRequest);
-        session.reserveRequest();
-        assertFalse(session.toolsAllowed());
-        assertEquals(1, session.remainingRequests());
+        for (int i = 0; i < 150; i++) session.reserveSearchRequest();
+        assertEquals(150, reservations.get());
+        assertTrue(session.toolsAllowed());
     }
 
     @Test

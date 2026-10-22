@@ -42,6 +42,154 @@ class PatchDraftingTest {
     }
 
     @Test
+    void thirdFailedCheckStopsImmediatelyAndPreservesTheCompilerDiagnosticForResume() throws Exception {
+        var fixture = new RunEngineFixture(root);
+        fixture.validator.answers(() -> {
+            throw new ValidationFailedException("package org.testcontainers does not exist");
+        });
+        var engine = fixture.engine(fixture.store, RunEngineFixture.LIVE_ENVIRONMENT, agents((prompt, draft) -> {
+            for (int i = 1; i <= 3; i++) {
+                draft.write(
+                        "README.md",
+                        dev.softwarefactory.governance.Hashes.sha256(i == 1 ? "original\n" : "edit " + (i - 1)),
+                        "edit " + i);
+                try {
+                    draft.check();
+                } catch (dev.softwarefactory.candidate.DraftCheckFailedException repairable) {
+                    /* Repair again. */
+                }
+            }
+            fail("The third failed check must end the invocation");
+        }));
+        var state = fixture.start(
+                engine,
+                RunMode.LIVE,
+                List.of(
+                        RunEngineFixture.patch("apply", List.of(), null, true),
+                        RunEngineFixture.validate("validate", List.of("apply"))));
+        state = engine.advance(state.id);
+        assertEquals(RunStatus.PAUSED, state.status);
+        assertNull(state.pendingApprovalTask);
+        assertEquals(1, state.modelCalls);
+        assertEquals(3, fixture.validator.requiredTestClasses.size());
+        String diagnostic = Files.readString(fixture.evidence(state, "apply-error-v1"));
+        assertTrue(diagnostic.contains("Draft check limit reached"));
+        assertTrue(diagnostic.contains("package org.testcontainers does not exist"));
+        String directory = state.drafting.get("apply").directory();
+        fixture.validator.answers(() -> "passed");
+        state = engine.advance(state.id);
+        assertEquals(directory, state.drafting.get("apply").directory());
+        assertEquals(1, state.modelCalls, "A saved valid draft resumes without another model request");
+        assertEquals("apply", state.pendingApprovalTask);
+        assertEquals("original\n", fixture.candidateFile(state, "README.md"));
+    }
+
+    @Test
+    void reviewRevisionKeepsDraftButRequiresFeedbackAndFreshApproval() throws Exception {
+        var fixture = new RunEngineFixture(root);
+        var calls = new AtomicInteger();
+        var engine = fixture.engine(fixture.store, RunEngineFixture.LIVE_ENVIRONMENT, agents((prompt, draft) -> {
+            if (calls.incrementAndGet() == 1) draft.replace("README.md", "original", "first proposal");
+            else {
+                assertTrue(prompt.contains("Fix public access"));
+                assertTrue(draft.read("README.md").contains("first proposal"));
+                draft.replace("README.md", "first proposal", "revised proposal");
+            }
+        }));
+        var state = fixture.start(
+                engine,
+                RunMode.LIVE,
+                List.of(
+                        RunEngineFixture.patch("apply", List.of(), null, true),
+                        RunEngineFixture.validate("validate", List.of("apply"))));
+        state = engine.advance(state.id);
+        String directory = state.drafting.get("apply").directory();
+        String oldApproval = state.pendingApprovalHash;
+        engine.revise(state.id, "apply", "Fix public access");
+        state = engine.advance(state.id);
+        assertEquals(2, calls.get(), "Passing old code must not skip new feedback");
+        assertEquals(directory, state.drafting.get("apply").directory());
+        assertNotEquals(oldApproval, state.pendingApprovalHash);
+        assertEquals("apply", state.pendingApprovalTask);
+        assertEquals("original\n", fixture.candidateFile(state, "README.md"));
+    }
+
+    @Test
+    void emptyFinalResponseStillValidatesSavedFilesAndRequiresApproval() throws Exception {
+        var fixture = new RunEngineFixture(root);
+        var engine = fixture.engine(fixture.store, RunEngineFixture.LIVE_ENVIRONMENT, agents((prompt, draft) -> {
+            draft.replace("README.md", "original", "finished");
+            throw new GenerationUnavailableException("Claude returned no usable artifact");
+        }));
+        var state = fixture.start(
+                engine,
+                RunMode.LIVE,
+                List.of(
+                        RunEngineFixture.patch("apply", List.of(), null, true),
+                        RunEngineFixture.validate("validate", List.of("apply"))));
+        state = engine.advance(state.id);
+        assertEquals("apply", state.pendingApprovalTask);
+        assertEquals("original\n", fixture.candidateFile(state, "README.md"));
+        assertEquals(1, fixture.validator.requiredTestClasses.size());
+        assertTrue(Files.readString(fixture.evidence(state, "apply-v1")).contains("+finished"));
+    }
+
+    @Test
+    void missingClosingResponseRoutesCompilerFeedbackIntoFreshRepairPass() throws Exception {
+        var fixture = new RunEngineFixture(root);
+        var calls = new AtomicInteger();
+        fixture.validator.answers(() -> {
+            if (calls.get() == 1) throw new ValidationFailedException("Compiler: incomplete implementation");
+            return "passed";
+        });
+        var engine = fixture.engine(fixture.store, RunEngineFixture.LIVE_ENVIRONMENT, agents((prompt, draft) -> {
+            if (calls.incrementAndGet() == 1) {
+                draft.replace("README.md", "original", "incomplete");
+                throw new GenerationUnavailableException("Draft tool batch complete");
+            }
+            assertTrue(prompt.contains("Compiler: incomplete implementation"));
+            draft.replace("README.md", "incomplete", "complete");
+        }));
+        var state = fixture.start(
+                engine,
+                RunMode.LIVE,
+                List.of(
+                        RunEngineFixture.patch("apply", List.of(), null, true),
+                        RunEngineFixture.validate("validate", List.of("apply"))));
+        state = engine.advance(state.id);
+        assertEquals(2, calls.get());
+        assertEquals("apply", state.pendingApprovalTask);
+        assertEquals("original\n", fixture.candidateFile(state, "README.md"));
+    }
+
+    @Test
+    void resumeChecksSavedDraftBeforeSpendingAnotherModelCall() throws Exception {
+        var fixture = new RunEngineFixture(root);
+        fixture.validator.answers(() -> {
+            throw new dev.softwarefactory.platform.InfrastructureException("Docker unavailable");
+        });
+        var first = fixture.engine(fixture.store, RunEngineFixture.LIVE_ENVIRONMENT, agents((prompt, draft) -> {
+            draft.replace("README.md", "original", "finished");
+        }));
+        var state = fixture.start(
+                first,
+                RunMode.LIVE,
+                List.of(
+                        RunEngineFixture.patch("apply", List.of(), null, true),
+                        RunEngineFixture.validate("validate", List.of("apply"))));
+        state = first.advance(state.id);
+        assertEquals(RunStatus.PAUSED, state.status);
+        assertNull(state.pendingApprovalTask);
+        fixture.validator.answers(() -> "passed");
+        var resumed = fixture.engine(fixture.store, RunEngineFixture.LIVE_ENVIRONMENT, agents((prompt, draft) -> {
+            throw new AssertionError("Saved draft must be checked first");
+        }));
+        state = resumed.advance(state.id);
+        assertEquals("apply", state.pendingApprovalTask);
+        assertEquals(1, state.modelCalls);
+    }
+
+    @Test
     void repairsValidationFeedbackThenRequiresApprovalForGitGeneratedDiff() throws Exception {
         var fixture = new RunEngineFixture(root);
         var calls = new AtomicInteger();

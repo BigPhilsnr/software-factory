@@ -1,6 +1,5 @@
 package dev.softwarefactory.run;
 
-import dev.softwarefactory.audit.EventTypes;
 import dev.softwarefactory.audit.EvidenceStore;
 import dev.softwarefactory.candidate.GitWorkspace;
 import dev.softwarefactory.generation.AgentRuntimes;
@@ -88,47 +87,6 @@ public final class RunEngine {
         return underLease(id, () -> transitions.revise().revise(id, taskId, feedback));
     }
 
-    /** Explicit operator action: raise a paused live run's total cap without spending calls or advancing it. */
-    public RunState increaseBudget(String id, int total) throws IOException, InterruptedException {
-        return underLease(id, () -> {
-            RunState state = runs.load(id);
-            String legacyTask = legacyBudgetTask(state);
-            if ((state.status != RunStatus.PAUSED && legacyTask == null) || !RunMode.LIVE.equals(state.mode))
-                throw new IllegalArgumentException(
-                        "Only paused live runs or verified legacy budget stops can receive additional budget");
-            if (!runs.auditValid(id)) throw new IllegalArgumentException("Audit verification failed");
-            if (total <= state.maxModelCalls || total > FactorySettings.MAX_MODEL_CALLS_LIMIT)
-                throw new IllegalArgumentException("New total must exceed the existing cap and be at most "
-                        + FactorySettings.MAX_MODEL_CALLS_LIMIT);
-            if (legacyTask != null) {
-                state.tasks.put(legacyTask, TaskStatus.PENDING);
-                state.status = RunStatus.PAUSED;
-                state.finishedAt = null;
-            }
-            int previous = state.maxModelCalls;
-            state.maxModelCalls = total;
-            runs.record(
-                    state,
-                    EventTypes.MODEL_BUDGET_INCREASED,
-                    previous + "->" + total
-                            + (legacyTask == null ? "" : "; recovered legacy budget stop:" + legacyTask));
-            return state;
-        });
-    }
-
-    /** Only the exact old budget-exhaustion event is recoverable; other terminal states remain final. */
-    private String legacyBudgetTask(RunState state) throws IOException {
-        if (state.status != RunStatus.SAFE_STOPPED || state.modelCalls < state.maxModelCalls) return null;
-        var event = runs.latestEvent(state.id).orElse(null);
-        if (event == null || !EventTypes.POLICY_SAFE_STOP.equals(event.type())) return null;
-        var failed = state.tasks.entrySet().stream()
-                .filter(entry -> entry.getValue() == TaskStatus.FAILED)
-                .toList();
-        if (failed.size() != 1) return null;
-        String task = failed.getFirst().getKey();
-        return (task + ":Model call budget exhausted").equals(event.detail()) ? task : null;
-    }
-
     /** Repairs only stored hunk counts and requests a new exact-hash review. */
     public RunState recoverPatch(String id, String task, int version, String proposalHash)
             throws IOException, InterruptedException {
@@ -137,6 +95,11 @@ public final class RunEngine {
 
     public Preflight validatorStatus() {
         return validator.preflight();
+    }
+
+    /** Reopens only a verified legacy draft test-tag stop for repair; never approves or applies it. */
+    public RunState recoverDraft(String id) throws IOException, InterruptedException {
+        return underLease(id, () -> transitions.recoverDraft().recover(id));
     }
 
     public int sweepOrphanedValidatorContainers(boolean includeOwn) {

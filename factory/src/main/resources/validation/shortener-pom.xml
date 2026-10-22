@@ -44,6 +44,11 @@
         <artifactId>maven-surefire-plugin</artifactId>
         <configuration>
           <excludedGroups>${test.excludedGroups}</excludedGroups>
+          <includes>
+            <include>**/Test*.java</include><include>**/*Test.java</include>
+            <include>**/*Tests.java</include><include>**/*TestCase.java</include>
+            <include>**/*IT.java</include><include>**/*ITCase.java</include>
+          </includes>
           <!-- Relative paths in tests resolve as they would from the module directory. -->
           <workingDirectory>/workspace/shortener</workingDirectory>
           <reportsDirectory>/reports</reportsDirectory>

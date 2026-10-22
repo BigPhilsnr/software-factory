@@ -18,7 +18,7 @@ import java.util.regex.Pattern;
 public final class OperatorCommands {
     /** Prefixes of commands that create, advance or decide runs. */
     private static final List<String> STATE_CHANGING =
-            List.of("/feature", "/demo", "/advance", "/approve", "/reject", "/answer", "/changes", "/budget");
+            List.of("/feature", "/demo", "/advance", "/approve", "/reject", "/answer", "/changes");
 
     private static final Pattern AMBIGUOUS_DECISION = Pattern.compile("(?i)(yes|no|approve|approved|reject|continue)");
     private static final Pattern WHITESPACE = Pattern.compile("\\s+");
@@ -41,16 +41,7 @@ public final class OperatorCommands {
             Map.of("/status", this::status, "/advance", this::advance, "/review", this::review);
 
     private final Map<String, RunCommand> runCommandsWithArgument = Map.of(
-            "/approve",
-            this::approve,
-            REJECT,
-            this::reject,
-            "/answer",
-            this::answer,
-            "/changes",
-            this::requestChanges,
-            "/budget",
-            this::increaseBudget);
+            "/approve", this::approve, REJECT, this::reject, "/answer", this::answer, "/changes", this::requestChanges);
 
     public OperatorCommands(FactoryService factory) {
         this(factory, new ChatConversation(factory.workspaceRoot(), factory.chatRuntime()));
@@ -195,17 +186,6 @@ public final class OperatorCommands {
         return "Review feedback recorded; affected tasks are being regenerated.";
     }
 
-    private String increaseBudget(String id, String argument) throws IOException, InterruptedException {
-        final int total;
-        try {
-            total = Integer.parseInt(argument);
-        } catch (NumberFormatException invalid) {
-            throw new IllegalArgumentException("Use /budget NEW_TOTAL (maximum 100)", invalid);
-        }
-        factory.increaseBudget(id, total);
-        return "Total paid model-call allowance increased to " + total + ". Use `/advance` to resume.";
-    }
-
     private String review(String id, String ignoredArgument) throws IOException {
         Map<String, Object> detail = factory.detail(id);
         if (!detail.containsKey("review")) return "No approval is pending. " + describe(factory.state(id));
@@ -220,7 +200,7 @@ public final class OperatorCommands {
 
     private static String describe(RunState state) {
         return "Run `" + state.id + "` · **" + state.status + "** · " + state.mode + "\n\n"
-                + "Tasks: " + state.tasks + "\n\nModel calls: " + state.modelCalls + "/" + state.maxModelCalls
+                + "Tasks: " + state.tasks + "\n\nModel calls: " + state.modelCalls
                 + (state.pendingApprovalTask == null
                         ? ""
                         : "\n\nReview required: **" + state.pendingApprovalTask + "**. Use `/review`.")
@@ -231,11 +211,10 @@ public final class OperatorCommands {
     }
 
     private static String help() {
-        return "## Software factory\n\nAsk questions about the project or discuss a feature in plain language. Chat answers use the repository and recent conversation; they do not create runs. Use `/feature REQUIREMENT` to save a feature request, then `/advance` to start it. Chat answers use paid model calls, separately from run budgets.\n\n"
+        return "## Software factory\n\nAsk questions about the project or discuss a feature in plain language. Chat answers use the repository and recent conversation; they do not create runs. Use `/feature REQUIREMENT` to save a feature request, then `/advance` to start it. Chat answers use paid model calls. Calls are counted without a count limit.\n\n"
                 + "- `/demo bugfix` — start a fixture demonstration without model charges\n"
                 + "- `/tools` — show web browsing and engineering tools\n"
                 + "- `/runs` and `/select RUN_ID` — find an existing run\n"
-                + "- `/budget NEW_TOTAL` — explicitly increase a paused live run’s paid call allowance (maximum 100); does not start it\n"
                 + "- `/status` — refresh selected run\n"
                 + "- `/review` — show pending approval details\n"
                 + "- `/approve EXACT_HASH` — approve the reviewed proposal and resume\n"

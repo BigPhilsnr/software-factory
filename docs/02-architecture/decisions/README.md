@@ -26,6 +26,8 @@
 
 | [0018](0018-incremental-drafting-and-bounded-repair.md) | Incremental drafting, durable checkpoints and bounded repair | Factory |
 
+| [0019](0019-model-call-counts-are-metrics.md) | Model-call counts are usage metrics, not execution ceilings | Factory |
+
 ## Format
 
 Every record has the same sections:

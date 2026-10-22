@@ -117,6 +117,10 @@ class SandboxValidatorTest {
         assertTrue(run.contains(SandboxValidator.IMAGE));
         assertTrue(run.contains("-Pintegration"));
         assertTrue(run.contains("SHORTENER_TEST_DB_URL=jdbc:postgresql://127.0.0.1:5432/shortener"));
+        assertTrue(run.contains("SPRING_DATASOURCE_URL=jdbc:postgresql://127.0.0.1:5432/shortener"));
+        assertTrue(run.contains("SPRING_DATASOURCE_USERNAME=shortener"));
+        assertTrue(run.contains("SPRING_DATASOURCE_PASSWORD=shortener"));
+        assertTrue(run.contains("SPRING_DATASOURCE_DRIVER_CLASS_NAME=org.postgresql.Driver"));
         List<String> database = commands.stream()
                 .filter(args -> args.contains(ValidationDatabase.IMAGE) && args.contains("run"))
                 .findFirst()

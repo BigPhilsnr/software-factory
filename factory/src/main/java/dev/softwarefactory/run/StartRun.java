@@ -48,7 +48,6 @@ final class StartRun {
         state.baselineTag = spec.baselineTag();
         state.baselineCommit = workspace.resolveCommit(state.baselineTag);
         state.mode = mode;
-        state.maxModelCalls = settings.maxModelCalls();
         state.candidatePath = workspace.create(state.id, state.baselineCommit).toString();
         for (TaskSpec task : spec.tasks()) state.tasks.put(task.id(), TaskStatus.PENDING);
         boolean created = false;

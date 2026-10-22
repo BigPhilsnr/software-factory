@@ -33,7 +33,9 @@ public final class RunState {
     public String revisionRequiredTask;
 
     public int modelCalls;
+    /** Historical snapshot field only; no longer enforced. New runs leave it at zero. */
     public int maxModelCalls;
+
     public Instant startedAt;
     public Instant finishedAt;
 

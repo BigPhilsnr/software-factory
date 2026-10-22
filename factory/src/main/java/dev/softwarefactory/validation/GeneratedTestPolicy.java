@@ -19,12 +19,12 @@ public final class GeneratedTestPolicy {
     private static final String JAVA_SUFFIX = ".java";
     private static final String NEW_FILE_PREFIX = "+++ b/";
     private static final String PRODUCT_TEST_ROOT = "shortener/" + TEST_ROOT;
-    /** Surefire's default inclusion patterns. */
-    private static final List<String> TEST_CLASS_SUFFIXES = List.of("Test", "Tests", "TestCase");
+    /** Trusted Surefire inclusion patterns, including integration-test suffixes. */
+    private static final List<String> TEST_CLASS_SUFFIXES = List.of("Test", "Tests", "TestCase", "IT", "ITCase");
 
     private GeneratedTestPolicy() {}
 
-    /** A test class in a Maven test source directory, as Surefire would select it by default. */
+    /** A test class in a Maven test source directory, as the trusted Surefire configuration selects it. */
     private record TestSource(String packagePath, String className) {
         String qualifiedName() {
             return packagePath.replace('/', '.') + className;

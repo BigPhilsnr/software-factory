@@ -84,8 +84,6 @@ Read once at startup by `platform/FactorySettings`. An out-of-range number stops
 | `ANTHROPIC_API_KEY` | none | | yes | Provider key. Required for live runs and chat answers. Read by the Anthropic SDK; never stored or logged by the factory. |
 | `FACTORY_AUDIT_KEY` | none | at least 32 characters | yes | Secret for the audit chain HMAC. Required for live runs. Keep it stable: changing it makes existing chains fail verification. |
 | `CLAUDE_MODEL` | `claude-sonnet-4-5` | a model id your key can use | yes | Model for tasks, chat and web search. |
-| `FACTORY_MAX_MODEL_CALLS` | `24` | 1 to 100 | yes | Provider requests allowed per run. Fixed when the run is created. |
-| `FACTORY_CHAT_DAILY_REQUESTS` | `80` | 1 to 10000 | yes | Provider requests allowed for chat per UTC day, across restarts. |
 | `FACTORY_RUN_DEADLINE_SECONDS` | `900` | 1 to 3600 | yes | Deadline for one task generation. |
 | `FACTORY_CHAT_DEADLINE_SECONDS` | `180` | 1 to 3600 | yes | Deadline for one chat answer. |
 | `FACTORY_OPERATOR` | OS user name | text | yes | Label written into approval, clarification and revision events. Not verified. |
@@ -231,7 +229,7 @@ Validator containers are named `factory-validator-<uuid>`. Leftovers from a cras
 | Run pauses with event `REVISION_REQUIRED`; Start / resume answers `409` "Validation failed for this exact candidate" | The candidate's tests fail or it does not compile | Use **Request changes** on the patch task with feedback. Re-running validation alone cannot help. |
 | Run pauses with event `REVALIDATION_REQUIRED` | The candidate changed after it was validated | Use **Request changes** on a patch task so that the candidate is rebuilt and validated again. |
 | Run pauses with event `REPLAN_REQUIRED` | The scenario file changed after the run started | Revise any task. That re-pins the scenario and regenerates everything. |
-| Run is `SAFE_STOPPED` | A rule was broken. The `POLICY_SAFE_STOP` event says which: patch outside scope, audit chain or evidence integrity failed, model call budget exhausted | Final. Inspect the run, fix the cause, start a new run. |
+| Run is `SAFE_STOPPED` | A rule was broken. The `POLICY_SAFE_STOP` event says which: patch outside scope, audit chain or evidence integrity failed | Final. Inspect the run, fix the cause, start a new run. |
 | `403` "Reload the operator page before taking an action" | The page holds a token from before the factory restarted | Reload the page. |
 | `403` "Local same-origin requests only" | The page was opened through another host name, a proxy or another origin | Use `http://localhost:8000/factory/` or `http://127.0.0.1:8000/factory/`. |
 | Chat answers "Workflow commands require the operator token" | Run-changing commands are refused without the token | Use the operator page for that action. |
@@ -240,7 +238,6 @@ Validator containers are named `factory-validator-<uuid>`. Leftovers from a cras
 | `409` "Reviewed hash differs from the pending approval" | The proposal changed since the page loaded | Reload and review again. |
 | `503` "Two runs are active; no decision was recorded" | Both workers are busy | Retry when one finishes. Nothing was saved. |
 | New live run refused: "Add ANTHROPIC_API_KEY ..." or "Set FACTORY_AUDIT_KEY ..." | Live prerequisites missing | Set both in `.env`, restart. |
-| Chat answers "Daily chat provider-request budget exhausted" | The chat budget for today (UTC) is used up | Wait until 00:00 UTC or raise `FACTORY_CHAT_DAILY_REQUESTS` and restart. |
 | `verify-audit` prints `AUDIT_INVALID` for runs that used to verify | The audit key changed, or `.runs/audit.key` was deleted and regenerated | Restore the original key. If that is impossible, treat those chains as unverifiable. |
 | Startup fails with "... must be in 1..N" or "FACTORY_AUDIT_KEY must contain at least 32 characters" | Invalid setting | Fix the named variable. |
 | Launcher exits with "Invalid .env entry on line N" | A name the launchers do not accept, or a line without `=` | Remove it from `.env`; export it in the shell if it is a shell-only variable. |
@@ -265,8 +262,12 @@ Validator containers are named `factory-validator-<uuid>`. Leftovers from a cras
 | Symptom | Meaning and action |
 | --- | --- |
 | Output token limit; incomplete artifact discarded | Truncated text/tool calls were rejected. One recovery request is attempted if budget permits; saved earlier draft edits survive. Resume uses the checkpoint instead of restarting the whole patch. |
-| Repeated failed draft / repair limit | The bounded repair loop made no progress or exhausted three passes/checks. Inspect the diagnostic and revise requirements or feedback before resuming. |
-| Model-call budget exhausted | Increase the run ceiling explicitly only if additional paid requests are authorized; the system does not increase it itself. |
+| Repeated failed draft / repair limit | The bounded repair loop made no progress or exhausted three passes/checks. The third failed check stops further edits/provider calls and records the latest compiler/test diagnostic. Saved files remain intact. Correct the reported issue or provide revised feedback before resuming; the saved draft is checked first. |
+| Generated tests reference unavailable dependencies or old Spring Boot imports | The sandbox uses its bundled POM, not the generated POM. Use its supported JDBC stack and supplied PostgreSQL datasource; do not start Testcontainers inside the sandbox. Use compatible HTTP test APIs and `org.springframework.test.context.ContextConfiguration`. Engineering prompts now include this build contract even for empty baselines. |
 | Draft checkpoint mismatch | Files or base commit differ from saved state. Do not approve or overwrite hashes to bypass the check. Investigate local edits/storage failures; revise or start a fresh run from trusted inputs. |
+| Legacy safe stop for generated `@Tag("integration")` | Select **Recover saved draft**, then **Start / resume**. Recovery applies only to an unreviewed draft with intact evidence, inputs and checkpoint. It does not bypass test policy or approval. New drafts report this as repairable check feedback. |
 
 Drafts are retained under `.runs/drafts/`; they are not deployed features. A crash between a file write and checkpoint persistence fails closed. Old runs without draft state start a new draft when live PATCH generation is next invoked. Already reviewed proposal artifacts and fixtures retain their existing approval path.
+
+
+A PATCH worker does not need a closing prose response to validate its saved code. After a draft tool batch or unusable final response, the engine checks checkpoint integrity and runs the required green/red validator. Failed checks become feedback for a fresh bounded repair pass; passed checks still require the normal proposal approval. Resume checks an existing nonempty draft before spending another model call. Tasks without a direct validation gate cannot use this recovery shortcut. Regression tests cover missing final text, fresh repair feedback, zero-call resume checks and tool-batch completion without an extra provider request.

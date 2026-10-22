@@ -11,6 +11,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import dev.softwarefactory.generation.AgentRuntimes;
+import dev.softwarefactory.platform.GenerationUnavailableException;
 import dev.softwarefactory.platform.WorkflowConflictException;
 import dev.softwarefactory.scenario.Stage;
 import dev.softwarefactory.scenario.TaskKind;
@@ -68,7 +69,7 @@ class RunEngineGenerationTest {
         assertEquals(RunStatus.CREATED, state.status);
         assertEquals(RunEngineFixture.NOW, state.startedAt);
         assertEquals(RunMode.FIXTURE, state.mode);
-        assertEquals(24, state.maxModelCalls);
+        assertEquals(0, state.maxModelCalls);
         assertEquals(40, state.baselineCommit.length(), "The tag is resolved to an immutable commit");
         assertEquals(Map.of("write", TaskStatus.PENDING), state.tasks);
         assertTrue(Files.isDirectory(Path.of(state.candidatePath)));
@@ -109,7 +110,7 @@ class RunEngineGenerationTest {
         state = engine.advance(state.id);
         assertEquals(RunStatus.COMPLETED, state.status);
         assertEquals(3, state.modelCalls);
-        assertEquals(List.of("understand:1/24", "handoff:2/24", "test-plan:3/24"), store.details("MODEL_CALL_STARTED"));
+        assertEquals(List.of("understand:1", "handoff:2", "test-plan:3"), store.details("MODEL_CALL_STARTED"));
         assertEquals(3, store.details("TOOL_STARTED").size());
         assertEquals("output of requirements", Files.readString(fixture.evidence(state, "understand-v1")));
 
@@ -124,61 +125,24 @@ class RunEngineGenerationTest {
     }
 
     @Test
-    void exhaustedBudgetPausesAndAnExplicitIncreaseAllowsResumption() throws Exception {
+    void oldExhaustedBudgetAndEnvironmentDoNotBlockResume() throws Exception {
         AgentRuntimes agents = (checkout, beforeRequest, audit) -> (role, prompt) -> {
-            beforeRequest.reserve();
-            beforeRequest.reserve();
-            return "never returned";
+            for (int i = 0; i < 105; i++) beforeRequest.reserve();
+            return "complete";
         };
         var environment = new HashMap<>(LIVE_ENVIRONMENT);
         environment.put("FACTORY_MAX_MODEL_CALLS", "1");
         RunEngine engine = fixture.engine(store, environment, agents);
         RunState state = fixture.start(
                 engine, RunMode.LIVE, List.of(live("understand", List.of(), "requirements", "Define the criteria")));
+        state.status = RunStatus.PAUSED;
+        state.maxModelCalls = 40;
+        state.modelCalls = 40;
+        store.record(state, "MODEL_GENERATION_PAUSED", "Historical limit");
         state = engine.advance(state.id);
-        assertEquals(RunStatus.PAUSED, state.status);
-        assertEquals(1, state.modelCalls);
-        assertEquals(TaskStatus.PENDING, state.tasks.get("understand"));
-        assertTrue(state.attempts.isEmpty());
-        assertEquals(1, store.details("MODEL_GENERATION_PAUSED").size());
-        assertTrue(store.details("POLICY_SAFE_STOP").isEmpty());
-        String id = state.id;
-        assertThrows(IllegalArgumentException.class, () -> engine.increaseBudget(id, 1));
-        assertThrows(IllegalArgumentException.class, () -> engine.increaseBudget(id, 101));
-        state = engine.increaseBudget(id, 3);
-        assertEquals(RunStatus.PAUSED, state.status);
-        assertEquals(1, state.modelCalls);
-        assertEquals(List.of("1->3"), store.details("MODEL_BUDGET_INCREASED"));
-        state = engine.advance(id);
         assertEquals(RunStatus.COMPLETED, state.status);
-        assertEquals(3, state.modelCalls);
-        assertThrows(IllegalArgumentException.class, () -> engine.increaseBudget(id, 4));
-    }
-
-    @Test
-    void onlyVerifiedLegacyBudgetStopsCanBeRecoveredWithoutGenerating() throws Exception {
-        RunEngine engine = fixture.engine(store, LIVE_ENVIRONMENT, RunEngineFixture.unusedAgents());
-        RunState state =
-                fixture.start(engine, RunMode.LIVE, List.of(live("tests", List.of(), "tester", "Write tests")));
-        state.status = RunStatus.SAFE_STOPPED;
-        state.modelCalls = state.maxModelCalls;
-        state.tasks.put("tests", TaskStatus.FAILED);
-        state.finishedAt = RunEngineFixture.NOW;
-        state.approvals.put("implementation", "approved-hash");
-        String id = state.id;
-        store.record(state, "POLICY_SAFE_STOP", "tests:Patch outside approved scope");
-        assertThrows(IllegalArgumentException.class, () -> engine.increaseBudget(id, 40));
-        store.record(state, "TASK_FAILED", "tests:Model call budget exhausted");
-        assertThrows(IllegalArgumentException.class, () -> engine.increaseBudget(id, 40));
-        store.record(state, "POLICY_SAFE_STOP", "tests:Model call budget exhausted");
-        state = engine.increaseBudget(id, 40);
-        assertEquals(RunStatus.PAUSED, state.status);
-        assertEquals(TaskStatus.PENDING, state.tasks.get("tests"));
-        assertEquals(null, state.finishedAt);
-        assertEquals(24, state.modelCalls);
-        assertEquals(40, state.maxModelCalls);
-        assertEquals("approved-hash", state.approvals.get("implementation"));
-        assertTrue(store.details("MODEL_BUDGET_INCREASED").getLast().contains("recovered legacy budget stop:tests"));
+        assertEquals(145, state.modelCalls);
+        assertEquals(105, store.details("MODEL_CALL_STARTED").size());
     }
 
     @Test
@@ -236,6 +200,30 @@ class RunEngineGenerationTest {
         assertTrue(prompts.get("requirements")
                 .contains("Previous attempt failed. Correct this diagnostic without weakening policy:\n"
                         + "java.io.IOException: provider returned 529"));
+    }
+
+    @Test
+    void resumedGenerationRetainsFinalTestFailuresAfterVerboseStartupLogs() throws Exception {
+        AtomicBoolean failed = new AtomicBoolean();
+        AgentRuntimes agents = (checkout, beforeRequest, audit) -> (role, prompt) -> {
+            if (failed.compareAndSet(false, true))
+                throw new GenerationUnavailableException("Draft check limit reached; saved edits retained.\n"
+                        + "Application startup log\n".repeat(500)
+                        + "[ERROR] securityMatrix: expected 404 but was 401");
+            assertTrue(prompt.contains("Draft check limit reached; saved edits retained."));
+            assertTrue(prompt.contains("[ERROR] securityMatrix: expected 404 but was 401"));
+            return "repaired";
+        };
+        var engine = fixture.engine(store, LIVE_ENVIRONMENT, agents);
+        var state = fixture.start(
+                engine, RunMode.LIVE, List.of(live("understand", List.of(), "requirements", "Define the criteria")));
+        state = engine.advance(state.id);
+        assertEquals(RunStatus.PAUSED, state.status);
+        String diagnostic = Files.readString(fixture.evidence(state, "understand-error-v1"));
+        assertTrue(diagnostic.endsWith("[ERROR] securityMatrix: expected 404 but was 401"));
+        assertTrue(diagnostic.length() < 4_100);
+        assertTrue(store.details("MODEL_GENERATION_PAUSED").getFirst().contains("expected 404 but was 401"));
+        assertEquals(RunStatus.COMPLETED, engine.advance(state.id).status);
     }
 
     @Test

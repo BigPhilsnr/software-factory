@@ -31,6 +31,56 @@ class TokenLimitRecoveryTest {
     Path root;
 
     @Test
+    void realAdkLoopStopsAtCheckExhaustionWithoutAnotherProviderRequest() throws Exception {
+        Path candidate = Files.createDirectory(root.resolve("candidate"));
+        Files.writeString(candidate.resolve("README.md"), "original\n");
+        var checkpoint = DraftWorkspace.create(candidate, root.resolve("draft"), "input");
+        var exhausted =
+                new dev.softwarefactory.platform.GenerationUnavailableException("Check limit: compiler failure");
+        var draft =
+                new DraftWorkspace(checkpoint, new GitWorkspace(root), List.of("README.md"), saved -> {}, (p, d) -> {
+                    throw exhausted;
+                });
+        String check = "[{\"type\":\"tool_use\",\"id\":\"check\",\"name\":\"check_draft\",\"input\":{}}]";
+        try (var provider = new Provider(List.of(response(check, "tool_use")))) {
+            var clients = mock(ModelClients.class);
+            when(clients.anthropic()).thenReturn(provider.client);
+            var runtime = new AdkClaudeRuntime(
+                    clients,
+                    FactorySettings.from(Map.of("CLAUDE_MODEL", "claude-sonnet-5")),
+                    draft.path(),
+                    () -> {},
+                    (event, detail) -> {});
+            assertSame(
+                    exhausted,
+                    assertThrows(exhausted.getClass(), () -> runtime.draft("implementer", "Check draft", draft)));
+            assertEquals(1, provider.requests.size(), "A tool stop must not trigger another paid request");
+            assertEquals("original\n", Files.readString(candidate.resolve("README.md")));
+        }
+    }
+
+    @Test
+    void completedDraftToolBatchReturnsToValidationWithoutAnotherProviderCall() {
+        var client = mock(AnthropicClient.class);
+        try (var session = new ToolSession(
+                () -> {
+                    throw new AssertionError("No extra paid call");
+                },
+                (event, detail) -> {},
+                null,
+                java.time.Clock.systemUTC(),
+                true)) {
+            for (int i = 0; i < 64; i++) session.invoke("read_draft_file", "README.md", () -> "data");
+            var model = new ThinkingAwareClaude("test-model", client, session);
+            var request = LlmRequest.builder().model("test-model").build();
+            assertThrows(
+                    dev.softwarefactory.platform.GenerationUnavailableException.class,
+                    () -> model.generateContent(request, false).blockingFirst());
+            verifyNoInteractions(client);
+        }
+    }
+
+    @Test
     void recoveryDoesNotDisableThinkingForOtherModels() throws Exception {
         for (String model : List.of("claude-sonnet-5.5", "unknown-model")) {
             try (var provider = new Provider(List.of(

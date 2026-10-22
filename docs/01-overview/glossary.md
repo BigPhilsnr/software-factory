@@ -39,7 +39,7 @@
 | **Clarify** | Record the operator's answer to a `CLARIFY` task. | `run/AnswerClarification` |
 | **Revise** | The operator sends a task back, optionally with feedback. That task and everything downstream of it become stale and are generated again; their patches are removed from the candidate. | `run/ReviseRun` |
 | **Stale** | A task whose output was invalidated by a revision and has not been queued again yet. | `run/TaskStatus.STALE` |
-| **Safe stop** | The run ends as `SAFE_STOPPED` because a rule was broken: a patch outside its scope, a tampered record, an exhausted model budget. Never retried. | `run/FailureHandling` |
+| **Safe stop** | The run ends as `SAFE_STOPPED` because a rule was broken: a patch outside its scope, a tampered record, an integrity or security violation. Never retried. | `run/FailureHandling` |
 | **Retry** | A task that fails for an ordinary reason may run once more after the operator resumes. A second failure ends the run as `FAILED`. | `FailureHandling.MAX_ATTEMPTS` |
 | **Revision required** | A validation failed for a reproducible reason (tests fail, code does not compile). Running it again cannot help, so the run pauses until an upstream task is revised. | `RunState.revisionRequiredTask` |
 | **Recovery** | On the next advance after a crash, tasks left `RUNNING` adopt output they had already saved or are queued again. An interrupted patch also resets the candidate. | `run/RecoverInterruptedRun` |

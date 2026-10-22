@@ -5,4 +5,8 @@ public final class DraftCheckFailedException extends RuntimeException {
     public DraftCheckFailedException(String message) {
         super(message);
     }
+
+    public DraftCheckFailedException(String message, Throwable cause) {
+        super(message, cause);
+    }
 }

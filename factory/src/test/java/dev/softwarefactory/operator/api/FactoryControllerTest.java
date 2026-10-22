@@ -55,6 +55,14 @@ class FactoryControllerTest {
     }
 
     @Test
+    void draftRecoveryDoesNotImplicitlyAdvanceOrApprove() throws Exception {
+        api.perform(json(post(ACTIONS), "{\"action\":\"recover-draft\"}")).andExpect(status().isOk());
+        verify(factory).recoverDraft(ID);
+        org.mockito.Mockito.verify(factory, org.mockito.Mockito.never()).advance(any());
+        org.mockito.Mockito.verify(factory, org.mockito.Mockito.never()).approve(any(), any());
+    }
+
+    @Test
     void configTellsThePageItsTokenAndWhatIsAvailable() throws Exception {
         when(factory.validatorStatus())
                 .thenReturn(new Preflight(false, "Validator image missing", Instant.parse("2026-01-01T00:00:00Z")));
@@ -102,11 +110,9 @@ class FactoryControllerTest {
     }
 
     @Test
-    void budgetActionRequiresATotalAndDoesNotAdvanceTheRun() throws Exception {
-        api.perform(json(post(ACTIONS), "{\"action\":\"budget\"}")).andExpect(status().isBadRequest());
+    void removedBudgetActionIsRejected() throws Exception {
         api.perform(json(post(ACTIONS), "{\"action\":\"budget\",\"budget\":40}"))
-                .andExpect(status().isOk());
-        verify(factory).increaseBudget(ID, 40);
+                .andExpect(status().isBadRequest());
         org.mockito.Mockito.verify(factory, org.mockito.Mockito.never()).advance(any());
     }
 

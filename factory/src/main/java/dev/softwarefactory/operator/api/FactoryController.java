@@ -110,12 +110,12 @@ public final class FactoryController {
     public ResponseEntity<JsonNode> action(@PathVariable("id") String id, @Valid @RequestBody ActionRequest body)
             throws IOException, InterruptedException {
         switch (body.action()) {
-            case "budget" -> factory.increaseBudget(id, body.requiredBudget());
             case "advance" -> factory.advance(id);
             case "approve" -> factory.approve(id, body.hash());
             case "reject" -> factory.reject(id, body.hash());
             case "clarify" -> factory.clarify(id, body.answer());
             case "revise" -> factory.revise(id, body.task(), body.feedback());
+            case "recover-draft" -> factory.recoverDraft(id);
             default -> throw new IllegalArgumentException("Unknown action");
         }
         return json(Map.of("accepted", true));

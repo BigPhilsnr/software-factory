@@ -37,6 +37,8 @@ class GeneratedTestPolicyTest {
     @Test
     void surefireNamingDecidesWhichChangedFilesAreTestClasses() {
         String patch = header("shortener/src/test/java/TestExpiry.java")
+                + header("shortener/src/test/java/dev/shortener/RedirectIT.java")
+                + header("shortener/src/test/java/dev/shortener/StatsITCase.java")
                 + header("shortener/src/test/java/dev/shortener/link/ExpiryTests.java")
                 + header("src/test/java/a/b/ExpiryTestCase.java")
                 + header("shortener/src/test/java/dev/shortener/link/ExpiryFixture.java")
@@ -45,7 +47,12 @@ class GeneratedTestPolicyTest {
                 + header("shortener/notsrc/test/java/ExpiryTest.java")
                 + header("shortener/src/test/java/dev/Test.kt");
         assertEquals(
-                Set.of("TestExpiry", "dev.shortener.link.ExpiryTests", "a.b.ExpiryTestCase"),
+                Set.of(
+                        "TestExpiry",
+                        "dev.shortener.link.ExpiryTests",
+                        "a.b.ExpiryTestCase",
+                        "dev.shortener.RedirectIT",
+                        "dev.shortener.StatsITCase"),
                 GeneratedTestPolicy.changedTestClasses(patch));
     }
 

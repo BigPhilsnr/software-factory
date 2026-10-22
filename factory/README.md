@@ -96,7 +96,7 @@ How a task failure is classified (`run/FailureHandling`):
 
 | Failure | Outcome | Retry budget |
 | --- | --- | --- |
-| `GenerationUnavailableException` (output/recovery/repair or model budget exhausted) | run `PAUSED`, saved draft retained | does not consume candidate retry |
+| `GenerationUnavailableException` (output/recovery/repair exhausted) | run `PAUSED`, saved draft retained | does not consume candidate retry |
 | `SecurityException` (policy violation, escaping fixture) | run `SAFE_STOPPED`, task `FAILED` | n/a |
 | `InfrastructureException` (Docker, validator image, Maven cache, control database) | run `PAUSED`, task `PENDING` | not consumed |
 | `ValidationFailedException` on a validation task | run `PAUSED` with `revisionRequiredTask`; an upstream task must be revised | not consumed |
@@ -157,7 +157,7 @@ mvn -pl factory -Pintegration -Dtest=FactoryHttpIntegrationTest test
 
 The test owns a unique database schema and a disposable Git clone under `.runs/http-integration-*`; it copies current scenario files into that clone. Background workers drain before cleanup removes these resources. Existing operator runs and source files are not modified. `CONTROL_DB_URL`, `CONTROL_DB_USER`, and `CONTROL_DB_PASSWORD` override local Compose defaults; Maven does not load `.env`. Port 8000 need not be running.
 
-The Docker validator requires the pinned Maven image and populated local Maven cache described in the [testing strategy](../docs/04-quality/testing.md#how-to-run). These tests exercise orchestration and boundaries, not live model reasoning quality. `RunEngineResilienceTest` and `ControlRecordIntegrationTest` additionally cover recovery, concurrent leases, migration compatibility and persisted budgets.
+The Docker validator requires the pinned Maven image and populated local Maven cache described in the [testing strategy](../docs/04-quality/testing.md#how-to-run). These tests exercise orchestration and boundaries, not live model reasoning quality. `RunEngineResilienceTest` and `ControlRecordIntegrationTest` additionally cover recovery, concurrent leases, migration compatibility and persisted usage counters.
 
 ## Incremental drafting
 

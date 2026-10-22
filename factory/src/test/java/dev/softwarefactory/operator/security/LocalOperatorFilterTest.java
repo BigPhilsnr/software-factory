@@ -56,8 +56,8 @@ class LocalOperatorFilterTest {
                     status("POST", path, null, "application/json", null, chat("/approve " + "a".repeat(64))),
                     path);
             assertEquals(403, status("POST", path, null, "application/json", null, chat("  /advance")), path);
-            assertEquals(403, status("POST", path, null, "application/json", null, chat("/budget 40")), path);
-            assertEquals(200, status("POST", path, null, "application/json", TOKEN, chat("/budget 40")), path);
+            assertEquals(403, status("POST", path, null, "application/json", null, chat("/advance")), path);
+            assertEquals(200, status("POST", path, null, "application/json", TOKEN, chat("/advance")), path);
             assertEquals(403, status("POST", path, null, "application/json", null, "not json"), path);
             assertEquals(
                     200,

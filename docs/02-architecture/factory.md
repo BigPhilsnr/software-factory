@@ -203,11 +203,12 @@ Refusals: a hash that does not match returns `409` and changes nothing. If the s
 
 ## Failures, retries and recovery
 
-`FailureHandling` turns every task failure into one of four outcomes:
+`FailureHandling` classifies task failures; draft checks first convert repairable test-content problems into feedback:
 
 | Cause | Outcome |
 | --- | --- |
-| A rule was broken (`SecurityException`) | Run `SAFE_STOPPED`. Never retried. |
+| A scope or integrity rule was broken (`SecurityException`) | Run `SAFE_STOPPED`; no normal retry. Eligible historical draft integration-tag stops have a separate verified recovery action. |
+| Generation unavailable or bounded draft repairs exhausted (`GenerationUnavailableException`) | Run `PAUSED` with saved edits and actionable diagnostics; resume remains available. |
 | The platform failed: Docker, the validator image, the Maven cache, the control database (`InfrastructureException`) | Run `PAUSED`, task back to `PENDING`. The retry budget is untouched. |
 | A validation failed reproducibly (`ValidationFailedException`) | Run `PAUSED` with `revisionRequiredTask` set. An upstream task must be revised. |
 | Anything else | First time: run `PAUSED`, retry offered. Second time: run `FAILED`. |
@@ -222,12 +223,10 @@ In live mode `AdkClaudeRuntime` builds one ADK agent per task invocation, with `
 
 | Limit | Value | Where |
 | --- | --- | --- |
-| Provider requests per run | 24 by default, at most 100 (`FACTORY_MAX_MODEL_CALLS`) | `RunState.maxModelCalls`, reserved and audited before each request |
-| Provider requests per task invocation | 8 for documents; 32 for drafting | `ToolSession` |
 | Tool calls per task invocation | 12 for documents; 64 for drafting | `ToolSession` |
 | Deadline per task invocation | 900 s by default (`FACTORY_RUN_DEADLINE_SECONDS`) | `FactorySettings` |
 | Timeout per provider request | 5 minutes, never past the deadline | `ToolSession.MAX_REQUEST_TIMEOUT` |
-| Output tokens per response | 32,768; truncated response discarded, one budgeted recovery request | `ThinkingAwareClaude` |
+| Output tokens per response | 32,768; truncated response discarded, one recovery request | `ThinkingAwareClaude` |
 | SDK retries | 0 | `ModelClients` |
 
 The prompt contains the requirement, the task instruction, any operator feedback, the previous failure diagnostic, the outputs of upstream tasks, and a bounded copy of the shortener source from the candidate (16,000 bytes per file, 80,000 bytes in total). Everything except the instruction is wrapped in random delimiters and labelled as data. The tools are described in [agent tools](../03-operations/agent-tools.md).
@@ -263,7 +262,7 @@ flowchart LR
 
 | Boundary | What crosses it | Control |
 | --- | --- | --- |
-| Model to engine | Documents, diffs, tool calls | Diffs are inert until `PatchScope`, `GeneratedTestPolicy`, `PatchPolicy` and `git apply --check` pass. There is no tool that writes, executes or approves. |
+| Model to engine | Documents, diffs, tool calls | PATCH agents edit only scoped draft files and request trusted sandbox checks. Candidate application still requires scope/test policy checks, applicability and any required exact-hash approval. There is no arbitrary shell, approval or release tool. |
 | Web to model | Search summaries, page text | Pages can be fetched only if a search returned that URL. Results are size-capped and delimited as data. |
 | Candidate to engine | Test results | Code runs only inside the sandbox. Results are read from report files in a folder the candidate cannot write to before the run, not from process output. |
 | Browser to engine | Operator actions | Loopback host name, same origin, `X-Factory-Token`, 64 KiB body limit, strict Content-Security-Policy. |
@@ -277,7 +276,7 @@ Threats, controls and what remains exposed are listed in the [security model](..
 - At most two runs advance at once in the web process (`RunWorkers`), and at most two documents are generated in parallel within a run.
 - Task graphs are fixed templates. The model cannot change the plan.
 - Validation is tied to the shortener: the trusted POM builds `shortener/` with the current dependency set.
-- The model-call budget counts requests, not tokens or money.
+- Model-call counts are usage metrics; there is no request-count or spending ceiling.
 
 ## Durable incremental PATCH generation
 

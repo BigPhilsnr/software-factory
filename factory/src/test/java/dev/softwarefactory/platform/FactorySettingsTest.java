@@ -14,8 +14,6 @@ class FactorySettingsTest {
     void defaultsAreDefinedOnceAndLiveModeNeedsBothKeys() {
         var defaults = FactorySettings.from(Map.of());
         assertEquals(FactorySettings.DEFAULT_MODEL, defaults.model());
-        assertEquals(24, defaults.maxModelCalls());
-        assertEquals(80, defaults.chatDailyRequests());
         assertFalse(defaults.liveReady());
         assertTrue(defaults.liveBlocker().contains("ANTHROPIC_API_KEY"));
         var providerOnly = FactorySettings.from(Map.of("ANTHROPIC_API_KEY", "key"));
@@ -34,14 +32,13 @@ class FactorySettingsTest {
     }
 
     @Test
-    void rejectsOutOfRangeOrMalformedNumbers() {
-        assertThrows(
-                IllegalArgumentException.class, () -> FactorySettings.from(Map.of("FACTORY_MAX_MODEL_CALLS", "0")));
-        assertThrows(
-                IllegalArgumentException.class, () -> FactorySettings.from(Map.of("FACTORY_MAX_MODEL_CALLS", "101")));
+    void oldCallLimitEnvironmentIsIgnoredButDeadlinesRemainValidated() {
+        var settings =
+                FactorySettings.from(Map.of("FACTORY_MAX_MODEL_CALLS", "1", "FACTORY_CHAT_DAILY_REQUESTS", "many"));
+        assertEquals(FactorySettings.DEFAULT_MODEL, settings.model());
         assertThrows(
                 IllegalArgumentException.class,
-                () -> FactorySettings.from(Map.of("FACTORY_CHAT_DAILY_REQUESTS", "many")));
+                () -> FactorySettings.from(Map.of("FACTORY_RUN_DEADLINE_SECONDS", "0")));
     }
 
     @Test

@@ -13,8 +13,6 @@ import java.util.Objects;
 public record FactorySettings(
         boolean providerKeyConfigured,
         String model,
-        int maxModelCalls,
-        int chatDailyRequests,
         String operator,
         Duration chatDeadline,
         Duration runDeadline,
@@ -24,10 +22,6 @@ public record FactorySettings(
         Path mavenRepository,
         String auditKey) {
     public static final String DEFAULT_MODEL = "claude-sonnet-4-5";
-    static final int DEFAULT_MAX_MODEL_CALLS = 24;
-    public static final int MAX_MODEL_CALLS_LIMIT = 100;
-    static final int DEFAULT_CHAT_DAILY_REQUESTS = 80;
-    static final int CHAT_DAILY_REQUESTS_LIMIT = 10_000;
     static final int DEFAULT_CHAT_DEADLINE_SECONDS = 180;
     static final int DEFAULT_RUN_DEADLINE_SECONDS = 900;
     static final int MAX_DEADLINE_SECONDS = 3_600;
@@ -51,12 +45,6 @@ public record FactorySettings(
         return new FactorySettings(
                 !text(environment, "ANTHROPIC_API_KEY", "").isBlank(),
                 text(environment, "CLAUDE_MODEL", DEFAULT_MODEL),
-                bounded(environment, "FACTORY_MAX_MODEL_CALLS", DEFAULT_MAX_MODEL_CALLS, MAX_MODEL_CALLS_LIMIT),
-                bounded(
-                        environment,
-                        "FACTORY_CHAT_DAILY_REQUESTS",
-                        DEFAULT_CHAT_DAILY_REQUESTS,
-                        CHAT_DAILY_REQUESTS_LIMIT),
                 text(environment, "FACTORY_OPERATOR", System.getProperty("user.name", "operator")),
                 Duration.ofSeconds(bounded(
                         environment,
@@ -99,9 +87,8 @@ public record FactorySettings(
     @Override
     public String toString() {
         // Never print database credentials or the audit key.
-        return "FactorySettings[model=" + model + ", maxModelCalls=" + maxModelCalls + ", chatDailyRequests="
-                + chatDailyRequests + ", chatDeadline=" + chatDeadline + ", runDeadline=" + runDeadline + ", liveReady="
-                + liveReady() + "]";
+        return "FactorySettings[model=" + model + ", chatDeadline=" + chatDeadline + ", runDeadline=" + runDeadline
+                + ", liveReady=" + liveReady() + "]";
     }
 
     private static String text(Map<String, String> environment, String name, String fallback) {

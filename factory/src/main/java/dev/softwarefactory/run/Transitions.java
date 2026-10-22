@@ -14,7 +14,8 @@ record Transitions(
         ApproveStep approve,
         AnswerClarification clarify,
         ReviseRun revise,
-        RecoverPatch recoverPatch) {
+        RecoverPatch recoverPatch,
+        DraftRecovery recoverDraft) {
     static Transitions wire(
             RunStore runs,
             EvidenceStore evidenceStore,
@@ -38,7 +39,8 @@ record Transitions(
                         TaskExecutors.forEveryKind(core, generation, workspace, validator)),
                 new ApproveStep(core, workspace, operator),
                 new AnswerClarification(runs, core.evidence(), operator),
-                new ReviseRun(runs, candidates, operator),
-                new RecoverPatch(core, workspace));
+                new ReviseRun(runs, candidates, operator, workspace),
+                new RecoverPatch(core, workspace),
+                new DraftRecovery(core, workspace, operator));
     }
 }

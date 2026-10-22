@@ -31,9 +31,9 @@ class EmptyResponseRecoveryTest {
                         2),
                 Arguments.of("[]", "max_tokens", 8, 2),
                 Arguments.of("[{\"type\":\"text\",\"text\":\"partial patch\"}]", "max_tokens", 8, 2),
-                Arguments.of("[]", "max_tokens", 1, 1),
+                Arguments.of("[]", "max_tokens", 1, 2),
                 Arguments.of("[]", "refusal", 8, 1),
-                Arguments.of("[]", "end_turn", 1, 1));
+                Arguments.of("[]", "end_turn", 1, 2));
     }
 
     @ParameterizedTest
@@ -68,11 +68,6 @@ class EmptyResponseRecoveryTest {
                     @Override
                     public void reserve() {
                         reservations.incrementAndGet();
-                    }
-
-                    @Override
-                    public int remaining() {
-                        return budget - reservations.get();
                     }
                 },
                 (event, detail) -> audit.add(event + ":" + detail))) {

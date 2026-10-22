@@ -116,3 +116,18 @@ mvn -q -pl factory spotless:check verify
 ```
 
 Recovery is bounded, not a guarantee that arbitrary generated code eventually passes. Live paid runs are separate from these deterministic regressions.
+
+
+Model-call count limits have been removed from runs, agent invocations and daily chat. Calls remain audited; tool limits, deadlines, bounded recovery and approval gates remain. See [ADR 0019](../02-architecture/decisions/0019-model-call-counts-are-metrics.md).
+
+
+A PATCH worker does not need a closing prose response to validate its saved code. After a draft tool batch or unusable final response, the engine checks checkpoint integrity and runs the required green/red validator. Failed checks become feedback for a fresh bounded repair pass; passed checks still require the normal proposal approval. Resume checks an existing nonempty draft before spending another model call. Tasks without a direct validation gate cannot use this recovery shortcut. Regression tests cover missing final text, fresh repair feedback, zero-call resume checks and tool-batch completion without an extra provider request.
+
+
+The trusted Surefire configuration explicitly includes `*IT` and `*ITCase` alongside standard test names. Changed integration-test classes are required to execute; a unit-only green result cannot silently omit these classes. The product and trusted POM inclusion patterns are checked for drift.
+
+Draft-recovery regressions exercise the real ADK tool loop against a local mock provider: exhausting checks must make no subsequent provider request. Engine tests verify that the third failed check retains its compiler diagnostic and saved files, and that a repaired draft can reach approval on resume without another model call. Prompt tests verify that the exact bundled validation POM reaches planning, implementation and test authors before upstream artifacts, including for empty baselines.
+
+`DraftRecoveryTest` checks repairable test-policy feedback and verified recovery of legacy integration-tag stops, including refusal of tampered drafts, changed inputs, broken audits and unrelated policy stops. `node scripts/checks/operator_recovery_test.cjs` exercises the recovery button and restoration of resume controls without a server or paid calls.
+
+`RunEngineGenerationTest` verifies that verbose startup logs cannot displace the final test failure from a pause diagnostic or the next repair prompt.

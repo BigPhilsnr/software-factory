@@ -2,6 +2,8 @@
 
 **Status:** accepted
 
+**Update:** [ADR 0019](0019-model-call-counts-are-metrics.md) supersedes the model-call limits described below; historical decisions are retained for traceability.
+
 **In one paragraph.** Live generation goes through Google ADK, but the model class is our own `ThinkingAwareClaude`, a subclass of ADK's `Claude`. It keeps the provider's complete tool-use turns so they can be replayed correctly, hides thinking blocks from everything outside the provider round trip, and enforces the factory's request and tool budgets on every call.
 
 ## Context

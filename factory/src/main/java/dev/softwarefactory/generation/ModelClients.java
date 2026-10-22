@@ -26,7 +26,7 @@ public final class ModelClients implements AutoCloseable {
             anthropic = AnthropicOkHttpClient.builder()
                     .fromEnv()
                     .timeout(ToolSession.MAX_REQUEST_TIMEOUT)
-                    // No SDK retries: every provider request must pass the run/chat budget reservation and
+                    // No SDK retries: every provider request must pass the run/chat usage recording and
                     // audit in ToolSession first, and an automatic retry could repeat a paid call unseen.
                     // Failures surface to the workflow's bounded, recorded retry policy instead.
                     .maxRetries(0)

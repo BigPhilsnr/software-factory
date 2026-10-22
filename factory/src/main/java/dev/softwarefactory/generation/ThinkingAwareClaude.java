@@ -52,6 +52,9 @@ final class ThinkingAwareClaude extends Claude {
 
     @Override
     public Flowable<LlmResponse> generateContent(LlmRequest request, boolean stream) {
+        if (session.drafting() && !session.toolsAllowed())
+            throw new dev.softwarefactory.platform.GenerationUnavailableException(
+                    "Draft tool batch complete; validate saved files before starting a fresh repair pass");
         if (stream) throw new IllegalArgumentException("Factory Claude runtime uses non-streaming provider calls");
         String system = String.join("\n", request.getSystemInstructions());
         MessageCreateParams.Builder params = MessageCreateParams.builder()
@@ -88,7 +91,7 @@ final class ThinkingAwareClaude extends Claude {
         return parts;
     }
 
-    /** While budget remains the model may call one tool at a time; the last request must be the final answer. */
+    /** While tool capacity remains the model may call one tool at a time; tool exhaustion requests a final answer. */
     private void chooseTools(MessageCreateParams.Builder params, String system, boolean toolsAllowed) {
         if (toolsAllowed) {
             params.toolChoice(ToolChoice.ofAuto(

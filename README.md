@@ -2,6 +2,10 @@
 
 Two Spring Boot applications: a URL shortener and an agentic software factory that proposes, tests and presents changes for human approval. **Start here to run and evaluate the prototype locally.**
 
+For a presentation of the dependencies, architecture, program flow, authentication, security and delivery process, read the [project presentation](docs/presentation/README.md).
+
+For each orchestration requirement and the Java files that implement it, read the [workflow orchestration requirement map](docs/02-architecture/workflow-orchestration-requirement-map.md).
+
 ## 1. Setup and run locally
 
 Run commands from the repository root. Use a full Git clone with tags, **JDK 21** (supported for the quality gate: 21–25), Maven 3.9+, Python 3 and Docker with Compose. Docker Desktop or Colima must be running. Ports **8000, 8080, 5433 and 5434** must be available. No API key is needed for fixture scenarios or automated tests; the first build and image pull need internet access.
@@ -159,3 +163,6 @@ flowchart LR
 ## Incremental feature drafting
 
 Live feature patches now accumulate small, checkpointed edits in an isolated draft. Git generates the review diff, and bounded validation feedback supports repairs before approval. Resume preserves verified draft progress; provider token-limit recovery never applies a truncated artifact. See [design and limits](docs/02-architecture/decisions/0018-incremental-drafting-and-bounded-repair.md) and the [operator guide](docs/03-operations/operator-guide.md).
+
+
+Model-call count limits have been removed from runs, agent invocations and daily chat. Calls remain audited; tool limits, deadlines, bounded recovery and approval gates remain. See [ADR 0019](docs/02-architecture/decisions/0019-model-call-counts-are-metrics.md).

@@ -7,7 +7,7 @@ import com.anthropic.models.messages.WebSearchTool20250305;
 import com.anthropic.models.messages.WebSearchToolResultBlockContent;
 import java.util.function.Consumer;
 
-/** Provider-hosted search with citations, using the same key and budget as the agent. */
+/** Provider-hosted search with citations, using the same key and request accounting as the agent. */
 public final class AnthropicWebSearch {
     private static final int MAX_SUMMARY_TOKENS = 2500;
     private static final int MAX_QUERY_LENGTH = 500;

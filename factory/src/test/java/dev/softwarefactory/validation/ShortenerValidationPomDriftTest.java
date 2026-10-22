@@ -36,6 +36,11 @@ class ShortenerValidationPomDriftTest {
                 surefireSetting(product, "excludedGroups"),
                 surefireSetting(trusted, "excludedGroups"),
                 "Surefire excludedGroups");
+        assertEquals(
+                surefireSetting(product, "includes").replaceAll("\\s", ""),
+                surefireSetting(trusted, "includes").replaceAll("\\s", ""));
+        assertTrue(surefireSetting(trusted, "includes").contains("**/*IT.java"));
+        assertTrue(surefireSetting(trusted, "includes").contains("**/*ITCase.java"));
         assertEquals("/workspace/shortener", surefireSetting(trusted, "workingDirectory"));
         assertEquals(DockerSandbox.REPORTS_MOUNT, surefireSetting(trusted, "reportsDirectory"));
     }

@@ -5,6 +5,7 @@ import dev.softwarefactory.candidate.DraftWorkspace;
 import dev.softwarefactory.candidate.GitWorkspace;
 import dev.softwarefactory.governance.Hashes;
 import dev.softwarefactory.governance.PatchScope;
+import dev.softwarefactory.governance.PolicyViolationException;
 import dev.softwarefactory.platform.GenerationUnavailableException;
 import dev.softwarefactory.scenario.TaskKind;
 import dev.softwarefactory.scenario.TaskSpec;
@@ -49,23 +50,32 @@ final class DraftChecks implements DraftWorkspace.Check {
             throw new DraftCheckFailedException("Draft contains no changes; use the draft editing tools first");
         String hash = Hashes.sha256(diff);
         if (!Hashes.same(hash, lastHash)) inspect(directory, diff, hash);
-        if (failure != null) throw failure;
+        if (failure != null) {
+            requireCapacity();
+            throw failure;
+        }
         return report;
+    }
+
+    /** Stop before another model pass when no further validation is possible in this attempt. */
+    void requireCapacity() {
+        if (checks >= MAX_CHECKS)
+            throw new GenerationUnavailableException("Draft check limit reached; saved edits retained. "
+                    + (failure == null ? "Resume to validate the latest edits." : failure.getMessage()));
     }
 
     private void inspect(Path directory, String diff, String hash) throws IOException, InterruptedException {
         PatchScope.changedPaths(diff, task.writeScope());
-        GeneratedTestPolicy.check(diff);
         workspace.checkApply(Path.of(state.candidatePath), diff, task.writeScope());
-        if (checks >= MAX_CHECKS)
-            throw new GenerationUnavailableException("Draft check limit reached; progress saved for review/resume");
+        requireCapacity();
         checks++;
         runs.record(state, "DRAFT_CHECK_STARTED", task.id() + ":" + hash + ":" + checks + "/" + MAX_CHECKS);
         failure = null;
         try {
+            checkTestPolicy(diff);
             report = validate(directory, diff);
             runs.record(state, "DRAFT_CHECK_PASSED", task.id() + ":" + hash + ":" + report);
-        } catch (ValidationFailedException invalid) {
+        } catch (ValidationFailedException | DraftCheckFailedException invalid) {
             String message = invalid.getMessage();
             failure = new DraftCheckFailedException(message.substring(Math.max(0, message.length() - 10000)));
             runs.record(
@@ -74,6 +84,15 @@ final class DraftChecks implements DraftWorkspace.Check {
                     task.id() + ":" + hash + ":diagnosticSha256=" + Hashes.sha256(message));
         }
         lastHash = hash;
+    }
+
+    /** Unapproved test content can be corrected; scope and integrity violations still fail closed. */
+    private static void checkTestPolicy(String diff) {
+        try {
+            GeneratedTestPolicy.check(diff);
+        } catch (PolicyViolationException invalidTest) {
+            throw new DraftCheckFailedException("Draft test policy: " + invalidTest.getMessage(), invalidTest);
+        }
     }
 
     private String validate(Path directory, String diff) throws IOException, InterruptedException {

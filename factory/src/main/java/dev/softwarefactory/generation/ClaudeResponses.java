@@ -27,7 +27,7 @@ final class ClaudeResponses {
 
     Message generate(MessageCreateParams.Builder params, String system, boolean hasTools) {
         Message message = requestMessage(params.build());
-        if (needsRecovery(message) && session.remainingRequests() > 0) {
+        if (needsRecovery(message)) {
             message = recover(params, system, hasTools, message);
         }
         if (isTruncated(message))

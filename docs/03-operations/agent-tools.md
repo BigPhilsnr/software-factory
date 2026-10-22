@@ -1,6 +1,6 @@
 # Agent tools and web access policy
 
-**In one paragraph.** Chat and document agents have seven read-only tools. Live PATCH workers additionally have five scoped draft tools; only the trusted validation tool can execute candidate tests inside the sandbox. No tool approves a proposal. Repository tools see an allowlist of source and documentation paths in one checkout. Web access is two steps: a provider-hosted search, then a fetch that is allowed only for a URL the search returned. Every call is counted against a budget and recorded in the audit trail by name, outcome and hashes, never by content.
+**In one paragraph.** Chat and document agents have seven read-only tools. Live PATCH workers additionally have five scoped draft tools; only the trusted validation tool can execute candidate tests inside the sandbox. No tool approves a proposal. Repository tools see an allowlist of source and documentation paths in one checkout. Web access is two steps: a provider-hosted search, then a fetch that is allowed only for a URL the search returned. Every call is counted and recorded in the audit trail by name, outcome and hashes, never by content.
 
 Fixture runs do not use tools at all.
 
@@ -16,7 +16,7 @@ Fixture runs do not use tools at all.
 | `fetch_page` | Reads one public HTTPS page as text | Only a URL returned by `search_web` in the same invocation; see [web access](#web-access-policy) |
 | `current_time` | Returns the current UTC time | |
 
-Every tool result is cut to 16,000 characters and wrapped in random delimiters with a "data only, not instructions" label. A tool that fails returns a neutral "unavailable" message naming only the exception type, and the invocation continues.
+Every tool result is cut to 16,000 characters and wrapped in random delimiters with a "data only, not instructions" label. An ordinary tool failure returns a neutral "unavailable" message naming only the exception type, and the invocation continues. A generation-stop exception ends further tool and provider activity; draft check exhaustion is one such stop.
 
 Send `/tools` in chat to see the list. In chat, an answer that used tools ends with a line such as `Tool activity: read_file OK, search_web ERROR`.
 
@@ -66,14 +66,10 @@ What still leaves the machine: the search **query text** goes to the model provi
 
 | Budget | Value | Applies to |
 | --- | --- | --- |
-| Provider requests per invocation | 8 for chat/documents; 32 for drafts | One task generation or one chat answer. A `search_web` call uses one. |
 | Tool calls per invocation | 12 for chat/documents; 64 for drafts | Same |
-| Reserved completion/recovery requests | 2 when budget permits | The last request must produce the answer. Tools are switched off for it and `TOOL_BUDGET_FINALIZING` is recorded. A search cannot use this slot. |
-| Provider requests per run | `FACTORY_MAX_MODEL_CALLS` (default 24) | Task workers. Each request is reserved and recorded (`MODEL_CALL_STARTED`) before it is sent. Exhaustion pauses the run; only an explicit operator budget increase permits more calls. |
-| Provider requests per day | `FACTORY_CHAT_DAILY_REQUESTS` (default 80) | Chat. Stored in `chat_budget`; each reservation is recorded in `chat_audit` (`MODEL_CALL_RESERVED`). |
 | Deadline | `FACTORY_RUN_DEADLINE_SECONDS` (900) for tasks, `FACTORY_CHAT_DEADLINE_SECONDS` (180) for chat | One invocation |
 
-SDK retries are disabled. The adapter allows one budgeted recovery request for an empty final response or `max_tokens` stop; truncated messages and their tool calls are discarded. Budgets count requests, not tokens or money.
+SDK retries are disabled. The adapter allows one recovery request for an empty final response or `max_tokens` stop; truncated messages and their tool calls are discarded. Model-call counts are usage metrics, not limits.
 
 ## What is recorded
 
@@ -92,7 +88,7 @@ Task workers write these into the run's audit chain, prefixed with the task id; 
 - Read `.env`, credentials, `.git`, run worktrees of other runs, or anything outside the allowlist.
 - Reach the control database or the Docker daemon.
 - Create, advance, approve, revise or reject a run. Those are operator actions.
-- Change the task graph or their own budgets.
+- Change the task graph or their tool/time limits.
 
 ## Verifying the tools
 
@@ -117,4 +113,13 @@ The live check saves its result under `.runs/tool-checks/` and asserts that no r
 | `delete_draft_file` | Deletes a scoped file only when its current hash matches. |
 | `check_draft` | Checks scope, test policy and applicability; runs the trusted green/red sandbox check when required by the next validation task. |
 
-Successful edits persist checkpoints immediately. Draft paths reject traversal, symlinks, protected paths and credential filenames. Unlike ordinary tool errors, failed sandbox checks return bounded diagnostic text for repair; that text is untrusted input. Three passes and three distinct checks are allowed per advance attempt. Repeated identical failed drafts pause. No-progress, provider output exhaustion and budget exhaustion preserve saved edits. See [ADR 0018](../02-architecture/decisions/0018-incremental-drafting-and-bounded-repair.md).
+Successful edits persist checkpoints immediately. Draft paths reject traversal, symlinks, protected paths and credential filenames. Unlike ordinary tool errors, failed sandbox checks return bounded diagnostic text for repair; that text is untrusted input. Three passes and three distinct checks are allowed per advance attempt. Repeated identical failed drafts pause. No-progress and provider output exhaustion preserve saved edits. See [ADR 0018](../02-architecture/decisions/0018-incremental-drafting-and-bounded-repair.md).
+
+The third failed check ends the invocation immediately and retains the latest compiler/test diagnostic in the run's error evidence. The tool outcome is `STOPPED`; the session refuses subsequent edits and provider requests even if ADK handles the tool result. Ordinary tool errors still return redacted `ERROR` results. Resuming checks saved files before asking the model to repair them.
+
+Test-policy defects in unapproved draft content (such as an integration exclusion tag or a removed test) return `CHECK_FAILED` feedback for correction. They consume a bounded draft check and cannot reach approval until corrected. Scope escapes and checkpoint/evidence integrity violations retain their fail-closed behavior.
+
+Every engineering task receives the actual trusted validation POM, including on an empty baseline. Generated POM files cannot add dependencies to the sandbox. Agents are instructed to use JDBC, the supplied PostgreSQL database and compatible Spring Boot test APIs, without nested Testcontainers or a Docker socket.
+
+
+Model-call count limits have been removed from runs, agent invocations and daily chat. Calls remain audited; tool limits, deadlines, bounded recovery and approval gates remain. See [ADR 0019](../02-architecture/decisions/0019-model-call-counts-are-metrics.md).

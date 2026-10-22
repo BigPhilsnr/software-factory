@@ -37,3 +37,8 @@ credentials. PostgreSQL runs without root or capabilities, with a read-only root
 filesystem and disposable tmpfs data. Both containers are cleaned up after success,
 failure, interruption, or a later orphan sweep. Database startup failures pause the
 run as infrastructure failures; changed tests must still produce executed reports.
+
+
+The trusted Surefire configuration explicitly includes `*IT` and `*ITCase` alongside standard test names. Changed integration-test classes are required to execute; a unit-only green result cannot silently omit these classes. The product and trusted POM inclusion patterns are checked for drift.
+
+The sandbox sets standard `SPRING_DATASOURCE_URL`, `SPRING_DATASOURCE_USERNAME`, `SPRING_DATASOURCE_PASSWORD` and `SPRING_DATASOURCE_DRIVER_CLASS_NAME` alongside the existing `SHORTENER_TEST_DB_*` variables. Both generated Spring applications and repository-specific test fixtures use the same isolated PostgreSQL instance. These are disposable test credentials, not host credentials.

@@ -6,16 +6,14 @@ import dev.softwarefactory.generation.AgentRuntimes;
 import dev.softwarefactory.generation.FixtureRuntime;
 import dev.softwarefactory.generation.PromptBuilder;
 import dev.softwarefactory.generation.SourceContext;
-import dev.softwarefactory.generation.tools.ToolSession;
 import dev.softwarefactory.governance.PolicyViolationException;
-import dev.softwarefactory.platform.GenerationUnavailableException;
 import dev.softwarefactory.scenario.ScenarioFiles;
 import dev.softwarefactory.scenario.ScenarioSpec;
 import dev.softwarefactory.scenario.TaskSpec;
 import java.io.IOException;
 import java.nio.file.Path;
 
-/** Hands a task to an agent: a recorded fixture in fixture mode, the live model within the run's budget otherwise. */
+/** Hands a task to an agent: a recorded fixture in fixture mode, the live model with audited calls otherwise. */
 final class TaskGeneration {
     private final RunStore runs;
     private final RunEvidence evidence;
@@ -53,7 +51,7 @@ final class TaskGeneration {
         }
     }
 
-    /** Only reads the immutable snapshot and synchronizes on the state for budget updates. */
+    /** Only reads the immutable snapshot and synchronizes on the state for usage updates. */
     String generate(RunState state, TaskSpec task, Generation generation) throws IOException {
         if (RunMode.FIXTURE.equals(state.mode)) {
             if (generation.fixture() == null) throw new IllegalArgumentException("Fixture missing: " + task.id());
@@ -73,42 +71,17 @@ final class TaskGeneration {
     }
 
     private AgentRuntime runtime(RunState state, TaskSpec task, Path checkout) {
-        return agents.live(
-                checkout,
-                new ToolSession.BeforeRequest() {
-                    @Override
-                    public void reserve() throws IOException {
-                        reserveModelCall(state, task);
-                    }
-
-                    @Override
-                    public int remaining() {
-                        return remainingModelCalls(state);
-                    }
-                },
-                (event, detail) -> {
-                    synchronized (state) {
-                        runs.record(state, event, task.id() + ":" + detail);
-                    }
-                });
-    }
-
-    private static int remainingModelCalls(RunState state) {
-        synchronized (state) {
-            return state.maxModelCalls - state.modelCalls;
-        }
+        return agents.live(checkout, () -> reserveModelCall(state, task), (event, detail) -> {
+            synchronized (state) {
+                runs.record(state, event, task.id() + ":" + detail);
+            }
+        });
     }
 
     private void reserveModelCall(RunState state, TaskSpec task) throws IOException {
         synchronized (state) {
-            if (state.modelCalls >= state.maxModelCalls)
-                throw new GenerationUnavailableException(
-                        "Model call budget exhausted; explicitly increase the run budget before resuming");
             state.modelCalls++;
-            runs.record(
-                    state,
-                    EventTypes.MODEL_CALL_STARTED,
-                    task.id() + ":" + state.modelCalls + "/" + state.maxModelCalls);
+            runs.record(state, EventTypes.MODEL_CALL_STARTED, task.id() + ":" + state.modelCalls);
         }
     }
 }
