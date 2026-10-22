@@ -2,13 +2,11 @@ package dev.softwarefactory.generation;
 
 import com.anthropic.client.AnthropicClient;
 import com.anthropic.core.JsonValue;
-import com.anthropic.core.RequestOptions;
 import com.anthropic.models.messages.ContentBlock;
 import com.anthropic.models.messages.ContentBlockParam;
 import com.anthropic.models.messages.Message;
 import com.anthropic.models.messages.MessageCreateParams;
 import com.anthropic.models.messages.MessageParam;
-import com.anthropic.models.messages.StopReason;
 import com.anthropic.models.messages.TextBlockParam;
 import com.anthropic.models.messages.Tool;
 import com.anthropic.models.messages.ToolChoice;
@@ -39,10 +37,6 @@ final class ThinkingAwareClaude extends Claude {
 
     private static final String MODEL_ROLE = "model";
     private static final String SCHEMA_TYPE = "type";
-    private static final String FINAL_RESPONSE_INSTRUCTION =
-            "\nThe tool exploration budget is complete. This request is reserved for your final response. "
-                    + "Return the requested artifact using the supplied context and collected evidence. "
-                    + "No further tool calls are available. Preserve the requested output format; do not invent observations.";
 
     private final AnthropicClient client;
     private final String modelName;
@@ -58,26 +52,23 @@ final class ThinkingAwareClaude extends Claude {
 
     @Override
     public Flowable<LlmResponse> generateContent(LlmRequest request, boolean stream) {
+        if (session.drafting() && !session.toolsAllowed())
+            throw new dev.softwarefactory.platform.GenerationUnavailableException(
+                    "Draft tool batch complete; validate saved files before starting a fresh repair pass");
         if (stream) throw new IllegalArgumentException("Factory Claude runtime uses non-streaming provider calls");
         String system = String.join("\n", request.getSystemInstructions());
         MessageCreateParams.Builder params = MessageCreateParams.builder()
                 .model(request.model().orElse(modelName))
                 .system(system)
                 .maxTokens(MAX_OUTPUT_TOKENS);
+        ClaudeThinking.configure(params, request.model().orElse(modelName), false);
         for (Content content : request.contents()) params.addMessage(toMessage(content));
         declareTools(request, params);
         session.reserveRequest();
         boolean toolsAllowed = session.toolsAllowed();
         if (!request.tools().isEmpty()) chooseTools(params, system, toolsAllowed);
-        Message message = client.messages()
-                .create(
-                        params.build(),
-                        RequestOptions.builder()
-                                .timeout(session.requestTimeout())
-                                .build());
-        if (message.stopReason().filter(StopReason.MAX_TOKENS::equals).isPresent()) {
-            throw new IllegalStateException("Claude response exceeded the output token limit");
-        }
+        Message message = new ClaudeResponses(client, session)
+                .generate(params, system, !request.tools().isEmpty());
         List<Part> parts = visibleParts(message, toolsAllowed);
         return Flowable.just(LlmResponse.builder()
                 .content(Content.builder().role(MODEL_ROLE).parts(parts).build())
@@ -97,18 +88,17 @@ final class ThinkingAwareClaude extends Claude {
             Part part = toPart(block, message, toolsAllowed);
             if (part != null) parts.add(part);
         }
-        if (parts.isEmpty()) throw new IllegalStateException("Claude returned no visible text");
         return parts;
     }
 
-    /** While budget remains the model may call one tool at a time; the last request must be the final answer. */
+    /** While tool capacity remains the model may call one tool at a time; tool exhaustion requests a final answer. */
     private void chooseTools(MessageCreateParams.Builder params, String system, boolean toolsAllowed) {
         if (toolsAllowed) {
             params.toolChoice(ToolChoice.ofAuto(
                     ToolChoiceAuto.builder().disableParallelToolUse(true).build()));
         } else {
             params.toolChoice(ToolChoice.ofNone(ToolChoiceNone.builder().build()));
-            params.system(system + FINAL_RESPONSE_INSTRUCTION);
+            params.system(system + ClaudeResponses.FINAL_RESPONSE_INSTRUCTION);
             session.recordFinalization();
         }
     }
@@ -146,7 +136,10 @@ final class ThinkingAwareClaude extends Claude {
 
     /** The ADK part for a visible block; null for thinking blocks, which stay private to provider round trips. */
     private Part toPart(ContentBlock block, Message message, boolean toolsAllowed) {
-        if (block.isText()) return Part.fromText(block.asText().text());
+        if (block.isText())
+            return block.asText().text().isBlank()
+                    ? null
+                    : Part.fromText(block.asText().text());
         if (block.isToolUse()) {
             if (!toolsAllowed)
                 throw new SecurityException("Provider returned a tool call after tool access was disabled");

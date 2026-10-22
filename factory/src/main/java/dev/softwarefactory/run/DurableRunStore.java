@@ -1,6 +1,7 @@
 package dev.softwarefactory.run;
 
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import dev.softwarefactory.audit.AuditEvent;
 import dev.softwarefactory.audit.AuditTrail;
 import dev.softwarefactory.audit.RunJournal;
 import dev.softwarefactory.audit.RunLease;
@@ -10,6 +11,7 @@ import java.io.IOException;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 /** The production {@link RunStore}: run state as JSON snapshots in the control database's audited journal. */
@@ -49,6 +51,12 @@ public final class DurableRunStore implements RunStore {
                     UUID.fromString(state.id), state.revision, Json.MAPPER.writeValueAsString(snapshot), type, detail);
             state.revision++;
         }
+    }
+
+    @Override
+    public Optional<AuditEvent> latestEvent(String id) throws IOException {
+        var events = trail.timeline(id);
+        return events.isEmpty() ? Optional.empty() : Optional.of(events.getLast());
     }
 
     @Override

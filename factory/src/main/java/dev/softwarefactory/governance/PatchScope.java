@@ -3,6 +3,7 @@ package dev.softwarefactory.governance;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /** Worker authority over paths: a generated patch may only edit plain files inside its task's write scope. */
@@ -11,6 +12,7 @@ public final class PatchScope {
     private static final Pattern LINK_OR_SUBMODULE =
             Pattern.compile("(?:new file mode|old mode|new mode|deleted file mode|index [^ ]+) (?:120000|160000)");
     private static final Pattern SAFE_PATH = Pattern.compile("[A-Za-z0-9_./-]+");
+    private static final Pattern HUNK_HEADER = Pattern.compile("^@@ -\\d+(?:,(\\d+))? \\+\\d+(?:,(\\d+))? @@.*$");
     private static final String GIT_METADATA_PREFIX = ".git";
     private static final String GIT_IGNORE = ".gitignore";
     private static final String BUILD_OUTPUT = "target";
@@ -27,8 +29,10 @@ public final class PatchScope {
         if (patch.lines().anyMatch(line -> LINK_OR_SUBMODULE.matcher(line).matches())) {
             throw new PolicyViolationException("Symlinks and submodules are outside worker authority");
         }
+        List<String> lines = patch.lines().toList();
+        requireAccurateHunkCounts(lines);
         List<String> changed = new ArrayList<>();
-        for (String line : patch.lines().toList()) {
+        for (String line : lines) {
             String path = changedPath(line);
             if (path == null) continue;
             if (!isWritable(path, allowed)) throw new PolicyViolationException("Patch outside approved scope: " + path);
@@ -36,6 +40,60 @@ public final class PatchScope {
         }
         if (changed.isEmpty()) throw new IllegalArgumentException("Patch has no recognized file changes");
         return changed;
+    }
+
+    /**
+     * A hunk header declares how many old- and new-side lines its body holds. A model can get that
+     * count wrong without producing anything else recognizably malformed; {@code git apply} then
+     * silently stops reading the hunk at the declared count and drops the remaining lines, so a file
+     * can lose its closing braces with no error until a much later compile step. Counting the body
+     * ourselves and rejecting a mismatch turns that into an immediate, specific, retryable diagnostic.
+     */
+    private static void requireAccurateHunkCounts(List<String> lines) {
+        int index = 0;
+        while (index < lines.size()) {
+            Matcher header = HUNK_HEADER.matcher(lines.get(index));
+            index = header.matches() ? requireMatchingHunk(lines, index, header) : index + 1;
+        }
+    }
+
+    /** @return the index of the first line after this hunk's body */
+    private static int requireMatchingHunk(List<String> lines, int headerIndex, Matcher header) {
+        int declaredOld = count(header.group(1));
+        int declaredNew = count(header.group(2));
+        HunkBody actual = countHunkBody(lines, headerIndex + 1);
+        if (actual.oldLines() != declaredOld || actual.newLines() != declaredNew) {
+            throw new IllegalArgumentException("Hunk header declares -%d,+%d lines but the body has -%d,+%d"
+                    .formatted(declaredOld, declaredNew, actual.oldLines(), actual.newLines()));
+        }
+        return actual.nextIndex();
+    }
+
+    private record HunkBody(int oldLines, int newLines, int nextIndex) {}
+
+    /** Counts a hunk's old- and new-side lines from its first body line up to its first non-body line. */
+    private static HunkBody countHunkBody(List<String> lines, int start) {
+        int oldLines = 0;
+        int newLines = 0;
+        int index = start;
+        while (index < lines.size() && isHunkBodyLine(lines.get(index))) {
+            String line = lines.get(index);
+            if (!line.startsWith("\\")) {
+                if (line.isEmpty() || line.charAt(0) != '+') oldLines++;
+                if (line.isEmpty() || line.charAt(0) != '-') newLines++;
+            }
+            index++;
+        }
+        return new HunkBody(oldLines, newLines, index);
+    }
+
+    private static int count(String declared) {
+        return declared == null ? 1 : Integer.parseInt(declared);
+    }
+
+    /** A hunk body line: context, addition, removal or the no-newline marker. Anything else ends it. */
+    private static boolean isHunkBodyLine(String line) {
+        return line.isEmpty() || " +-\\".indexOf(line.charAt(0)) >= 0;
     }
 
     /** The path named by a diff header line, or null for any other line. */

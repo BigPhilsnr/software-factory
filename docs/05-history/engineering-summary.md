@@ -70,3 +70,7 @@ Analytics are best effort: redirects enqueue without waiting for writes; counts 
 4. Before production use, add authenticated approvals, durable queued analytics if required, appropriate cache eviction, trusted-proxy handling, distributed operational controls and measured load testing.
 
 These limits are part of the engineering judgment. The repository does not establish a guaranteed evaluation score.
+
+## Current implementation note
+
+The read-only/text-only agent descriptions above record the earlier implementation. Live PATCH generation now uses scoped draft edits and bounded repair as described in [ADR 0018](../02-architecture/decisions/0018-incremental-drafting-and-bounded-repair.md); historical run outcomes are unchanged.

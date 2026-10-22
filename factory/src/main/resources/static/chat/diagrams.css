@@ -22,3 +22,14 @@
 .factory-diagram-error { border-color: #a44213; }
 pre.factory-diagram-source-hidden { display: none !important; }
 .factory-diagram-stage { position: fixed; left: -100000px; top: 0; width: 1200px; visibility: hidden; }
+#factory-command-error {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 10000;
+  padding: 1rem;
+  background: #fff2e0;
+  color: #652500;
+  border-bottom: 2px solid #a44900;
+}

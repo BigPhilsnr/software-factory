@@ -2,6 +2,8 @@
 
 **Status:** accepted
 
+**Update:** [ADR 0019](0019-model-call-counts-are-metrics.md) supersedes the model-call limits described below; historical decisions are retained for traceability.
+
 **In one paragraph.** Both applications are Spring Boot 4.1.1 on Java 21 and let Spring own object lifecycle, HTTP, configuration, connection pools, migrations, security filters and health endpoints. Popular libraries that have no current job here (JPA, OAuth2, Resilience4j, Redis, Kafka, Testcontainers, Lombok, MapStruct) are deliberately not included. Each has a stated condition for adding it.
 
 ## Context

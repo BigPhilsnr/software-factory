@@ -1,6 +1,7 @@
 package dev.softwarefactory.run;
 
 import dev.softwarefactory.audit.EventTypes;
+import dev.softwarefactory.candidate.GitWorkspace;
 import dev.softwarefactory.governance.Hashes;
 import dev.softwarefactory.platform.LogText;
 import dev.softwarefactory.platform.WorkflowConflictException;
@@ -28,11 +29,13 @@ final class ReviseRun {
     private final RunStore runs;
     private final CandidateRebuild candidates;
     private final String operator;
+    private final GitWorkspace workspace;
 
-    ReviseRun(RunStore runs, CandidateRebuild candidates, String operator) {
+    ReviseRun(RunStore runs, CandidateRebuild candidates, String operator, GitWorkspace workspace) {
         this.runs = runs;
         this.candidates = candidates;
         this.operator = operator;
+        this.workspace = workspace;
     }
 
     static void requireUsableFeedback(String feedback) {
@@ -48,14 +51,9 @@ final class ReviseRun {
         ScenarioSpec spec = scenario.spec();
         if (spec.tasks().stream().noneMatch(task -> task.id().equals(taskId)))
             throw new IllegalArgumentException("Unknown task");
-        if (feedback != null) {
-            state.reviewFeedback.put(taskId, feedback);
-            runs.record(
-                    state,
-                    EventTypes.REVIEW_FEEDBACK_RECORDED,
-                    taskId + ":" + Hashes.sha256(feedback) + ":" + operator);
-        }
         String specHash = Hashes.sha256(scenario.text());
+        var draftRevision = DraftRevision.capture(state, taskId, specHash, workspace);
+        recordFeedback(state, taskId, feedback);
         Set<String> affected = affectedTasks(state, spec, taskId, !Hashes.same(specHash, state.specHash));
         for (String task : affected) state.invalidate(task, TaskStatus.STALE);
         if (state.revisionRequiredTask != null && affected.contains(state.revisionRequiredTask))
@@ -68,6 +66,7 @@ final class ReviseRun {
         state.pendingClarificationTask = null;
         state.requirementHash = Hashes.sha256(spec.requirement());
         state.specHash = specHash;
+        if (draftRevision != null) draftRevision.restore(state, taskId, workspace);
         state.status = RunStatus.PAUSED;
         runs.record(
                 state,
@@ -80,6 +79,16 @@ final class ReviseRun {
                 LogText.singleLine(taskId),
                 LogText.singleLine(operator));
         return state;
+    }
+
+    private void recordFeedback(RunState state, String taskId, String feedback) throws IOException {
+        if (feedback != null) {
+            state.reviewFeedback.put(taskId, feedback);
+            runs.record(
+                    state,
+                    EventTypes.REVIEW_FEEDBACK_RECORDED,
+                    taskId + ":" + Hashes.sha256(feedback) + ":" + operator);
+        }
     }
 
     private static Set<String> affectedTasks(RunState state, ScenarioSpec spec, String taskId, boolean specChanged) {

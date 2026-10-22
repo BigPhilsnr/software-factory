@@ -5,7 +5,7 @@ import jakarta.validation.constraints.Pattern;
 
 /** {@code POST /factory/api/runs/{id}/actions}: one operator action and the fields that action uses. */
 public record ActionRequest(
-        @NotBlank @Pattern(regexp = "advance|approve|reject|clarify|revise")
+        @NotBlank @Pattern(regexp = "advance|approve|reject|clarify|revise|recover-draft")
         String action,
 
         String hash,

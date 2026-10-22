@@ -6,9 +6,11 @@
 
 | Step | Document | What it answers |
 | --- | --- | --- |
+| 1 | [Project presentation](presentation/README.md) | A guided presentation of dependencies and their purpose, architecture, workflows, authentication, security, recovery and delivery. |
 | 1 | [Overview](01-overview/README.md) | What is this, who uses it, what talks to what? |
 | 1 | [Glossary](01-overview/glossary.md) | What do "run", "task", "candidate", "evidence", "approval gate", "lease" and "audit chain" mean? |
 | 2 | [Factory architecture](02-architecture/factory.md) | Components, run lifecycle, sequences and trust boundaries of the control plane. |
+| 2 | [Workflow orchestration requirement map](02-architecture/workflow-orchestration-requirement-map.md) | Each orchestration requirement explained with Java files, key methods, tests and implementation limits. |
 | 2 | [Shortener architecture](02-architecture/shortener.md) | The three request flows of the product. |
 | 2 | [Data model](02-architecture/data-model.md) | Both database schemas, the files on disk and the audit hash chain. |
 | 2 | [Decision records](02-architecture/decisions/README.md) | Why each significant choice was made, one decision per file. |

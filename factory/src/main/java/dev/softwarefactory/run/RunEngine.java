@@ -87,8 +87,19 @@ public final class RunEngine {
         return underLease(id, () -> transitions.revise().revise(id, taskId, feedback));
     }
 
+    /** Repairs only stored hunk counts and requests a new exact-hash review. */
+    public RunState recoverPatch(String id, String task, int version, String proposalHash)
+            throws IOException, InterruptedException {
+        return underLease(id, () -> transitions.recoverPatch().recover(id, task, version, proposalHash));
+    }
+
     public Preflight validatorStatus() {
         return validator.preflight();
+    }
+
+    /** Reopens only a verified legacy draft test-tag stop for repair; never approves or applies it. */
+    public RunState recoverDraft(String id) throws IOException, InterruptedException {
+        return underLease(id, () -> transitions.recoverDraft().recover(id));
     }
 
     public int sweepOrphanedValidatorContainers(boolean includeOwn) {

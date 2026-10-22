@@ -10,7 +10,7 @@ Words such as *run*, *task*, *candidate*, *evidence* and *lease* are defined in 
 flowchart TD
     operator["operator<br/>web API, chat, CLI, security"]
     run["run<br/>engine, task executors, approval gate"]
-    generation["generation<br/>agents, prompts, read-only tools"]
+    generation["generation<br/>agents, prompts, scoped tools"]
     validation["validation<br/>Docker sandbox, Surefire reports"]
     candidate["candidate<br/>Git worktree, host commands"]
     audit["audit<br/>run journal, audit chain, leases, evidence"]
@@ -41,7 +41,7 @@ The direction is enforced. `StoryArchitectureTest` (ArchUnit) fails the build if
 | --- | --- |
 | `scenario` | What is asked: `ScenarioSpec`, `TaskSpec`, `TaskGraph`, and `FeatureScenario`, the fixed workflow for feature requests. |
 | `run` | How a run progresses: `RunEngine` and its transitions (`StartRun`, `AdvanceRun`, `ApproveStep`, `AnswerClarification`, `ReviseRun`, `RecoverInterruptedRun`), one executor per task kind, `FailureHandling`. |
-| `generation` | How task output is produced: `FixtureRuntime` (recorded) or `AdkClaudeRuntime` (live), `PromptBuilder`, and the read-only tools in `generation/tools`. |
+| `generation` | How task output is produced: `FixtureRuntime` (recorded) or `AdkClaudeRuntime` (live), `PromptBuilder`, and the read-only plus PATCH-only draft tools in `generation/tools`. |
 | `candidate` | The isolated working copy: `GitWorkspace`, and `CommandRunner` for bounded host processes. |
 | `validation` | Proving the candidate: `SandboxValidator`, `DockerSandbox`, `SurefireReports`, `GeneratedTestPolicy`. |
 | `governance` | Rules: `PatchScope`, `PatchPolicy`, `Hashes`. |
@@ -63,7 +63,7 @@ Both can run at the same time against the same control database. The per-run lea
 flowchart TD
     start["start: validate graph,<br/>pin baseline, create candidate"] --> advance{"advance:<br/>next ready task?"}
     advance -->|"ARTIFACT"| artifact["agent writes a document"]
-    advance -->|"PATCH"| patch["agent proposes a diff"]
+    advance -->|"PATCH"| patch["agent edits draft; Git produces diff"]
     advance -->|"VALIDATE"| validate["sandbox runs the tests"]
     advance -->|"CLARIFY or RELEASE"| wait
     artifact --> advance
@@ -110,7 +110,9 @@ sequenceDiagram
 
     E->>S: record TASK_STARTED
     E->>A: prompt (requirement, upstream outputs, source)
-    A-->>E: unified diff (text)
+    A->>E: scoped draft edits and trusted check requests
+    E->>S: persist each draft checkpoint
+    E->>E: bounded repair; Git computes proposal diff
     E->>S: save the proposal as evidence
     E->>G: inside write scope? tests kept?
     E->>C: git apply --check
@@ -201,11 +203,12 @@ Refusals: a hash that does not match returns `409` and changes nothing. If the s
 
 ## Failures, retries and recovery
 
-`FailureHandling` turns every task failure into one of four outcomes:
+`FailureHandling` classifies task failures; draft checks first convert repairable test-content problems into feedback:
 
 | Cause | Outcome |
 | --- | --- |
-| A rule was broken (`SecurityException`) | Run `SAFE_STOPPED`. Never retried. |
+| A scope or integrity rule was broken (`SecurityException`) | Run `SAFE_STOPPED`; no normal retry. Eligible historical draft integration-tag stops have a separate verified recovery action. |
+| Generation unavailable or bounded draft repairs exhausted (`GenerationUnavailableException`) | Run `PAUSED` with saved edits and actionable diagnostics; resume remains available. |
 | The platform failed: Docker, the validator image, the Maven cache, the control database (`InfrastructureException`) | Run `PAUSED`, task back to `PENDING`. The retry budget is untouched. |
 | A validation failed reproducibly (`ValidationFailedException`) | Run `PAUSED` with `revisionRequiredTask` set. An upstream task must be revised. |
 | Anything else | First time: run `PAUSED`, retry offered. Second time: run `FAILED`. |
@@ -220,12 +223,10 @@ In live mode `AdkClaudeRuntime` builds one ADK agent per task invocation, with `
 
 | Limit | Value | Where |
 | --- | --- | --- |
-| Provider requests per run | 24 by default, at most 100 (`FACTORY_MAX_MODEL_CALLS`) | `RunState.maxModelCalls`, reserved and audited before each request |
-| Provider requests per task invocation | 8 | `ToolSession.MAX_MODEL_REQUESTS` |
-| Tool calls per task invocation | 12 | `ToolSession.MAX_TOOL_CALLS` |
+| Tool calls per task invocation | 12 for documents; 64 for drafting | `ToolSession` |
 | Deadline per task invocation | 900 s by default (`FACTORY_RUN_DEADLINE_SECONDS`) | `FactorySettings` |
 | Timeout per provider request | 5 minutes, never past the deadline | `ToolSession.MAX_REQUEST_TIMEOUT` |
-| Output tokens per response | 32,768; a longer response is an error, not a truncation | `ThinkingAwareClaude` |
+| Output tokens per response | 32,768; truncated response discarded, one recovery request | `ThinkingAwareClaude` |
 | SDK retries | 0 | `ModelClients` |
 
 The prompt contains the requirement, the task instruction, any operator feedback, the previous failure diagnostic, the outputs of upstream tasks, and a bounded copy of the shortener source from the candidate (16,000 bytes per file, 80,000 bytes in total). Everything except the instruction is wrapped in random delimiters and labelled as data. The tools are described in [agent tools](../03-operations/agent-tools.md).
@@ -252,7 +253,7 @@ flowchart LR
     engine --> controlDb
     key --> engine
     templates --> engine
-    engine <-->|"out: prompts, read-only tools<br/>back: text only, checked"| model
+    engine <-->|"out: prompts, scoped draft tools<br/>back: checked artifacts"| model
     web -->|"delimited, size-capped"| model
     engine <-->|"out: docker run, no network<br/>back: test report files"| code
 ```
@@ -261,7 +262,7 @@ flowchart LR
 
 | Boundary | What crosses it | Control |
 | --- | --- | --- |
-| Model to engine | Documents, diffs, tool calls | Diffs are inert until `PatchScope`, `GeneratedTestPolicy`, `PatchPolicy` and `git apply --check` pass. There is no tool that writes, executes or approves. |
+| Model to engine | Documents, diffs, tool calls | PATCH agents edit only scoped draft files and request trusted sandbox checks. Candidate application still requires scope/test policy checks, applicability and any required exact-hash approval. There is no arbitrary shell, approval or release tool. |
 | Web to model | Search summaries, page text | Pages can be fetched only if a search returned that URL. Results are size-capped and delimited as data. |
 | Candidate to engine | Test results | Code runs only inside the sandbox. Results are read from report files in a folder the candidate cannot write to before the run, not from process output. |
 | Browser to engine | Operator actions | Loopback host name, same origin, `X-Factory-Token`, 64 KiB body limit, strict Content-Security-Policy. |
@@ -275,4 +276,8 @@ Threats, controls and what remains exposed are listed in the [security model](..
 - At most two runs advance at once in the web process (`RunWorkers`), and at most two documents are generated in parallel within a run.
 - Task graphs are fixed templates. The model cannot change the plan.
 - Validation is tied to the shortener: the trusted POM builds `shortener/` with the current dependency set.
-- The model-call budget counts requests, not tokens or money.
+- Model-call counts are usage metrics; there is no request-count or spending ceiling.
+
+## Durable incremental PATCH generation
+
+`PatchDrafting` owns separate draft repositories, checkpoint integrity and a bounded three-pass repair loop. `DraftChecks` runs trusted checks and feeds bounded failures back into generation. Git produces the proposal; approval applies it to the original candidate. See [ADR 0018](decisions/0018-incremental-drafting-and-bounded-repair.md) for lifecycle, limits and failure semantics.

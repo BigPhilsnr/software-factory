@@ -64,13 +64,13 @@ public final class FactoryService implements AutoCloseable {
         this.workers = new RunWorkers(active);
     }
 
-    /** Conversational generation against the checkout, charged to the persistent daily chat budget. */
+    /** Conversational generation against the checkout, recorded in persistent daily chat usage. */
     private static AgentRuntime chatRuntime(
             Path root, ControlRecords records, FactorySettings settings, ModelClients clients) {
         AgentRuntimes agents = AgentRuntimes.claude(clients, settings);
         return (role, prompt) -> agents.live(
                         root,
-                        () -> records.chat().reserveRequest(settings.chatDailyRequests()),
+                        () -> records.chat().reserveRequest(),
                         (type, detail) -> records.chat().record(type, detail))
                 .generate(role, prompt);
     }
@@ -141,10 +141,21 @@ public final class FactoryService implements AutoCloseable {
         workers.start(id, () -> engine.advance(id));
     }
 
+    public synchronized void recoverPatch(String id, String task, int version, String hash)
+            throws IOException, InterruptedException {
+        workers.requireCapacity(id);
+        engine.recoverPatch(id, task, version, hash);
+    }
+
     public synchronized void approve(String id, String hash) throws IOException, InterruptedException {
         workers.requireCapacity(id);
         engine.approve(id, hash, true);
         advance(id);
+    }
+
+    public synchronized void recoverDraft(String id) throws IOException, InterruptedException {
+        workers.requireCapacity(id);
+        engine.recoverDraft(id);
     }
 
     public synchronized void reject(String id, String hash) throws IOException, InterruptedException {

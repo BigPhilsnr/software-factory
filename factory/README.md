@@ -14,7 +14,7 @@ flowchart TD
     recover["RecoverInterruptedRun<br/>adopt finished output or re-queue;<br/>an interrupted patch resets the candidate"]
     clarify["ClarifyTask<br/>ask the operator"]
     artifact["ArtifactTask / ParallelBranches<br/>agent writes a document (fixture or Claude via ADK)"]
-    patch["PatchTask<br/>agent proposes a diff"]
+    patch["PatchTask<br/>agent edits draft; Git produces diff"]
     policy{"PatchScope + GeneratedTestPolicy<br/>inside write scope, tests kept?"}
     gate{"PatchPolicy / ApprovalGate<br/>approved for this exact hash?"}
     apply["GitWorkspace.apply<br/>patch the candidate"]
@@ -96,7 +96,8 @@ How a task failure is classified (`run/FailureHandling`):
 
 | Failure | Outcome | Retry budget |
 | --- | --- | --- |
-| `SecurityException` (policy violation, exhausted model budget, escaping fixture) | run `SAFE_STOPPED`, task `FAILED` | n/a |
+| `GenerationUnavailableException` (output/recovery/repair exhausted) | run `PAUSED`, saved draft retained | does not consume candidate retry |
+| `SecurityException` (policy violation, escaping fixture) | run `SAFE_STOPPED`, task `FAILED` | n/a |
 | `InfrastructureException` (Docker, validator image, Maven cache, control database) | run `PAUSED`, task `PENDING` | not consumed |
 | `ValidationFailedException` on a validation task | run `PAUSED` with `revisionRequiredTask`; an upstream task must be revised | not consumed |
 | anything else | first time: run `PAUSED`, task `PENDING` (retry); second time: run `FAILED` | consumed; reset when the task is revised |
@@ -110,7 +111,7 @@ Dependencies point down this table only (`operator → run → {generation, vali
 | `scenario/` | What is asked | `ScenarioSpec`, `TaskSpec`, `TaskKind`, `Stage`; `TaskGraph` validates dependencies and stage order and answers which tasks are ready; `FeatureScenario` is the trusted workflow for a feature request; `ScenarioFiles` reads scenario documents. |
 | `run/` | How a run progresses | `RunEngine` is the facade and table of contents. Transitions: `StartRun`, `AdvanceRun` (scheduler loop), `ApproveStep`, `AnswerClarification`, `ReviseRun`, `RecoverInterruptedRun`. One `TaskExecutor` per task kind: `ClarifyTask`, `ArtifactTask`, `PatchTask`, `ValidateTask`, `ReleaseTask`; `ParallelBranches` joins two artifact tasks. Shared policy: `FailureHandling`, `ApprovalGate`, `EvidenceIntegrity`, `RunEvidence`, `CandidateRebuild`. State: `RunState`, `RunStatus`, `TaskStatus`; `RunStore` is the persistence port and `DurableRunStore` its production adapter. |
 | `generation/` | Agents produce work | `AgentRuntime` with `FixtureRuntime` (recorded) and `AdkClaudeRuntime` (live, created through `AgentRuntimes`); `PromptBuilder` assembles a task prompt; `SourceContext` and `UntrustedText` bound and delimit repository data. |
-| `generation/tools/` | | Read-only agent capabilities: `EngineeringTools` catalog, `RepositoryReader`, `PublicWebReader` (`PublicUrls`, `PublicAddresses`, `HtmlText`), `AnthropicWebSearch`, `WebAccessPolicy`; `ToolSession` enforces per-invocation budgets and audits tool calls. |
+| `generation/tools/` | | Read-only capabilities plus PATCH-only `DraftTools`: `EngineeringTools` catalog, `RepositoryReader`, `PublicWebReader` (`PublicUrls`, `PublicAddresses`, `HtmlText`), `AnthropicWebSearch`, `WebAccessPolicy`; `ToolSession` enforces per-invocation budgets and audits tool calls. |
 | `candidate/` | The isolated working copy | `GitWorkspace` (detached worktree under `.runs/`, patch application, exact candidate diff); `CommandRunner` (bounded host processes). |
 | `validation/` | Proving the candidate | `CandidateValidator` port; `SandboxValidator` classifies outcomes, `DockerSandbox` runs offline Maven in a locked-down container, `SurefireReports` reads results; `GeneratedTestPolicy` keeps generated changes from weakening the suite. |
 | `governance/` | Rules and human gates | `PatchScope` (worker write authority), `PatchPolicy` (changes that always need approval, including `**/platform/**` and legacy `**/bootstrap/**`), `Hashes` (approval hashing), `PolicyViolationException`. |
@@ -156,4 +157,8 @@ mvn -pl factory -Pintegration -Dtest=FactoryHttpIntegrationTest test
 
 The test owns a unique database schema and a disposable Git clone under `.runs/http-integration-*`; it copies current scenario files into that clone. Background workers drain before cleanup removes these resources. Existing operator runs and source files are not modified. `CONTROL_DB_URL`, `CONTROL_DB_USER`, and `CONTROL_DB_PASSWORD` override local Compose defaults; Maven does not load `.env`. Port 8000 need not be running.
 
-The Docker validator requires the pinned Maven image and populated local Maven cache described in the [testing strategy](../docs/04-quality/testing.md#how-to-run). These tests exercise orchestration and boundaries, not live model reasoning quality. `RunEngineResilienceTest` and `ControlRecordIntegrationTest` additionally cover recovery, concurrent leases, migration compatibility and persisted budgets.
+The Docker validator requires the pinned Maven image and populated local Maven cache described in the [testing strategy](../docs/04-quality/testing.md#how-to-run). These tests exercise orchestration and boundaries, not live model reasoning quality. `RunEngineResilienceTest` and `ControlRecordIntegrationTest` additionally cover recovery, concurrent leases, migration compatibility and persisted usage counters.
+
+## Incremental drafting
+
+Live PATCH workers use scoped edit tools in a separate draft repository and checkpoint every successful edit. Bounded sandbox feedback supports up to three repair passes; Git generates the proposal for existing approval gates. Chat and document agents remain read-only. See [ADR 0018](../docs/02-architecture/decisions/0018-incremental-drafting-and-bounded-repair.md) and [tool limits](../docs/03-operations/agent-tools.md).

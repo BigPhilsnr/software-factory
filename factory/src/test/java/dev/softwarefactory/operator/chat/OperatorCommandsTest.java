@@ -41,7 +41,9 @@ class OperatorCommandsTest {
 
     @Test
     void questionsAndImplementationDiscussionNeverCreateRuns() throws Exception {
-        var commands = new OperatorCommands(service, new ChatConversation(root, (role, prompt) -> "Repository answer"));
+        var commands = new OperatorCommands(
+                org.mockito.Mockito.mock(FactoryService.class),
+                new ChatConversation(root, (role, prompt) -> "Repository answer"));
         assertEquals("Repository answer", commands.handle("session", "Explain the shortener architecture"));
         assertEquals("Repository answer", commands.handle("session", "Add expiration support"));
         assertFalse(Files.exists(root.resolve(".runs")));

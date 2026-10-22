@@ -1,6 +1,7 @@
 package dev.softwarefactory.run;
 
 import dev.softwarefactory.audit.EventTypes;
+import dev.softwarefactory.platform.GenerationUnavailableException;
 import dev.softwarefactory.platform.InfrastructureException;
 import dev.softwarefactory.platform.LogText;
 import dev.softwarefactory.scenario.TaskSpec;
@@ -84,8 +85,14 @@ final class FailureHandling {
             safeStop(state, task, String.valueOf(cause.getMessage()));
             return;
         }
-        String message = String.valueOf(cause.getMessage());
-        if (message.length() > MAX_DIAGNOSTIC) message = message.substring(0, MAX_DIAGNOSTIC);
+        String message = diagnostic(cause);
+        if (cause instanceof GenerationUnavailableException) {
+            evidence.recordDiagnostic(state, task.id(), cause, message);
+            state.tasks.put(task.id(), TaskStatus.PENDING);
+            state.status = RunStatus.PAUSED;
+            runs.record(state, EventTypes.MODEL_GENERATION_PAUSED, task.id() + ":" + message);
+            return;
+        }
         if (cause instanceof InfrastructureException) {
             pauseForPlatform(state, task, message, cause);
             return;
@@ -96,6 +103,16 @@ final class FailureHandling {
         } else {
             retryOrFail(state, task, diagnostic, cause);
         }
+    }
+
+    /** Keep the failure summary and final compiler/test errors instead of only startup logs. */
+    private static String diagnostic(Throwable cause) {
+        String message = String.valueOf(cause.getMessage());
+        if (message.length() <= MAX_DIAGNOSTIC) return message;
+        String omitted = "\n... intermediate output omitted ...\n";
+        int prefix = 512;
+        int suffix = MAX_DIAGNOSTIC - prefix - omitted.length();
+        return message.substring(0, prefix) + omitted + message.substring(message.length() - suffix);
     }
 
     void safeStop(RunState state, TaskSpec task, String reason) throws IOException {

@@ -68,6 +68,7 @@ const answers = [
       return request.abort(); // Offline fonts are harmless; diagram contents must stay local.
     }
     if (url.pathname === '/run_sse') {
+      assert(request.headers()['x-factory-token'], 'Dev UI chat must include the operator token');
       const text = answers[calls++];
       assert(text, 'Unexpected model request');
       const event = {id:'diagram-' + calls, invocationId:'invocation-' + calls, author:'software_factory', timestamp:Date.now()/1000, content:{role:'model', parts:[{text}]}};

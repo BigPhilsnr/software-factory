@@ -11,6 +11,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import dev.softwarefactory.generation.AgentRuntimes;
+import dev.softwarefactory.platform.GenerationUnavailableException;
 import dev.softwarefactory.platform.WorkflowConflictException;
 import dev.softwarefactory.scenario.Stage;
 import dev.softwarefactory.scenario.TaskKind;
@@ -68,7 +69,7 @@ class RunEngineGenerationTest {
         assertEquals(RunStatus.CREATED, state.status);
         assertEquals(RunEngineFixture.NOW, state.startedAt);
         assertEquals(RunMode.FIXTURE, state.mode);
-        assertEquals(24, state.maxModelCalls);
+        assertEquals(0, state.maxModelCalls);
         assertEquals(40, state.baselineCommit.length(), "The tag is resolved to an immutable commit");
         assertEquals(Map.of("write", TaskStatus.PENDING), state.tasks);
         assertTrue(Files.isDirectory(Path.of(state.candidatePath)));
@@ -109,7 +110,7 @@ class RunEngineGenerationTest {
         state = engine.advance(state.id);
         assertEquals(RunStatus.COMPLETED, state.status);
         assertEquals(3, state.modelCalls);
-        assertEquals(List.of("understand:1/24", "handoff:2/24", "test-plan:3/24"), store.details("MODEL_CALL_STARTED"));
+        assertEquals(List.of("understand:1", "handoff:2", "test-plan:3"), store.details("MODEL_CALL_STARTED"));
         assertEquals(3, store.details("TOOL_STARTED").size());
         assertEquals("output of requirements", Files.readString(fixture.evidence(state, "understand-v1")));
 
@@ -124,21 +125,24 @@ class RunEngineGenerationTest {
     }
 
     @Test
-    void anExhaustedModelBudgetSafeStopsTheRun() throws Exception {
+    void oldExhaustedBudgetAndEnvironmentDoNotBlockResume() throws Exception {
         AgentRuntimes agents = (checkout, beforeRequest, audit) -> (role, prompt) -> {
-            beforeRequest.reserve();
-            beforeRequest.reserve();
-            return "never returned";
+            for (int i = 0; i < 105; i++) beforeRequest.reserve();
+            return "complete";
         };
         var environment = new HashMap<>(LIVE_ENVIRONMENT);
         environment.put("FACTORY_MAX_MODEL_CALLS", "1");
         RunEngine engine = fixture.engine(store, environment, agents);
         RunState state = fixture.start(
                 engine, RunMode.LIVE, List.of(live("understand", List.of(), "requirements", "Define the criteria")));
+        state.status = RunStatus.PAUSED;
+        state.maxModelCalls = 40;
+        state.modelCalls = 40;
+        store.record(state, "MODEL_GENERATION_PAUSED", "Historical limit");
         state = engine.advance(state.id);
-        assertEquals(RunStatus.SAFE_STOPPED, state.status);
-        assertEquals(1, state.modelCalls);
-        assertEquals(List.of("understand:Model call budget exhausted"), store.details("POLICY_SAFE_STOP"));
+        assertEquals(RunStatus.COMPLETED, state.status);
+        assertEquals(145, state.modelCalls);
+        assertEquals(105, store.details("MODEL_CALL_STARTED").size());
     }
 
     @Test
@@ -171,9 +175,10 @@ class RunEngineGenerationTest {
         String prompt = prompts.get("implementer");
         assertTrue(prompt.contains("Operator review feedback to address:\nKeep it to one line."));
         assertFalse(prompt.contains("Previous attempt failed"), "A revision starts from a clean retry budget");
-        assertTrue(prompt.contains("Return only a git apply-compatible unified diff"));
+        assertTrue(prompt.contains("Use the scoped draft tools"));
         assertTrue(prompt.contains("[README.md]"));
-        assertEquals(PATCH, Files.readString(fixture.evidence(state, "apply-proposal-v1")));
+        assertTrue(
+                Files.readString(fixture.evidence(state, "apply-proposal-v1")).contains("+reviewed change"));
     }
 
     @Test
@@ -195,6 +200,30 @@ class RunEngineGenerationTest {
         assertTrue(prompts.get("requirements")
                 .contains("Previous attempt failed. Correct this diagnostic without weakening policy:\n"
                         + "java.io.IOException: provider returned 529"));
+    }
+
+    @Test
+    void resumedGenerationRetainsFinalTestFailuresAfterVerboseStartupLogs() throws Exception {
+        AtomicBoolean failed = new AtomicBoolean();
+        AgentRuntimes agents = (checkout, beforeRequest, audit) -> (role, prompt) -> {
+            if (failed.compareAndSet(false, true))
+                throw new GenerationUnavailableException("Draft check limit reached; saved edits retained.\n"
+                        + "Application startup log\n".repeat(500)
+                        + "[ERROR] securityMatrix: expected 404 but was 401");
+            assertTrue(prompt.contains("Draft check limit reached; saved edits retained."));
+            assertTrue(prompt.contains("[ERROR] securityMatrix: expected 404 but was 401"));
+            return "repaired";
+        };
+        var engine = fixture.engine(store, LIVE_ENVIRONMENT, agents);
+        var state = fixture.start(
+                engine, RunMode.LIVE, List.of(live("understand", List.of(), "requirements", "Define the criteria")));
+        state = engine.advance(state.id);
+        assertEquals(RunStatus.PAUSED, state.status);
+        String diagnostic = Files.readString(fixture.evidence(state, "understand-error-v1"));
+        assertTrue(diagnostic.endsWith("[ERROR] securityMatrix: expected 404 but was 401"));
+        assertTrue(diagnostic.length() < 4_100);
+        assertTrue(store.details("MODEL_GENERATION_PAUSED").getFirst().contains("expected 404 but was 401"));
+        assertEquals(RunStatus.COMPLETED, engine.advance(state.id).status);
     }
 
     @Test
@@ -311,6 +340,33 @@ class RunEngineGenerationTest {
         assertTrue(Files.exists(fixture.evidence(state, "apply-proposal-v1")));
         assertTrue(Files.exists(fixture.evidence(state, "apply-proposal-v2")), "Each attempt keeps its own proposal");
         assertEquals(List.of("apply:apply-error-v2"), store.details("TASK_FAILED"));
+    }
+
+    @Test
+    void aPatchMissingItsFinalNewlineStillApplies() throws Exception {
+        // A model reply that stops right after the last content line is a well-formed diff with no
+        // file-terminating newline. git rejects that as a corrupt patch; the engine must normalize it first.
+        fixture.fixture("no-trailing-newline.patch", PATCH.stripTrailing());
+        RunEngine engine = fixture.engine();
+        RunState state = fixture.start(
+                engine, RunMode.FIXTURE, List.of(patch("apply", List.of(), "no-trailing-newline.patch", false)));
+        state = engine.advance(state.id);
+        assertEquals(RunStatus.COMPLETED, state.status);
+        assertEquals("reviewed change\n", fixture.candidateFile(state, "README.md"));
+    }
+
+    @Test
+    void aPatchWrappedInAMarkdownFenceStillApplies() throws Exception {
+        // Despite being told not to, a model sometimes wraps its whole reply in a code fence. git apply
+        // does not reject that cleanly: it can silently stop partway through the hunk instead. The fence
+        // must come off before anything reaches git.
+        fixture.fixture("fenced.patch", "```diff\n" + PATCH + "```\n");
+        RunEngine engine = fixture.engine();
+        RunState state =
+                fixture.start(engine, RunMode.FIXTURE, List.of(patch("apply", List.of(), "fenced.patch", false)));
+        state = engine.advance(state.id);
+        assertEquals(RunStatus.COMPLETED, state.status);
+        assertEquals("reviewed change\n", fixture.candidateFile(state, "README.md"));
     }
 
     @Test

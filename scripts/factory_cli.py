@@ -8,7 +8,7 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
-ALLOWED = {"ANTHROPIC_API_KEY", "CLAUDE_MODEL", "FACTORY_MAX_MODEL_CALLS", "FACTORY_CHAT_DAILY_REQUESTS",
+ALLOWED = {"ANTHROPIC_API_KEY", "CLAUDE_MODEL",
            "FACTORY_AUDIT_KEY", "FACTORY_OPERATOR", "FACTORY_CHAT_DEADLINE_SECONDS", "FACTORY_RUN_DEADLINE_SECONDS",
            "FACTORY_MAVEN_REPOSITORY",
            "CONTROL_DB_URL", "CONTROL_DB_USER", "CONTROL_DB_PASSWORD",
@@ -16,8 +16,11 @@ ALLOWED = {"ANTHROPIC_API_KEY", "CLAUDE_MODEL", "FACTORY_MAX_MODEL_CALLS", "FACT
            "SHORTENER_PORT", "SHORTENER_BASE_URL"}
 
 
+RETIRED = {"FACTORY_MAX_MODEL_CALLS", "FACTORY_CHAT_DAILY_REQUESTS"}
+
+
 def environment():
-    values = dict(os.environ)
+    values = {name: value for name, value in os.environ.items() if name not in RETIRED}
     # Some shells export DEBUG=release; Boot treats a non-false value as debug enabled.
     # Preserve intentional Boot boolean settings, not unrelated tool mode strings.
     if values.get("DEBUG", "false").lower() not in {"true", "false"}:
@@ -29,6 +32,8 @@ def environment():
             if not line or line.startswith("#"):
                 continue
             name, separator, value = line.partition("=")
+            if separator and name.strip() in RETIRED:
+                continue  # Accept old .env files without restoring removed call limits.
             if not separator or name.strip() not in ALLOWED:
                 raise ValueError(f"Invalid .env entry on line {number}")
             if not values.get(name.strip()):

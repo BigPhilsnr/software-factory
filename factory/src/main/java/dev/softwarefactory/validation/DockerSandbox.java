@@ -11,7 +11,6 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
-import java.util.regex.Pattern;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -27,21 +26,21 @@ final class DockerSandbox {
     private static final Logger LOG = LoggerFactory.getLogger(DockerSandbox.class);
     private static final Duration RUN_TIMEOUT = Duration.ofMinutes(10);
     private static final Duration DOCKER_TIMEOUT = Duration.ofSeconds(20);
-    private static final Pattern TAB = Pattern.compile("\t");
     private static final String DOCKER = "docker";
     private static final String FORMAT = "--format";
     private static final String MOUNT = "--mount";
     private static final String BIND = "type=bind,source=";
     private static final String READ_ONLY = ",readonly";
     private static final String ENVIRONMENT = "--env";
-    private static final int LISTING_FIELDS = 3;
 
     private final Path mavenCache;
     private final HostCommand host;
+    private final ValidatorContainers containers;
 
     DockerSandbox(Path mavenCache, HostCommand host) {
         this.mavenCache = mavenCache.toAbsolutePath();
         this.host = host;
+        this.containers = new ValidatorContainers(host);
     }
 
     Preflight check(Instant now) {
@@ -51,8 +50,9 @@ final class DockerSandbox {
             if (!succeeds(here, List.of(DOCKER, "info", FORMAT, "{{.ServerVersion}}"))) {
                 return new Preflight(false, "Docker is not available: start Docker Desktop or Colima", now);
             }
-            if (!succeeds(here, List.of(DOCKER, "image", "inspect", FORMAT, "{{.Id}}", SandboxValidator.IMAGE))) {
-                return new Preflight(false, "Validator image missing; run: docker pull " + SandboxValidator.IMAGE, now);
+            for (String image : List.of(SandboxValidator.IMAGE, ValidationDatabase.IMAGE)) {
+                if (!succeeds(here, List.of(DOCKER, "image", "inspect", FORMAT, "{{.Id}}", image)))
+                    return new Preflight(false, "Validator image missing; run: docker pull " + image, now);
             }
         } catch (InterruptedException interrupted) {
             Thread.currentThread().interrupt();
@@ -73,6 +73,17 @@ final class DockerSandbox {
 
     /** Runs Maven with the given goals; test reports appear in {@code reports} on the host. */
     void maven(Path candidate, Path reports, List<String> goals) throws IOException, InterruptedException {
+        String database = goals.contains("-Pintegration") ? CONTAINER_PREFIX + "db-" + UUID.randomUUID() : null;
+        try {
+            if (database != null) new ValidationDatabase(host).start(candidate, database);
+            maven(candidate, reports, goals, database);
+        } finally {
+            if (database != null) containers.removeContainer(candidate, database);
+        }
+    }
+
+    private void maven(Path candidate, Path reports, List<String> goals, String database)
+            throws IOException, InterruptedException {
         validateMount(candidate);
         validateMount(mavenCache);
         validateMount(reports);
@@ -84,7 +95,7 @@ final class DockerSandbox {
         }
         validateMount(trustedPom);
         String container = CONTAINER_PREFIX + UUID.randomUUID();
-        List<String> command = new ArrayList<>(isolation(container));
+        List<String> command = new ArrayList<>(isolation(container, database));
         command.addAll(mounts(candidate, build, reports, trustedPom));
         command.addAll(List.of(
                 "--workdir",
@@ -100,7 +111,7 @@ final class DockerSandbox {
         try {
             host.run(candidate, command, RUN_TIMEOUT);
         } finally {
-            removeContainer(candidate, container);
+            containers.removeContainer(candidate, container);
             Files.deleteIfExists(trustedPom);
         }
     }
@@ -121,7 +132,7 @@ final class DockerSandbox {
         return Files.createDirectories(build);
     }
 
-    private static List<String> isolation(String container) {
+    private static List<String> isolation(String container, String database) {
         return List.of(
                 DOCKER,
                 "run",
@@ -131,7 +142,7 @@ final class DockerSandbox {
                 "--label",
                 OWNER_LABEL + "=" + ProcessHandle.current().pid(),
                 "--network",
-                "none",
+                database == null ? "none" : "container:" + database,
                 "--cpus",
                 "2",
                 "--memory",
@@ -150,7 +161,28 @@ final class DockerSandbox {
                 ENVIRONMENT,
                 "HOME=/tmp",
                 ENVIRONMENT,
-                "MAVEN_CONFIG=/tmp/.m2");
+                "MAVEN_CONFIG=/tmp/.m2",
+                // The tmpfs above is deliberately non-executable (candidate test code must not gain exec
+                // there), so jansi's native terminal library cannot load and logs one harmless warning per
+                // build; Maven proceeds past it either way. Disabling color stops that warning's raw ANSI
+                // escape codes from polluting the real error text, which this diagnostic is fed back to the
+                // model verbatim as the next prompt's "previous attempt failed" context.
+                ENVIRONMENT,
+                "MAVEN_OPTS=-Dstyle.color=never",
+                ENVIRONMENT,
+                "SHORTENER_TEST_DB_URL=jdbc:postgresql://127.0.0.1:5432/shortener",
+                ENVIRONMENT,
+                "SHORTENER_TEST_DB_USER=shortener",
+                ENVIRONMENT,
+                "SHORTENER_TEST_DB_PASSWORD=shortener",
+                ENVIRONMENT,
+                "SPRING_DATASOURCE_URL=jdbc:postgresql://127.0.0.1:5432/shortener",
+                ENVIRONMENT,
+                "SPRING_DATASOURCE_USERNAME=shortener",
+                ENVIRONMENT,
+                "SPRING_DATASOURCE_PASSWORD=shortener",
+                ENVIRONMENT,
+                "SPRING_DATASOURCE_DRIVER_CLASS_NAME=org.postgresql.Driver");
     }
 
     private List<String> mounts(Path candidate, Path build, Path reports, Path trustedPom) {
@@ -167,68 +199,8 @@ final class DockerSandbox {
                 BIND + mavenCache + ",target=/m2" + READ_ONLY);
     }
 
-    /**
-     * Killing the Docker CLI on timeout does not stop the container. Remove the uniquely named container
-     * even if this thread was interrupted: clear the flag for the cleanup command, then restore it.
-     */
-    private void removeContainer(Path directory, String container) {
-        boolean interrupted = Thread.interrupted();
-        try {
-            host.run(directory, List.of(DOCKER, "rm", "-f", container), DOCKER_TIMEOUT);
-        } catch (IOException alreadyRemoved) {
-            LOG.debug("Validator container {} was already removed: {}", container, alreadyRemoved.getMessage());
-        } catch (InterruptedException cleanupInterrupted) {
-            interrupted = true;
-            LOG.warn("Interrupted while removing validator container {}", container);
-        } finally {
-            if (interrupted) Thread.currentThread().interrupt();
-        }
-    }
-
-    /** Containers of other live factory processes are kept. */
     int sweepOrphanedContainers(boolean includeOwn) {
-        Path here = Path.of(".").toAbsolutePath();
-        long self = ProcessHandle.current().pid();
-        int removed = 0;
-        try {
-            String listing = host.run(
-                    here,
-                    List.of(
-                            DOCKER,
-                            "ps",
-                            "--all",
-                            "--filter",
-                            "name=" + CONTAINER_PREFIX,
-                            FORMAT,
-                            "{{.ID}}\t{{.Names}}\t{{.Label \"" + OWNER_LABEL + "\"}}"),
-                    DOCKER_TIMEOUT);
-            for (String line : listing.lines().filter(value -> !value.isBlank()).toList()) {
-                String[] fields = TAB.split(line, -1);
-                if (fields.length == LISTING_FIELDS
-                        && fields[1].startsWith(CONTAINER_PREFIX)
-                        && orphaned(fields[2], self, includeOwn)) {
-                    host.run(here, List.of(DOCKER, "rm", "-f", fields[0]), DOCKER_TIMEOUT);
-                    removed++;
-                }
-            }
-        } catch (IOException unavailable) {
-            LOG.debug("Skipped validator container sweep; Docker unavailable: {}", unavailable.getMessage());
-        } catch (InterruptedException interrupted) {
-            Thread.currentThread().interrupt();
-        }
-        if (removed > 0) LOG.warn("Removed {} orphaned validator container(s)", removed);
-        return removed;
-    }
-
-    private static boolean orphaned(String ownerLabel, long self, boolean includeOwn) {
-        long owner;
-        try {
-            owner = Long.parseLong(ownerLabel.strip());
-        } catch (NumberFormatException unlabelled) {
-            return true; // Created before ownership labels; --rm containers never outlive their run.
-        }
-        if (owner == self) return includeOwn;
-        return ProcessHandle.of(owner).map(handle -> !handle.isAlive()).orElse(true);
+        return containers.sweepOrphanedContainers(includeOwn);
     }
 
     static void validateMount(Path path) {

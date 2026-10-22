@@ -27,7 +27,9 @@ class RunStateTest {
                 restored.artifactVersions,
                 restored.approvals,
                 restored.patchDrafts,
-                restored.reviewFeedback)) {
+                restored.reviewFeedback,
+                restored.drafting,
+                restored.activeDiagnostics)) {
             assertInstanceOf(ConcurrentHashMap.class, map);
         }
         assertEquals(TaskStatus.DONE, restored.tasks.get("a"));
@@ -64,7 +66,9 @@ class RunStateTest {
                         "artifactHashes",
                         "attempts",
                         "diagnosticVersions",
+                        "drafting",
                         "artifactVersions",
+                        "activeDiagnostics",
                         "approvals",
                         "patchDrafts",
                         "reviewFeedback")),

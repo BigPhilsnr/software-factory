@@ -73,13 +73,16 @@ function render(data) {
   $('run-title').textContent = s.scenario; $('run-mode').textContent = s.mode.toUpperCase() + ' RUN';
   $('run-status').textContent = s.status; $('run-status').className = 'badge ' + s.status.toLowerCase();
   $('run-id').textContent = s.id; $('run-requirement').textContent = data.requirement;
-  $('calls').textContent = `Model calls ${s.modelCalls} / ${s.maxModelCalls}`;
+  $('calls').textContent = `Model calls ${s.modelCalls} (no call limit)`;
   $('audit').textContent = (data.auditValid ? 'Audit verified' : 'Audit verification failed') + (data.auditCheckedAt ? ' · ' + new Date(data.auditCheckedAt).toLocaleTimeString() : '');
   $('audit').title = 'Dashboard audit results are cached for at most 30 seconds. Workflow actions always verify the audit independently.';
   $('busy').textContent = data.busy ? 'Worker active on this server · refresh every 5 seconds' : 'No active worker on this server';
   $('advance').disabled = ended || data.busy || !!s.pendingApprovalTask || !!s.pendingClarificationTask || !!s.revisionRequiredTask;
+  $('recover-draft').hidden = !data.draftRecoveryTask;
+  $('recover-draft').disabled = data.busy;
   const stop = ['SAFE_STOPPED','FAILED'].includes(s.status) ? data.events.find(e=>['POLICY_SAFE_STOP','TASK_FAILED','RUN_FAILED'].includes(e.type)) : null;
   $('action-hint').textContent = ended ? (stop ? `Stopped: ${stop.detail}. This run has ended; inspect its evidence before starting a new request.` : 'Run ended. Evidence remains available.') : s.pendingApprovalTask ? 'Review the exact proposal below.' : s.pendingClarificationTask ? 'Answer the question below.' : data.busy ? 'Generation and validation continue in the background.' : 'Live runs make paid model calls. Fixture runs use recorded artifacts.';
+  if (data.draftRecoveryTask) $('action-hint').textContent = 'A generated test tag stopped this draft. Recover saved draft preserves the work and restores repair controls. Then Start / resume checks it again. Recovery makes no model calls and approves no code.';
   if (!ended && !data.busy && data.retryReason) $('action-hint').textContent = pauseHint(data.pauseKind, data.retryReason);
   else if (s.status === 'RUNNING' && !data.busy) $('action-hint').textContent = 'Saved RUNNING status, but no worker is active on this server. Start / resume recovers unfinished work when its database lease is available.';
   notice('run', data.error);
@@ -124,8 +127,7 @@ function confirmLiveCreation() {
 async function action(body) {
   if (!selected || current?.state.id !== selected) return;
   if (current.state.mode === 'live' && ['advance','approve','revise','clarify'].includes(body.action)) {
-    const remaining = Math.max(0, current.state.maxModelCalls - current.state.modelCalls);
-    if (!confirm(`Continue this live run? It may make up to ${remaining} remaining paid provider calls. Actual cost depends on model and token usage; the call limit is not a dollar budget.`)) {
+    if (!confirm(`Continue this live run? Model calls have no count limit. Actual charges depend on model and token usage.`)) {
       $('approve').disabled = !$('reviewed').checked;
       return;
     }
@@ -138,6 +140,7 @@ $('refresh').onclick = () => refresh();
 $('feature-form').onsubmit = e => {e.preventDefault(); perform(async()=>{if(!confirmLiveCreation())return;const s=await api('runs',{kind:'feature',requirement:$('requirement').value});await choose(s.id);});};
 $('scenario-form').onsubmit = e => {e.preventDefault();perform(async()=>{if($('mode').value==='live'&&!confirmLiveCreation())return;const s=await api('runs',{kind:'scenario',scenario:$('scenario').value,mode:$('mode').value});await choose(s.id);});};
 $('advance').onclick = () => perform(()=>action({action:'advance'}));
+$('recover-draft').onclick = () => perform(()=>action({action:'recover-draft'}));
 $('copy-hash').onclick = () => perform(async()=>{
   if (!reviewHash) return;
   await navigator.clipboard.writeText(reviewHash);

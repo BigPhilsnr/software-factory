@@ -115,7 +115,7 @@ public final class OperatorCommands {
             return "Use `/approve EXACT_HASH`, `/reject EXACT_HASH`, or `/advance` for run actions. Type `/help` for commands.";
         }
         String id = selected.get(session);
-        String context = id == null ? "No run selected." : describe(factory.state(id));
+        String context = new ChatRunContext(factory).read(id);
         return chat.answer(session, text, context);
     }
 
@@ -200,7 +200,7 @@ public final class OperatorCommands {
 
     private static String describe(RunState state) {
         return "Run `" + state.id + "` · **" + state.status + "** · " + state.mode + "\n\n"
-                + "Tasks: " + state.tasks + "\n\nModel calls: " + state.modelCalls + "/" + state.maxModelCalls
+                + "Tasks: " + state.tasks + "\n\nModel calls: " + state.modelCalls
                 + (state.pendingApprovalTask == null
                         ? ""
                         : "\n\nReview required: **" + state.pendingApprovalTask + "**. Use `/review`.")
@@ -211,7 +211,7 @@ public final class OperatorCommands {
     }
 
     private static String help() {
-        return "## Software factory\n\nAsk questions about the project or discuss a feature in plain language. Chat answers use the repository and recent conversation; they do not create runs. Use `/feature REQUIREMENT` to save a feature request, then `/advance` to start it. Chat answers use paid model calls, separately from run budgets.\n\n"
+        return "## Software factory\n\nAsk questions about the project or discuss a feature in plain language. Chat answers use the repository and recent conversation; they do not create runs. Use `/feature REQUIREMENT` to save a feature request, then `/advance` to start it. Chat answers use paid model calls. Calls are counted without a count limit.\n\n"
                 + "- `/demo bugfix` — start a fixture demonstration without model charges\n"
                 + "- `/tools` — show web browsing and engineering tools\n"
                 + "- `/runs` and `/select RUN_ID` — find an existing run\n"
@@ -221,7 +221,7 @@ public final class OperatorCommands {
                 + "- `/changes TASK_ID feedback` — request revision\n"
                 + "- `/answer answer` — answer a clarification\n"
                 + "- `/reject EXACT_HASH` — reject the reviewed proposal\n\n"
-                + "Commands that create, advance or decide runs require the operator token (sent by the operator page or the "
+                + "Commands that create, advance or decide runs require the operator token (sent automatically by the Dev UI and operator page, or supplied through the "
                 + "`X-Factory-Token` header); without it they are refused.\n\n"
                 + "[Open the operator page for live progress, artifact inspection and approval buttons](/factory/).";
     }

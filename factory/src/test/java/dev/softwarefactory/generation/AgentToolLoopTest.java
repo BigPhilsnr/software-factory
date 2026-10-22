@@ -30,7 +30,7 @@ class AgentToolLoopTest {
     Path root;
 
     @Test
-    void repeatedReadsLeaveOneRequestToProduceTheArtifact() throws Exception {
+    void emptyFinalResponseRetriesWithCollectedEvidenceAndWithoutRestartingTools() throws Exception {
         Files.writeString(root.resolve("README.md"), "Repository evidence marker\n");
         List<com.fasterxml.jackson.databind.JsonNode> requests = new ArrayList<>();
         List<String> audit = new ArrayList<>();
@@ -45,6 +45,7 @@ class AgentToolLoopTest {
                     ? "[{\"type\":\"text\",\"text\":\"Final engineering artifact\"}]"
                     : "[{\"type\":\"tool_use\",\"id\":\"read_" + number
                             + "\",\"name\":\"read_file\",\"input\":{\"path\":\"README.md\",\"start_line\":1,\"line_count\":10}}]";
+            if (number == 13) blocks = "[]";
             String response = "{\"id\":\"msg_" + number
                     + "\",\"type\":\"message\",\"role\":\"assistant\",\"model\":\"test-model\",\"content\":"
                     + blocks + ",\"stop_reason\":\"" + (finalizing ? "end_turn" : "tool_use")
@@ -82,9 +83,9 @@ class AgentToolLoopTest {
                     if (event.finalResponse()) event.content().ifPresent(content -> answer.append(content.text()));
                 }
                 assertEquals("Final engineering artifact", answer.toString());
-                assertEquals(ToolSession.MAX_MODEL_REQUESTS, reservations.get());
-                assertEquals(8, requests.size());
-                assertTrue(requests.subList(0, 7).stream()
+                assertEquals(14, reservations.get());
+                assertEquals(14, requests.size());
+                assertTrue(requests.subList(0, 12).stream()
                         .allMatch(request -> request.path("tool_choice")
                                 .path("type")
                                 .asText()
@@ -93,9 +94,13 @@ class AgentToolLoopTest {
                         "none",
                         requests.getLast().path("tool_choice").path("type").asText());
                 assertTrue(requests.getLast().path("system").toString().contains("reserved for your final response"));
-                assertEquals(7, audit.stream().filter("TOOL_FINISHED"::equals).count());
+                assertEquals(12, audit.stream().filter("TOOL_FINISHED"::equals).count());
                 assertTrue(audit.contains("TOOL_BUDGET_FINALIZING"));
-                assertThrows(SecurityException.class, session::reserveRequest);
+                assertTrue(audit.contains("MODEL_EMPTY_RESPONSE_RETRY"));
+                assertTrue(requests.getLast().path("messages").toString().contains("Repository evidence marker"));
+                assertEquals(requests.get(12).path("messages"), requests.get(13).path("messages"));
+                session.reserveRequest();
+                assertEquals(15, reservations.get());
             } finally {
                 runner.close().blockingAwait();
             }

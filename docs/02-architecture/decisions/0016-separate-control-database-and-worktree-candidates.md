@@ -26,3 +26,7 @@ The factory changes the shortener's code and decides whether those changes are a
 ## Revisit when
 
 - Candidates should become pull requests: push the worktree's diff to a branch after release approval.
+
+## Related later decision
+
+[ADR 0018](0018-incremental-drafting-and-bounded-repair.md) adds independent draft repositories before candidate approval; the candidate/control separation described here remains in force.

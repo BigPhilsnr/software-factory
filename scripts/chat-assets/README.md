@@ -22,6 +22,16 @@ and license together. Rebuild and run the browser check when upgrading ADK too:
 the integration deliberately depends on ADK's `markdown pre code.language-mermaid`
 DOM contract and `browser/index.html` resource.
 
+The page also loads `static/chat/workflow.js` before Angular starts. It reads a
+page-issued operator token and attaches it only to same-origin POST requests to
+`/run` and `/run_sse`, supporting both fetch and XMLHttpRequest. Workflow commands
+therefore work in the Dev UI without weakening the server's token or origin
+checks. HTTP failures display a visible notice; reload after a server restart to
+refresh authorization. `/feature REQUIREMENT` saves a request; `/advance` starts
+generation. Run `node scripts/checks/chat_workflow_test.cjs` from the repository
+root for transport isolation and error-display tests. The browser regression also
+checks that the real ADK client includes the token.
+
 Rendering uses Mermaid's [strict security mode](https://mermaid.js.org/config/usage),
 rejects configuration directives/frontmatter, bounds source size/edge count, and
 serializes calls to its shared renderer. SVG is displayed as a blob-backed image,

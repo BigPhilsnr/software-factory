@@ -1,6 +1,5 @@
 package dev.softwarefactory.audit;
 
-import dev.softwarefactory.platform.WorkflowConflictException;
 import java.io.IOException;
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -9,10 +8,9 @@ import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.UUID;
 
-/** The persistent daily budget for conversational provider requests, and the audit of chat tool activity. */
+/** The persistent daily usage counter for conversational provider requests, and the audit of chat tool activity. */
 public final class ChatLedger {
     private static final int MAX_AUDIT_DETAIL = 2000;
-    private static final int MAX_BUDGET = 10_000;
 
     private final ControlDatabase database;
 
@@ -20,25 +18,15 @@ public final class ChatLedger {
         this.database = database;
     }
 
-    /**
-     * Increments the daily budget and audits the reservation in one transaction.
-     *
-     * @throws WorkflowConflictException when today's budget is exhausted; nothing is recorded
-     */
-    public void reserveRequest(int dailyLimit) throws IOException {
-        if (dailyLimit < 1 || dailyLimit > MAX_BUDGET)
-            throw new IllegalArgumentException("Chat request budget must be 1.." + MAX_BUDGET);
+    /** Counts daily usage and audits the request atomically, without a request ceiling. */
+    public void reserveRequest() throws IOException {
         database.transaction(connection -> {
             try (var query = connection.prepareStatement(
-                    "INSERT INTO chat_budget(day, requests) VALUES (?, 1) ON CONFLICT(day) DO UPDATE SET requests = chat_budget.requests + 1 WHERE chat_budget.requests < ? RETURNING requests")) {
+                    "INSERT INTO chat_budget(day, requests) VALUES (?, 1) ON CONFLICT(day) DO UPDATE SET requests = chat_budget.requests + 1")) {
                 query.setObject(1, LocalDate.now(ZoneOffset.UTC));
-                query.setInt(2, dailyLimit);
-                try (var row = query.executeQuery()) {
-                    if (!row.next())
-                        throw new WorkflowConflictException("Daily chat provider-request budget exhausted");
-                }
+                query.executeUpdate();
             }
-            insert(connection, EventTypes.MODEL_CALL_RESERVED, "dailyLimit=" + dailyLimit);
+            insert(connection, EventTypes.MODEL_CALL_RESERVED, "Provider request recorded; no call limit");
             return null;
         });
     }

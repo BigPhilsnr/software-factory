@@ -6,7 +6,7 @@
 
 A language model is useful for writing code and unreliable as an authority. So the system splits the two roles:
 
-- **Agents propose.** An agent returns text: a document or a unified diff. It has read-only tools and nothing else.
+- **Agents propose.** Document agents return text. PATCH agents incrementally edit an isolated draft; Git produces the review diff. Only deterministic code applies an approved proposal to the candidate.
 - **Deterministic code decides.** Java code owns the task order, the path rules, patch application, test execution, budgets and the record of what happened.
 - **A human approves.** Sensitive patches and every release wait for the operator, who approves a hash of exactly what was reviewed.
 
@@ -48,7 +48,7 @@ flowchart TB
 | --- | --- |
 | Operator | Starts runs, answers questions, reviews and approves or rejects. Trusted. |
 | Factory | The control plane. One process serves the operator page, the ADK chat UI and the JSON API. A separate short-lived process serves each CLI command. |
-| Control DB | Run state, the audit chain, the chat budget and chat audit. Only the factory connects to it. |
+| Control DB | Run state, the audit chain, chat usage counters and chat audit. Only the factory connects to it. |
 | Claude API | Generates artifacts and patches in live mode, answers chat questions, and performs web search. Not used in fixture mode. |
 | Docker sandbox | Runs the candidate's Maven tests offline. It holds no credentials and cannot reach the network. |
 | Shortener | The product. It does not know the factory exists. |

@@ -120,17 +120,17 @@ class ControlRecordIntegrationTest {
     }
 
     @Test
-    void chatBudgetSurvivesRepositoryRecreationAndAuditsReservations() throws Exception {
-        new ChatLedger(database()).reserveRequest(2);
+    void chatUsageSurvivesRepositoryRecreationWithoutACallLimit() throws Exception {
+        new ChatLedger(database()).reserveRequest();
         var restarted = new ChatLedger(database());
-        restarted.reserveRequest(2);
-        assertThrows(WorkflowConflictException.class, () -> restarted.reserveRequest(2));
+        restarted.reserveRequest();
+        restarted.reserveRequest();
         restarted.record("TOOL_STARTED", "x".repeat(5000));
         try (var connection = connection();
                 var sql = connection.createStatement();
                 var rows = sql.executeQuery("SELECT count(*) FROM chat_audit WHERE type='MODEL_CALL_RESERVED'")) {
             assertTrue(rows.next());
-            assertEquals(2, rows.getInt(1), "A refused reservation leaves no audit row");
+            assertEquals(3, rows.getInt(1), "All requests remain audited across recreation");
         }
     }
 

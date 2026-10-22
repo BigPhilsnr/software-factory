@@ -2,6 +2,7 @@ package dev.softwarefactory.operator.api;
 
 import dev.softwarefactory.audit.EventTypes;
 import dev.softwarefactory.audit.RunMetrics;
+import dev.softwarefactory.run.DraftRecovery;
 import dev.softwarefactory.run.RunState;
 import dev.softwarefactory.run.RunStatus;
 import dev.softwarefactory.run.TaskStatus;
@@ -21,8 +22,12 @@ import java.util.Set;
  */
 final class RunDetail {
     /** Pause reasons shown to the operator, newest first. */
-    private static final Set<String> PAUSE_EVENTS =
-            Set.of(EventTypes.RETRY_AVAILABLE, EventTypes.INFRASTRUCTURE_UNAVAILABLE, EventTypes.REVISION_REQUIRED);
+    private static final Set<String> PAUSE_EVENTS = Set.of(
+            EventTypes.RETRY_AVAILABLE,
+            EventTypes.INFRASTRUCTURE_UNAVAILABLE,
+            EventTypes.REVISION_REQUIRED,
+            EventTypes.MODEL_GENERATION_PAUSED,
+            "DRAFT_RECOVERED");
 
     private static final String TASK = "task";
     private static final String TEXT = "text";
@@ -56,6 +61,9 @@ final class RunDetail {
         result.put("artifacts", artifacts);
         result.put("clarificationContext", clarificationContext(state, spec));
         result.put("validationEvidence", validationEvidence(state, spec));
+        var timeline = activity.inspection().timeline();
+        result.put(
+                "draftRecoveryTask", DraftRecovery.eligibleTask(state, timeline.isEmpty() ? null : timeline.getLast()));
         if (state.status == RunStatus.PAUSED
                 && state.pendingApprovalTask == null
                 && state.pendingClarificationTask == null) {

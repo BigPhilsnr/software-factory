@@ -4,13 +4,14 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
+import dev.softwarefactory.operator.security.OperatorToken;
 import org.junit.jupiter.api.Test;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 class AdkChatPageTest {
     @Test
     void extendsBundledPageAtBothEntryPointsWithoutCachingIt() throws Exception {
-        var page = new AdkChatPage();
+        var page = new AdkChatPage(new OperatorToken("test-page-token"));
         var mvc = MockMvcBuilders.standaloneSetup(page).build();
         for (String path : new String[] {"/dev-ui/", "/dev-ui/index.html"}) {
             String html = mvc.perform(get(path))
@@ -21,6 +22,8 @@ class AdkChatPageTest {
                     .getResponse()
                     .getContentAsString();
             assertTrue(html.contains("<app-root>"));
+            assertTrue(html.contains("name=\"factory-token\" content=\"test-page-token\""));
+            assertTrue(html.indexOf("/chat/workflow.js") < html.indexOf("src=\"./main-"));
             assertTrue(html.contains("src=\"./main-"));
             assertTrue(html.contains("/chat/diagrams.css"));
             assertTrue(html.contains("/chat/vendor/mermaid.js"));

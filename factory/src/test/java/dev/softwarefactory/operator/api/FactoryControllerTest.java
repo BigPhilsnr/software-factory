@@ -55,6 +55,14 @@ class FactoryControllerTest {
     }
 
     @Test
+    void draftRecoveryDoesNotImplicitlyAdvanceOrApprove() throws Exception {
+        api.perform(json(post(ACTIONS), "{\"action\":\"recover-draft\"}")).andExpect(status().isOk());
+        verify(factory).recoverDraft(ID);
+        org.mockito.Mockito.verify(factory, org.mockito.Mockito.never()).advance(any());
+        org.mockito.Mockito.verify(factory, org.mockito.Mockito.never()).approve(any(), any());
+    }
+
+    @Test
     void configTellsThePageItsTokenAndWhatIsAvailable() throws Exception {
         when(factory.validatorStatus())
                 .thenReturn(new Preflight(false, "Validator image missing", Instant.parse("2026-01-01T00:00:00Z")));
@@ -88,6 +96,24 @@ class FactoryControllerTest {
         api.perform(get("/factory/api/runs/" + ID + "/artifacts/plan-v1.txt"))
                 .andExpect(jsonPath("$.name").value("plan-v1.txt"))
                 .andExpect(jsonPath("$.text").value("The plan"));
+    }
+
+    @Test
+    void patchRecoveryRequiresProposalIdentityAndDoesNotAdvance() throws Exception {
+        String endpoint = "/factory/api/runs/" + ID + "/patch-recovery";
+        api.perform(json(post(endpoint), "{}")).andExpect(status().isBadRequest());
+        String hash = "a".repeat(64);
+        api.perform(json(post(endpoint), "{\"task\":\"tests\",\"version\":1,\"hash\":\"" + hash + "\"}"))
+                .andExpect(status().isOk());
+        verify(factory).recoverPatch(ID, "tests", 1, hash);
+        org.mockito.Mockito.verify(factory, org.mockito.Mockito.never()).advance(any());
+    }
+
+    @Test
+    void removedBudgetActionIsRejected() throws Exception {
+        api.perform(json(post(ACTIONS), "{\"action\":\"budget\",\"budget\":40}"))
+                .andExpect(status().isBadRequest());
+        org.mockito.Mockito.verify(factory, org.mockito.Mockito.never()).advance(any());
     }
 
     @Test

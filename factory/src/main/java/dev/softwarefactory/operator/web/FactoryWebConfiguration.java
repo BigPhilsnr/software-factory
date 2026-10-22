@@ -48,8 +48,8 @@ public class FactoryWebConfiguration implements WebMvcConfigurer {
     }
 
     @Bean
-    AdkChatPage adkChatPage() throws IOException {
-        return new AdkChatPage();
+    AdkChatPage adkChatPage(OperatorToken factoryToken) throws IOException {
+        return new AdkChatPage(factoryToken);
     }
 
     @Bean

@@ -31,6 +31,8 @@ public final class EventTypes {
     public static final String RELEASE_APPROVED = "RELEASE_APPROVED";
     public static final String CLARIFICATION_REQUIRED = "CLARIFICATION_REQUIRED";
     public static final String CLARIFICATION_RECORDED = "CLARIFICATION_RECORDED";
+    public static final String MODEL_GENERATION_PAUSED = "MODEL_GENERATION_PAUSED";
+    public static final String MODEL_BUDGET_INCREASED = "MODEL_BUDGET_INCREASED";
     public static final String MODEL_CALL_STARTED = "MODEL_CALL_STARTED";
     public static final String MODEL_CALL_RESERVED = "MODEL_CALL_RESERVED";
 

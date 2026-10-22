@@ -1,5 +1,6 @@
 package dev.softwarefactory.operator.web;
 
+import dev.softwarefactory.operator.security.OperatorToken;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import org.springframework.core.io.ClassPathResource;
@@ -8,16 +9,22 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.util.HtmlUtils;
 
 /** Extends the bundled ADK page without copying or modifying its Angular application. */
 @RestController
 public final class AdkChatPage {
     private final String html;
 
-    public AdkChatPage() throws IOException {
+    public AdkChatPage(OperatorToken token) throws IOException {
         String bundled = new ClassPathResource("browser/index.html").getContentAsString(StandardCharsets.UTF_8);
         if (!bundled.contains("</head>")) throw new IOException("ADK page is missing its head element");
-        html = bundled.replace("</head>", """
+        html = bundled.replace(
+                        "<head>",
+                        "<head><meta name=\"factory-token\" content=\""
+                                + HtmlUtils.htmlEscape(token.value())
+                                + "\"><script src=\"/chat/workflow.js\"></script>")
+                .replace("</head>", """
                 <link rel="stylesheet" href="/chat/diagrams.css">
                 <script defer src="/chat/vendor/mermaid.js"></script>
                 <script defer src="/chat/diagrams.js"></script>

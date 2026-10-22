@@ -24,6 +24,10 @@
 | [0016](0016-separate-control-database-and-worktree-candidates.md) | A separate control database, and Git worktrees as candidates | Factory |
 | [0017](0017-current-feature-baseline-and-scope-confirmation.md) | Pin current feature baselines and confirm scope before design | Factory |
 
+| [0018](0018-incremental-drafting-and-bounded-repair.md) | Incremental drafting, durable checkpoints and bounded repair | Factory |
+
+| [0019](0019-model-call-counts-are-metrics.md) | Model-call counts are usage metrics, not execution ceilings | Factory |
+
 ## Format
 
 Every record has the same sections:

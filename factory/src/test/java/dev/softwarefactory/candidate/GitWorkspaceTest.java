@@ -5,7 +5,6 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import dev.softwarefactory.governance.PolicyViolationException;
-import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.attribute.PosixFilePermissions;
@@ -32,10 +31,12 @@ class GitWorkspaceTest {
 
     @Test
     void preflightRejectsCorruptHunksWithoutWritingFiles() {
+        // The hunk header declares 3 new lines; the body has only 1. PatchScope now catches a declared
+        // count mismatch itself before git is ever invoked, so this never reaches git as a process failure.
         String patch =
                 "diff --git a/new.txt b/new.txt\nnew file mode 100644\n--- /dev/null\n+++ b/new.txt\n@@ -0,0 +1,3 @@\n+only one line\n";
         assertThrows(
-                IOException.class,
+                IllegalArgumentException.class,
                 () -> new GitWorkspace(repository).checkApply(repository, patch, List.of("new.txt")));
         assertFalse(Files.exists(repository.resolve("new.txt")));
     }

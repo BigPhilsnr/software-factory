@@ -68,16 +68,26 @@ final class RunEvidence {
         String diagnostic = taskId + DIAGNOSTIC + version;
         store.write(state.id, diagnostic, cause.getClass().getName() + ": " + message);
         state.diagnosticVersions.put(taskId, version);
+        state.activeDiagnostics.put(taskId, version);
         return diagnostic;
     }
 
     /** The diagnostic of the task's latest failed attempt since its inputs changed, or null. */
     String latestDiagnostic(RunState state, String taskId) throws IOException {
+        Integer active = state.activeDiagnostics.get(taskId);
+        if (Integer.valueOf(0).equals(active)) return null;
         Integer attempts = state.attempts.get(taskId);
-        if (attempts == null) return null;
+        if (attempts == null && !state.diagnosticVersions.containsKey(taskId)) return null;
         // Runs persisted before diagnostic versioning used the attempt count as the version.
-        int version = state.diagnosticVersions.getOrDefault(taskId, attempts);
+        Integer version = state.diagnosticVersions.get(taskId);
+        if (version == null) version = attempts;
         return Files.readString(store.path(state.id, taskId + DIAGNOSTIC + version));
+    }
+
+    String readProposal(RunState state, String taskId, int version) throws IOException {
+        Path path = store.path(state.id, taskId + PROPOSAL + version);
+        if (!EvidenceIntegrity.isUnalteredFile(path)) throw new IllegalArgumentException("Missing or unsafe proposal");
+        return Files.readString(path);
     }
 
     /** The file of a specific output version; it may not exist. */

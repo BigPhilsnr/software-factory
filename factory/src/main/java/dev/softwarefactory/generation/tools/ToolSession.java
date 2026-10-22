@@ -2,6 +2,7 @@ package dev.softwarefactory.generation.tools;
 
 import dev.softwarefactory.generation.UntrustedText;
 import dev.softwarefactory.governance.Hashes;
+import dev.softwarefactory.platform.GenerationUnavailableException;
 import java.io.IOException;
 import java.time.Clock;
 import java.time.Duration;
@@ -14,10 +15,9 @@ import org.slf4j.LoggerFactory;
 
 /**
  * Invocation-scoped limits, deadline and audit sink; never records tool arguments or returned source text.
- * After {@link #close()} late provider callbacks can neither reserve budget nor write audit events.
+ * After {@link #close()} late provider callbacks can neither record requests nor write audit events.
  */
 public final class ToolSession implements AutoCloseable {
-    public static final int MAX_MODEL_REQUESTS = 8;
     public static final int MAX_TOOL_CALLS = 12;
     /** Upper bound for one provider request, even with a generous invocation deadline. */
     public static final Duration MAX_REQUEST_TIMEOUT = Duration.ofMinutes(5);
@@ -32,10 +32,13 @@ public final class ToolSession implements AutoCloseable {
     private final Clock clock;
     private final AtomicBoolean closed = new AtomicBoolean();
     private final List<String> outcomes = new ArrayList<>();
+    private final boolean drafting;
+    private final int callLimit;
     private int requests;
     private int calls;
+    private GenerationUnavailableException stopped;
 
-    /** Reserves budget for one provider request; throwing refuses the request. */
+    /** Records one provider request; throwing refuses the request. */
     @FunctionalInterface
     public interface BeforeRequest {
         void reserve() throws IOException;
@@ -56,6 +59,12 @@ public final class ToolSession implements AutoCloseable {
     }
 
     public ToolSession(BeforeRequest beforeRequest, Audit audit, Instant deadline, Clock clock) {
+        this(beforeRequest, audit, deadline, clock, false);
+    }
+
+    public ToolSession(BeforeRequest beforeRequest, Audit audit, Instant deadline, Clock clock, boolean drafting) {
+        this.drafting = drafting;
+        this.callLimit = drafting ? 64 : MAX_TOOL_CALLS;
         this.beforeRequest = beforeRequest;
         this.audit = audit;
         this.deadline = deadline;
@@ -64,7 +73,7 @@ public final class ToolSession implements AutoCloseable {
 
     public synchronized void reserveRequest() {
         requireOpen();
-        if (requests >= MAX_MODEL_REQUESTS) throw new SecurityException("Per-answer/task model request limit reached");
+        requestTimeout();
         try {
             beforeRequest.reserve();
         } catch (IOException failure) {
@@ -73,17 +82,33 @@ public final class ToolSession implements AutoCloseable {
         requests++;
     }
 
-    /** A nested search must leave one provider request available to produce the final artifact. */
+    /** Nested searches are counted and audited like other provider requests. */
     public synchronized void reserveSearchRequest() {
-        if (requests >= MAX_MODEL_REQUESTS - 1) {
-            throw new IllegalStateException("Web search would consume the reserved final response request");
-        }
         reserveRequest();
     }
 
-    /** Call after reserving the next main-model request; the last request must return a final answer. */
+    /** Tool exhaustion ends exploration independently of the provider-call count. */
     public synchronized boolean toolsAllowed() {
-        return requests < MAX_MODEL_REQUESTS && calls < MAX_TOOL_CALLS;
+        return calls < callLimit;
+    }
+
+    /** Safe metadata only; never pass prompts, tool results, or thinking text here. */
+    public void recordResponse(String detail) {
+        record("MODEL_RESPONSE", detail);
+    }
+
+    public boolean drafting() {
+        return drafting;
+    }
+
+    public void recordOutputRecovery() {
+        record(
+                "MODEL_OUTPUT_LIMIT_RETRY",
+                "Discarded incomplete response; retrying once with reduced reasoning and a smaller step");
+    }
+
+    public void recordRecovery() {
+        record("MODEL_EMPTY_RESPONSE_RETRY", "Retrying with existing context and tools disabled");
     }
 
     /** Provider timeout for the next request: never beyond the invocation deadline. */
@@ -97,20 +122,18 @@ public final class ToolSession implements AutoCloseable {
     }
 
     public synchronized void recordFinalization() {
-        record(
-                "TOOL_BUDGET_FINALIZING",
-                "request=" + requests + "/" + MAX_MODEL_REQUESTS + "; tools=" + calls + "/" + MAX_TOOL_CALLS);
+        record("TOOL_BUDGET_FINALIZING", "request=" + requests + "; tools=" + calls + "/" + callLimit);
     }
 
     /**
-     * Runs one tool call. A failing tool never fails the invocation: the model is told the tool was
-     * unavailable, without any detail of the failure.
+     * Ordinary tool failures become redacted results. A generation stop is latched: no subsequent
+     * tool or provider request may run, even if ADK turns the tool exception into a model result.
      */
     @SuppressWarnings("PMD.AvoidCatchingGenericException") // Boundary: any tool failure becomes a safe result.
     public synchronized String invoke(String name, String input, Operation operation) {
         requireOpen();
         calls++;
-        if (calls > MAX_TOOL_CALLS) throw new SecurityException("Tool call limit reached");
+        if (calls > callLimit) throw new SecurityException("Tool call limit reached");
         long started = System.nanoTime();
         record("TOOL_STARTED", name + ":inputSha256=" + Hashes.sha256(input));
         String result;
@@ -118,6 +141,10 @@ public final class ToolSession implements AutoCloseable {
         try {
             result = operation.run();
             status = "OK";
+        } catch (GenerationUnavailableException exhausted) {
+            stopped = exhausted;
+            result = "Draft invocation stopped; saved progress retained for recovery.";
+            status = "STOPPED";
         } catch (IOException | RuntimeException failure) {
             result = unavailable(failure);
             status = FAILED;
@@ -153,6 +180,7 @@ public final class ToolSession implements AutoCloseable {
 
     private void requireOpen() {
         if (closed.get()) throw new IllegalStateException("Agent invocation has ended");
+        if (stopped != null) throw stopped;
     }
 
     private void record(String event, String detail) {

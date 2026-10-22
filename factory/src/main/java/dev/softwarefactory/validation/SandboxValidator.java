@@ -66,7 +66,7 @@ public final class SandboxValidator implements CandidateValidator {
         Path reports = reportDirectory(candidate);
         try {
             Instant started = clock.instant();
-            CommandRunner.Failed failure = mavenFailure(candidate, reports, List.of("test"));
+            CommandRunner.Failed failure = mavenFailure(candidate, reports, List.of("-Pintegration", "test"));
             if (failure != null) throw classify(failure, reports);
             Map<String, Suite> suites = SurefireReports.read(reports, started);
             Totals totals = Totals.of(suites.values());

@@ -110,7 +110,8 @@ class RunViewsTest {
                         "auditCheckedAt",
                         "artifacts",
                         "clarificationContext",
-                        "validationEvidence"),
+                        "validationEvidence",
+                        "draftRecoveryTask"),
                 List.copyOf(detail.keySet()),
                 "The response shape is part of the HTTP contract");
         assertEquals("Add expiry", detail.get("requirement"));

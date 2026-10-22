@@ -9,7 +9,13 @@ import java.time.Clock;
 
 /** Everything that can happen to a run, in story order, wired to one set of collaborators. */
 record Transitions(
-        StartRun start, AdvanceRun advance, ApproveStep approve, AnswerClarification clarify, ReviseRun revise) {
+        StartRun start,
+        AdvanceRun advance,
+        ApproveStep approve,
+        AnswerClarification clarify,
+        ReviseRun revise,
+        RecoverPatch recoverPatch,
+        DraftRecovery recoverDraft) {
     static Transitions wire(
             RunStore runs,
             EvidenceStore evidenceStore,
@@ -19,7 +25,8 @@ record Transitions(
             FactorySettings settings,
             Clock clock) {
         RunCore core = RunCore.of(runs, evidenceStore, clock);
-        TaskGeneration generation = new TaskGeneration(runs, core.evidence(), agents);
+        TaskGeneration generation =
+                new TaskGeneration(runs, core.evidence(), agents, new PatchDrafting(runs, workspace, validator));
         CandidateRebuild candidates = new CandidateRebuild(workspace, core.evidence());
         String operator = settings.operator();
         return new Transitions(
@@ -32,6 +39,8 @@ record Transitions(
                         TaskExecutors.forEveryKind(core, generation, workspace, validator)),
                 new ApproveStep(core, workspace, operator),
                 new AnswerClarification(runs, core.evidence(), operator),
-                new ReviseRun(runs, candidates, operator));
+                new ReviseRun(runs, candidates, operator, workspace),
+                new RecoverPatch(core, workspace),
+                new DraftRecovery(core, workspace, operator));
     }
 }

@@ -2,6 +2,8 @@
 
 **Status:** accepted
 
+**Update:** [ADR 0019](0019-model-call-counts-are-metrics.md) supersedes the model-call limits described below; historical decisions are retained for traceability.
+
 **In one paragraph.** Live generation goes through Google ADK, but the model class is our own `ThinkingAwareClaude`, a subclass of ADK's `Claude`. It keeps the provider's complete tool-use turns so they can be replayed correctly, hides thinking blocks from everything outside the provider round trip, and enforces the factory's request and tool budgets on every call.
 
 ## Context
@@ -22,7 +24,7 @@ ADK provides the agent loop, tool declaration and session handling. Its Claude a
 - returns only text and tool-call parts; thinking and redacted-thinking blocks are dropped from the visible response;
 - allows one tool call at a time (`disableParallelToolUse`), and on the last budgeted request sets `tool_choice: none`, appends a "final response" instruction and records `TOOL_BUDGET_FINALIZING`;
 - treats a tool call received after tools were disabled as a policy violation;
-- sets `max_tokens` to 32,768 and fails if the response stops for length, so a truncated patch is never used;
+- sets `max_tokens` to 32,768, discards truncated responses and allows one budgeted recovery request; see [ADR 0018](0018-incremental-drafting-and-bounded-repair.md);
 - supports non-streaming calls only.
 
 `ModelClients` builds the Anthropic client with zero SDK retries and a 5-minute request timeout, so no paid call happens outside the budget.
@@ -32,7 +34,7 @@ ADK provides the agent loop, tool declaration and session handling. Its Claude a
 - The factory, not the SDK, decides when a call may be made and how often it is retried.
 - The adapter is coupled to ADK 1.10.1 and Anthropic SDK 2.15.0. The SDK version is pinned in the POM to the one ADK was built against. An ADK upgrade means re-testing this class.
 - `ThinkingAwareClaudeTest` and `AgentToolLoopTest` exercise the protocol through a real ADK runner against a local fake HTTP provider, with no key.
-- The adapter does not itself turn extended thinking on; it only handles thinking blocks when the provider returns them.
+- `ClaudeThinking` configures supported adaptive models with medium effort, reduced to low on recovery. Recovery disables thinking only for supported Sonnet 5 IDs; other models retain their supported thinking behavior.
 
 ## Revisit when
 
