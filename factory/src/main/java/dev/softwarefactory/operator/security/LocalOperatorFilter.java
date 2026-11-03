@@ -36,13 +36,26 @@ public final class LocalOperatorFilter extends OncePerRequestFilter {
     private static final int HTTPS_PORT = 443;
     private final OperatorToken token;
     private final Predicate<String> changesWorkflowState;
+    private final Set<String> allowedHosts;
 
     /**
      * @param changesWorkflowState whether a chat message is a command that creates, advances or decides a run
      */
     public LocalOperatorFilter(OperatorToken token, Predicate<String> changesWorkflowState) {
+        this(token, changesWorkflowState, Set.of());
+    }
+
+    /**
+     * @param changesWorkflowState whether a chat message is a command that creates, advances or decides a run
+     * @param publicHosts extra host names (e.g. the public ingress host) allowed in addition to loopback,
+     *        so the operator console can be served through a terminating reverse proxy
+     */
+    public LocalOperatorFilter(OperatorToken token, Predicate<String> changesWorkflowState, Set<String> publicHosts) {
         this.token = token;
         this.changesWorkflowState = changesWorkflowState;
+        var hosts = new java.util.HashSet<>(LOCAL_HOSTS);
+        hosts.addAll(publicHosts);
+        this.allowedHosts = Set.copyOf(hosts);
     }
 
     @Override
@@ -58,7 +71,7 @@ public final class LocalOperatorFilter extends OncePerRequestFilter {
 
     /** Why the request may not pass, or null when it may. */
     private Refusal refusal(HttpServletRequest request) {
-        if (!LOCAL_HOSTS.contains(request.getServerName()) || !sameOrigin(request.getHeader("Origin"), request)) {
+        if (!allowedHosts.contains(request.getServerName()) || !sameOrigin(request.getHeader("Origin"), request)) {
             return new Refusal(HttpServletResponse.SC_FORBIDDEN, "Local same-origin requests only");
         }
         boolean authorized = token.matches(request.getHeader(TOKEN_HEADER));

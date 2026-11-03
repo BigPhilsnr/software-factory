@@ -45,6 +45,8 @@ public class FactoryWebConfiguration implements WebMvcConfigurer {
     public void addViewControllers(ViewControllerRegistry registry) {
         registry.addViewController("/factory/").setViewName("forward:/factory/index.html");
         registry.addRedirectViewController("/factory", "/factory/").setKeepQueryParams(true);
+        // The public address (e.g. https://factory.lakelyon.com) lands on the operator console.
+        registry.addViewController("/").setViewName("forward:/factory/");
     }
 
     @Bean
@@ -94,6 +96,15 @@ public class FactoryWebConfiguration implements WebMvcConfigurer {
 
     @Bean
     LocalOperatorFilter localOperatorFilter(OperatorToken factoryToken) {
-        return new LocalOperatorFilter(factoryToken, OperatorCommands::changesWorkflowState);
+        // Comma-separated extra host names (e.g. the public ingress host) the operator console may serve,
+        // in addition to loopback. Empty by default: the console stays a local-only boundary.
+        String publicHosts = System.getenv("FACTORY_ALLOWED_HOSTS");
+        var hosts = new java.util.LinkedHashSet<String>();
+        if (publicHosts != null) {
+            for (String host : publicHosts.split(",")) {
+                if (!host.isBlank()) hosts.add(host.trim());
+            }
+        }
+        return new LocalOperatorFilter(factoryToken, OperatorCommands::changesWorkflowState, hosts);
     }
 }

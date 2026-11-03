@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import dev.softwarefactory.operator.chat.OperatorCommands;
 import java.nio.charset.StandardCharsets;
+import java.util.Set;
 import org.junit.jupiter.api.Test;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
@@ -81,5 +82,42 @@ class LocalOperatorFilterTest {
         new LocalOperatorFilter(new OperatorToken(TOKEN), OperatorCommands::changesWorkflowState)
                 .doFilter(request, response, (req, res) -> ((MockHttpServletResponse) res).setStatus(200));
         assertEquals(403, response.getStatus());
+    }
+
+    @Test
+    void explicitlyAllowedPublicHostsPassTheBoundary() throws Exception {
+        var request = new MockHttpServletRequest("GET", "/factory/api/config");
+        request.setServerName("factory.lakelyon.com");
+        request.setServerPort(443);
+        response = new MockHttpServletResponse();
+        new LocalOperatorFilter(
+                        new OperatorToken(TOKEN),
+                        OperatorCommands::changesWorkflowState,
+                        Set.of("factory.lakelyon.com"))
+                .doFilter(request, response, (req, res) -> ((MockHttpServletResponse) res).setStatus(200));
+        assertEquals(200, response.getStatus());
+    }
+
+    @Test
+    void sameOriginCheckFollowsTheForwardedScheme() throws Exception {
+        // Behind TLS termination the app sees https/443 after forward-header processing,
+        // so a browser Origin from the public host is same-origin.
+        var request = new MockHttpServletRequest("POST", "/factory/api/runs");
+        request.setServerName("factory.lakelyon.com");
+        request.setServerPort(443);
+        request.setScheme("https");
+        request.addHeader("Origin", "https://factory.lakelyon.com");
+        request.setContentType("application/json");
+        byte[] body = "{}".getBytes(StandardCharsets.UTF_8);
+        request.setContent(body);
+        request.setAttribute(RequestBodyLimit.BODY_ATTRIBUTE, body);
+        request.addHeader(LocalOperatorFilter.TOKEN_HEADER, TOKEN);
+        response = new MockHttpServletResponse();
+        new LocalOperatorFilter(
+                        new OperatorToken(TOKEN),
+                        OperatorCommands::changesWorkflowState,
+                        Set.of("factory.lakelyon.com"))
+                .doFilter(request, response, (req, res) -> ((MockHttpServletResponse) res).setStatus(200));
+        assertEquals(200, response.getStatus());
     }
 }
