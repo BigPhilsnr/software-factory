@@ -189,6 +189,11 @@ class FactoryHttpIntegrationTest {
                 .header("Content-Security-Policy", containsString("script-src 'self'"))
                 .header("X-Content-Type-Options", "nosniff")
                 .header("X-Frame-Options", "DENY");
+        // The site root serves the operator console (200), not ADK's /dev-ui/ redirect.
+        http().get("/")
+                .then()
+                .statusCode(200)
+                .header("Content-Security-Policy", containsString("script-src 'self'"));
         http().get("/factory/api/config")
                 .then()
                 .statusCode(200)

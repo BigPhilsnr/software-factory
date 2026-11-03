@@ -45,8 +45,9 @@ public class FactoryWebConfiguration implements WebMvcConfigurer {
     public void addViewControllers(ViewControllerRegistry registry) {
         registry.addViewController("/factory/").setViewName("forward:/factory/index.html");
         registry.addRedirectViewController("/factory", "/factory/").setKeepQueryParams(true);
-        // The public address (e.g. https://factory.lakelyon.com) lands on the operator console.
-        registry.addViewController("/").setViewName("forward:/factory/");
+        // The site root is served by RootForwardController: ADK's dev UI also
+        // registers a "/" view controller (redirect to /dev-ui/), and request
+        // mappings take precedence over view controllers.
     }
 
     @Bean
