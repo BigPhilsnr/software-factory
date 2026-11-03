@@ -32,7 +32,7 @@ import org.springframework.test.context.DynamicPropertySource;
 @SpringBootTest(
         classes = FactoryWebServer.class,
         webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
-        properties = "debug=false")
+        properties = {"debug=false", "factory.auth.enabled=false"})
 @DirtiesContext
 class FactoryHttpIntegrationTest {
     private static final FactoryHttpTestEnvironment ENVIRONMENT = new FactoryHttpTestEnvironment();

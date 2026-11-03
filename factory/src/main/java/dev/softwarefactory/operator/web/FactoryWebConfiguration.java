@@ -9,6 +9,7 @@ import dev.softwarefactory.operator.security.RequestBodyLimit;
 import dev.softwarefactory.platform.FactorySettings;
 import java.io.IOException;
 import java.util.UUID;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.security.autoconfigure.web.servlet.SecurityFilterProperties;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
@@ -56,10 +57,25 @@ public class FactoryWebConfiguration implements WebMvcConfigurer {
     }
 
     @Bean
-    SecurityFilterChain operatorSecurity(HttpSecurity http, LocalOperatorFilter boundary) {
-        return http.csrf(AbstractHttpConfigurer::disable)
-                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .authorizeHttpRequests(authorize -> authorize.anyRequest().permitAll())
+    SecurityFilterChain operatorSecurity(HttpSecurity http, LocalOperatorFilter boundary,
+            @Value("${factory.auth.enabled:true}") boolean authEnabled) throws Exception {
+        if (authEnabled) {
+            // Public console: sign in with the same credentials as the rest of LakeLyon.
+            http.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))
+                    .authorizeHttpRequests(authorize -> authorize
+                            .requestMatchers("/factory/login", "/actuator/health/**").permitAll()
+                            .anyRequest().authenticated())
+                    .formLogin(form -> form.loginPage("/factory/login")
+                            .defaultSuccessUrl("/factory/", true)
+                            .failureUrl("/factory/login?error"))
+                    .logout(logout -> logout.logoutUrl("/factory/logout")
+                            .logoutSuccessUrl("/factory/login?loggedout"));
+        } else {
+            http.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                    .authorizeHttpRequests(authorize -> authorize.anyRequest().permitAll());
+        }
+        return http
+                .csrf(AbstractHttpConfigurer::disable)
                 .headers(headers -> headers.contentTypeOptions(Customizer.withDefaults())
                         .frameOptions(frame -> frame.deny())
                         .addHeaderWriter(new DelegatingRequestMatcherHeaderWriter(
@@ -88,6 +104,30 @@ public class FactoryWebConfiguration implements WebMvcConfigurer {
     @Bean
     OperatorToken factoryToken() {
         return new OperatorToken(UUID.randomUUID().toString());
+    }
+
+    /** The single operator login; the same credentials as the rest of LakeLyon. */
+    @Bean
+    org.springframework.security.core.userdetails.UserDetailsService factoryUserDetails(
+            @Value("${factory.login.user:}") String user,
+            @Value("${factory.login.password:}") String password,
+            @Value("${factory.auth.enabled:true}") boolean authEnabled) {
+        if (authEnabled && !user.isBlank() && !password.isBlank()) {
+            org.springframework.security.core.userdetails.User operator =
+                    (org.springframework.security.core.userdetails.User)
+                            org.springframework.security.core.userdetails.User.withUsername(user)
+                                    .password(new org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder()
+                                            .encode(password))
+                                    .roles("OPERATOR")
+                                    .build();
+            return new org.springframework.security.provisioning.InMemoryUserDetailsManager(operator);
+        }
+        return new org.springframework.security.provisioning.InMemoryUserDetailsManager();
+    }
+
+    @Bean
+    org.springframework.security.crypto.password.PasswordEncoder passwordEncoder() {
+        return new org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder();
     }
 
     @Bean
