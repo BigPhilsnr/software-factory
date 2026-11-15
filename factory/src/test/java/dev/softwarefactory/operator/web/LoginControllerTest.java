@@ -2,10 +2,12 @@ package dev.softwarefactory.operator.web;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+import java.util.Collection;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
 
 /** Renders the public login page and asserts its accessible markup. */
 class LoginControllerTest {
@@ -34,15 +36,16 @@ class LoginControllerTest {
 
     @Test
     void errorAndLoggedOutStatesRenderTheirMessages() {
-        assertTrue(controller.login(null, true, false).getBody().contains("Invalid email or password."));
-        assertTrue(controller.login(null, false, true).getBody().contains("You have been signed out."));
+        String errorPage = controller.login(null, true, false).getBody();
+        String outPage = controller.login(null, false, true).getBody();
+        assertTrue(errorPage.contains("Invalid email or password."));
+        assertTrue(outPage.contains("You have been signed out."));
     }
 
     private static Authentication authenticated() {
         return new Authentication() {
             @Override
-            public java.util.Collection<? extends org.springframework.security.core.GrantedAuthority>
-                    getAuthorities() {
+            public Collection<? extends GrantedAuthority> getAuthorities() {
                 return List.of();
             }
 
