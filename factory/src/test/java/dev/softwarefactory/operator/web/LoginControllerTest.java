@@ -2,10 +2,12 @@ package dev.softwarefactory.operator.web;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+import java.util.Collection;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
 
 /** Renders the public login page and asserts its accessible markup. */
 class LoginControllerTest {
@@ -26,11 +28,24 @@ class LoginControllerTest {
         assertTrue(html.contains(":focus-visible"));
     }
 
+    @Test
+    void authenticatedRequestIsRedirectedToFactory() {
+        ResponseEntity<String> response = controller.login(authenticated(), false, false);
+        assertEquals(302, response.getStatusCode().value());
+        assertEquals("/factory/", response.getHeaders().getFirst("Location"));
+    }
+
+    @Test
+    void errorAndLoggedOutStatesRenderTheirMessages() {
+        assertTrue(controller.login(null, true, false).getBody().contains("Invalid email or password."));
+        assertTrue(controller.login(null, false, true).getBody().contains("You have been signed out."));
+    }
+
     private static Authentication authenticated() {
         return new Authentication() {
             @Override
-            public Object getPrincipal() {
-                return "operator";
+            public Collection<? extends GrantedAuthority> getAuthorities() {
+                return List.of();
             }
 
             @Override
@@ -39,8 +54,18 @@ class LoginControllerTest {
             }
 
             @Override
-            public java.util.Collection<? extends org.springframework.security.core.GrantedAuthority> getAuthorities() {
-                return List.of();
+            public Object getDetails() {
+                return null;
+            }
+
+            @Override
+            public String getName() {
+                return "operator";
+            }
+
+            @Override
+            public Object getPrincipal() {
+                return "operator";
             }
 
             @Override
@@ -52,25 +77,6 @@ class LoginControllerTest {
             public void eraseCredentials() {
                 // no credentials to erase
             }
-
-            @Override
-            public String getName() {
-                return "operator";
-            }
         };
-    }
-
-    @Test
-    void authenticatedRequestIsRedirectedToFactory() {
-        Authentication auth = authenticated();
-        ResponseEntity<String> response = controller.login(auth, false, false);
-        assertEquals(302, response.getStatusCode().value());
-        assertEquals("/factory/", response.getHeaders().getFirst("Location"));
-    }
-
-    @Test
-    void errorAndLoggedOutStatesRenderTheirMessages() {
-        assertTrue(controller.login(null, true, false).getBody().contains("Invalid email or password."));
-        assertTrue(controller.login(null, false, true).getBody().contains("You have been signed out."));
     }
 }
