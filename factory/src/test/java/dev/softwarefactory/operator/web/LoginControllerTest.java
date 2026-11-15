@@ -11,7 +11,6 @@ import org.springframework.security.core.GrantedAuthority;
 
 /** Renders the public login page and asserts its accessible markup. */
 class LoginControllerTest {
-
     private final LoginController controller = new LoginController();
 
     @Test
