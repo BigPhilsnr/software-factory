@@ -56,7 +56,7 @@ public class LoginController {
               <input id="password" name="password" type="password" autocomplete="current-password" required
                 aria-describedby="form-message">
               <button type="submit">Sign in</button>
-              <p class="msg" role="alert" tabindex="-1">%s</p>
+              <p class="msg" id="form-message" role="alert" tabindex="-1">%s</p>
             </form></body></html>
             """;
 
