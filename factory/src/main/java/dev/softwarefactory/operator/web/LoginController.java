@@ -33,7 +33,7 @@ public class LoginController {
                 border:1px solid #30363d;background:#0d1117;color:#e6edf3;font:inherit}
               input:focus-visible,button:focus-visible{outline:3px solid #1f6feb;
                 outline-offset:2px;border-color:transparent}
-              button{margin-top:1.3rem;width:100%;padding:.6rem;border:0;border-radius:8px;
+              button{margin-top:1.3rem;width:100%%;padding:.6rem;border:0;border-radius:8px;
                 background:#238636;color:#fff;font:inherit;font-weight:600;cursor:pointer}
               button:hover{background:#2ea043}
               button:focus-visible{background:#2ea043}
