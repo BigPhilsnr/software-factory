@@ -57,7 +57,9 @@ public class LoginController {
             return org.springframework.http.ResponseEntity.status(302)
                     .header("Location", "/factory/").build();
         }
-        String message = error ? "Invalid email or password." : loggedOut ? "You have been signed out." : "";
+        String message = error
+                ? "Invalid email or password."
+                : loggedOut ? "You have been signed out." : "";
         return org.springframework.http.ResponseEntity.ok(PAGE.formatted(message));
     }
 }
