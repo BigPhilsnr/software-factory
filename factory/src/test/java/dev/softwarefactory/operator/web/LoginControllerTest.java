@@ -2,12 +2,11 @@ package dev.softwarefactory.operator.web;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-import java.util.Collection;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.GrantedAuthority;
 
 /** Renders the public login page and asserts its accessible markup. */
 class LoginControllerTest {
