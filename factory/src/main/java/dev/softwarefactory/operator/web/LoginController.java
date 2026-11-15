@@ -57,7 +57,8 @@ public class LoginController {
                     boolean loggedOut) {
         if (authentication != null) {
             return org.springframework.http.ResponseEntity.status(302)
-                    .header("Location", "/factory/").build();
+                    .header("Location", "/factory/")
+                    .build();
         }
         String message = error
                 ? "Invalid email or password."
