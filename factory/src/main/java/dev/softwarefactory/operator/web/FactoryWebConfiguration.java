@@ -74,7 +74,8 @@ public class FactoryWebConfiguration implements WebMvcConfigurer {
             http.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                     .authorizeHttpRequests(authorize -> authorize.anyRequest().permitAll());
         }
-        return http.csrf(AbstractHttpConfigurer::disable)
+        return http
+                .csrf(AbstractHttpConfigurer::disable)
                 .headers(headers -> headers.contentTypeOptions(Customizer.withDefaults())
                         .frameOptions(frame -> frame.deny())
                         .addHeaderWriter(new DelegatingRequestMatcherHeaderWriter(
