@@ -29,7 +29,7 @@ public class LoginController {
               .eyebrow{font-size:.72rem;letter-spacing:.12em;text-transform:uppercase;color:#7d8590}
               h1{font-size:1.3rem;margin:.35rem 0 1.4rem}
               label{display:block;font-size:.85rem;color:#9da7b1;margin:.9rem 0 .3rem}
-              input{width:100%;box-sizing:border-box;padding:.55rem .7rem;border-radius:8px;
+              input{width:100%%;box-sizing:border-box;padding:.55rem .7rem;border-radius:8px;
                 border:1px solid #30363d;background:#0d1117;color:#e6edf3;font:inherit}
               input:focus-visible,button:focus-visible{outline:3px solid #1f6feb;
                 outline-offset:2px;border-color:transparent}
