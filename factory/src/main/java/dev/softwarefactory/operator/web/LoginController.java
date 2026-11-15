@@ -31,10 +31,12 @@ public class LoginController {
               label{display:block;font-size:.85rem;color:#9da7b1;margin:.9rem 0 .3rem}
               input{width:100%;box-sizing:border-box;padding:.55rem .7rem;border-radius:8px;
                 border:1px solid #30363d;background:#0d1117;color:#e6edf3;font:inherit}
-              input:focus{outline:2px solid #1f6feb;border-color:transparent}
+              input:focus-visible,button:focus-visible{outline:3px solid #1f6feb;
+                outline-offset:2px;border-color:transparent}
               button{margin-top:1.3rem;width:100%;padding:.6rem;border:0;border-radius:8px;
                 background:#238636;color:#fff;font:inherit;font-weight:600;cursor:pointer}
               button:hover{background:#2ea043}
+              button:focus-visible{background:#2ea043}
               .msg{margin-top:1rem;font-size:.85rem;color:#f85149}
               .out{margin-top:1rem;font-size:.85rem;color:#7d8590}
             </style></head>
