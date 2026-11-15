@@ -1,26 +1,23 @@
 package dev.softwarefactory.operator.web;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import org.junit.jupiter.api.Test;
-import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+import org.mockito.Mockito;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 
 /** Renders the public login page and asserts its accessible markup. */
 class LoginControllerTest {
 
-    private final MockMvc mvc = MockMvcBuilders.standaloneSetup(new LoginController()).build();
+    private final LoginController controller = new LoginController();
 
     @Test
-    void anonymousLoginFormHasAccessibleLabelsAndMessageRegion() throws Exception {
-        String html = mvc.perform(get("/factory/login"))
-                .andExpect(status().isOk())
-                .andExpect(content().contentTypeCompatibleWith("text/html"))
-                .andReturn()
-                .getResponse()
-                .getContentAsString();
+    void anonymousLoginFormHasAccessibleLabelsAndMessageRegion() {
+        ResponseEntity<String> response = controller.login(null, false, false);
+        assertEquals(200, response.getStatusCode().value());
+        String html = response.getBody();
+        assertNotNull(html);
         assertTrue(html.contains("<label for=\"username\">Email</label>"));
         assertTrue(html.contains("<label for=\"password\">Password</label>"));
         assertTrue(html.contains("type=\"email\""));
@@ -30,19 +27,16 @@ class LoginControllerTest {
     }
 
     @Test
-    void errorAndLoggedOutStatesRenderTheirMessages() throws Exception {
-        String error = mvc.perform(get("/factory/login").param("error", "true"))
-                .andExpect(status().isOk())
-                .andReturn()
-                .getResponse()
-                .getContentAsString();
-        assertTrue(error.contains("Invalid email or password."));
+    void authenticatedRequestIsRedirectedToFactory() {
+        Authentication auth = Mockito.mock(Authentication.class);
+        ResponseEntity<String> response = controller.login(auth, false, false);
+        assertEquals(302, response.getStatusCode().value());
+        assertEquals("/factory/", response.getHeaders().getFirst("Location"));
+    }
 
-        String loggedOut = mvc.perform(get("/factory/login").param("loggedout", "true"))
-                .andExpect(status().isOk())
-                .andReturn()
-                .getResponse()
-                .getContentAsString();
-        assertTrue(loggedOut.contains("You have been signed out."));
+    @Test
+    void errorAndLoggedOutStatesRenderTheirMessages() {
+        assertTrue(controller.login(null, true, false).getBody().contains("Invalid email or password."));
+        assertTrue(controller.login(null, false, true).getBody().contains("You have been signed out."));
     }
 }
