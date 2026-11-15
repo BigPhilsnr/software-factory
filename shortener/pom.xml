@@ -180,3 +180,27 @@
           </execution>
         </executions>
       </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-pmd-plugin</artifactId>
+        <version>${maven-pmd-plugin.version}</version>
+        <configuration>
+          <rulesets>
+            <ruleset>${quality.config.dir}/pmd-ruleset.xml</ruleset>
+          </rulesets>
+          <targetJdk>${java.version}</targetJdk>
+          <failOnViolation>${quality.failOnViolation}</failOnViolation>
+          <failurePriority>3</failurePriority>
+          <printFailingErrors>true</printFailingErrors>
+          <linkXRef>false</linkXRef>
+        </configuration>
+        <executions>
+          <execution>
+            <id>pmd-check</id>
+            <goals>
+              <goal>check</goal>
+            </goals>
+            <phase>verify</phase>
+          </execution>
+        </executions>
+      </plugin>
