@@ -48,7 +48,7 @@ public class LoginController {
               <label for="password">Password</label>
               <input id="password" name="password" type="password" autocomplete="current-password" required>
               <button type="submit">Sign in</button>
-              <span class="msg">%s</span>
+              <p class="msg" role="alert" tabindex="-1">%s</p>
             </form></body></html>
             """;
 
