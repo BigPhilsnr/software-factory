@@ -11,6 +11,16 @@ import org.springframework.security.core.GrantedAuthority;
 
 /** Renders the public login page and asserts its accessible markup. */
 class LoginControllerTest {
+    private static final String USERNAME_LABEL = "<label for=\"username\">Email</label>";
+    private static final String PASSWORD_LABEL = "<label for=\"password\">Password</label>";
+    private static final String EMAIL_INPUT = "type=\"email\"";
+    private static final String PASSWORD_AUTOCOMPLETE = "autocomplete=\"current-password\"";
+    private static final String ALERT_REGION = "role=\"alert\"";
+    private static final String FOCUS_STYLE = ":focus-visible";
+    private static final String ERROR_MESSAGE = "Invalid email or password.";
+    private static final String SIGNED_OUT_MESSAGE = "You have been signed out.";
+    private static final String FACTORY_HOME = "/factory/";
+
     private final LoginController controller = new LoginController();
 
     @Test
@@ -19,27 +29,27 @@ class LoginControllerTest {
         assertEquals(200, response.getStatusCode().value());
         String html = response.getBody();
         assertNotNull(html);
-        assertTrue(html.contains("<label for=\"username\">Email</label>"));
-        assertTrue(html.contains("<label for=\"password\">Password</label>"));
-        assertTrue(html.contains("type=\"email\""));
-        assertTrue(html.contains("autocomplete=\"current-password\""));
-        assertTrue(html.contains("role=\"alert\""));
-        assertTrue(html.contains(":focus-visible"));
+        assertTrue(html.contains(USERNAME_LABEL));
+        assertTrue(html.contains(PASSWORD_LABEL));
+        assertTrue(html.contains(EMAIL_INPUT));
+        assertTrue(html.contains(PASSWORD_AUTOCOMPLETE));
+        assertTrue(html.contains(ALERT_REGION));
+        assertTrue(html.contains(FOCUS_STYLE));
     }
 
     @Test
     void authenticatedRequestIsRedirectedToFactory() {
         ResponseEntity<String> response = controller.login(authenticated(), false, false);
         assertEquals(302, response.getStatusCode().value());
-        assertEquals("/factory/", response.getHeaders().getFirst("Location"));
+        assertEquals(FACTORY_HOME, response.getHeaders().getFirst("Location"));
     }
 
     @Test
     void errorAndLoggedOutStatesRenderTheirMessages() {
         String errorPage = controller.login(null, true, false).getBody();
         String outPage = controller.login(null, false, true).getBody();
-        assertTrue(errorPage.contains("Invalid email or password."));
-        assertTrue(outPage.contains("You have been signed out."));
+        assertTrue(errorPage.contains(ERROR_MESSAGE));
+        assertTrue(outPage.contains(SIGNED_OUT_MESSAGE));
     }
 
     private static Authentication authenticated() {
