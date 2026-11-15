@@ -40,41 +40,6 @@ class LoginControllerTest {
     }
 
     private static Authentication authenticated() {
-        return new Authentication() {
-            @Override
-            public Collection<? extends GrantedAuthority> getAuthorities() {
-                return List.of();
-            }
-
-            @Override
-            public Object getCredentials() {
-                return "credentials";
-            }
-
-            @Override
-            public Object getDetails() {
-                return null;
-            }
-
-            @Override
-            public String getName() {
-                return "operator";
-            }
-
-            @Override
-            public Object getPrincipal() {
-                return "operator";
-            }
-
-            @Override
-            public boolean isAuthenticated() {
-                return true;
-            }
-
-            @Override
-            public void setAuthenticated(boolean authenticated) {
-                throw new UnsupportedOperationException();
-            }
-        };
+        return UsernamePasswordAuthenticationToken.authenticated("operator", "credentials", List.of());
     }
 }
