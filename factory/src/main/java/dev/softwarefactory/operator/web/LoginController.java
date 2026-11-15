@@ -44,7 +44,7 @@ public class LoginController {
               <span class="eyebrow">Software Factory</span>
               <h1>Sign in</h1>
               <label for="username">Email</label>
-              <input id="username" name="username" type="text" autocomplete="username" required autofocus>
+              <input id="username" name="username" type="email" autocomplete="username" required autofocus>
               <label for="password">Password</label>
               <input id="password" name="password" type="password" autocomplete="current-password" required>
               <button type="submit">Sign in</button>
