@@ -1,8 +1,10 @@
 package dev.softwarefactory.operator.web;
 
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 
 /**
  * Login page for the public operator console.
@@ -21,45 +23,53 @@ public class LoginController {
             <meta name="viewport" content="width=device-width,initial-scale=1">
             <title>Software Factory - Sign in</title>
             <style>
-              body{margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;
+              body{margin:0;min-height:100vh;min-height:100svh;display:flex;align-items:center;justify-content:center;
                 background:#0d1117;color:#e6edf3;font:16px/1.5 system-ui,sans-serif}
               .card{background:#161b22;border:1px solid #30363d;border-radius:12px;
-                padding:2.5rem 2.25rem;width:min(22rem,92vw)}
+                padding:clamp(1.25rem,4vw,2.5rem) clamp(1.25rem,4vw,2.25rem);
+                width:min(22rem,100%%);max-width:100%%;box-sizing:border-box;
+                margin:0 1rem}
+              @media (max-width:30rem){body{align-items:flex-start;padding:1rem 0}}
               .eyebrow{font-size:.72rem;letter-spacing:.12em;text-transform:uppercase;color:#7d8590}
               h1{font-size:1.3rem;margin:.35rem 0 1.4rem}
               label{display:block;font-size:.85rem;color:#9da7b1;margin:.9rem 0 .3rem}
-              input{width:100%;box-sizing:border-box;padding:.55rem .7rem;border-radius:8px;
+              input{width:100%%;box-sizing:border-box;padding:.55rem .7rem;border-radius:8px;
                 border:1px solid #30363d;background:#0d1117;color:#e6edf3;font:inherit}
-              input:focus{outline:2px solid #1f6feb;border-color:transparent}
-              button{margin-top:1.3rem;width:100%;padding:.6rem;border:0;border-radius:8px;
+              input:focus-visible,button:focus-visible{outline:3px solid #1f6feb;
+                outline-offset:2px;border-color:transparent}
+              button{margin-top:1.3rem;width:100%%;padding:.6rem;border:0;border-radius:8px;
                 background:#238636;color:#fff;font:inherit;font-weight:600;cursor:pointer}
               button:hover{background:#2ea043}
-              .msg{margin-top:1rem;font-size:.85rem;color:#f85149}
+              button:focus-visible{background:#2ea043}
+              .msg{margin:1rem 0 0;font-size:.85rem;color:#f85149}
+              .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+              .msg:empty{display:none}
               .out{margin-top:1rem;font-size:.85rem;color:#7d8590}
             </style></head>
             <body><form class="card" action="/factory/login" method="post">
               <span class="eyebrow">Software Factory</span>
               <h1>Sign in</h1>
               <label for="username">Email</label>
-              <input id="username" name="username" type="text" autocomplete="username" required autofocus>
+              <input id="username" name="username" type="email" autocomplete="username" required autofocus
+                aria-describedby="form-message">
               <label for="password">Password</label>
-              <input id="password" name="password" type="password" autocomplete="current-password" required>
+              <input id="password" name="password" type="password" autocomplete="current-password" required
+                aria-describedby="form-message">
               <button type="submit">Sign in</button>
-              <span class="msg">%s</span>
+              <p class="msg" id="form-message" role="alert" tabindex="-1">%s</p>
             </form></body></html>
             """;
 
     @GetMapping(value = "/factory/login", produces = "text/html;charset=UTF-8")
-    public org.springframework.http.ResponseEntity<String> login(Authentication authentication,
-            @org.springframework.web.bind.annotation.RequestParam(value = "error", defaultValue = "") boolean error,
-            @org.springframework.web.bind.annotation.RequestParam(value = "loggedout", defaultValue = "") boolean loggedOut) {
+    public ResponseEntity<String> login(Authentication authentication,
+            @RequestParam(value = "error", defaultValue = "") boolean error,
+            @RequestParam(value = "loggedout", defaultValue = "") boolean loggedOut) {
         if (authentication != null) {
-            return org.springframework.http.ResponseEntity.status(302)
-                    .header("Location", "/factory/").build();
+            return ResponseEntity.status(302).header("Location", "/factory/").build();
         }
         String message = error
                 ? "Invalid email or password."
                 : loggedOut ? "You have been signed out." : "";
-        return org.springframework.http.ResponseEntity.ok(PAGE.formatted(message));
+        return ResponseEntity.ok(PAGE.formatted(message));
     }
 }
