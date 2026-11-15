@@ -42,6 +42,7 @@ public class LoginController {
               button:hover{background:#2ea043}
               button:focus-visible{background:#2ea043}
               .msg{margin:1rem 0 0;font-size:.85rem;color:#f85149}
+              .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
               .msg:empty{display:none}
               .out{margin-top:1rem;font-size:.85rem;color:#7d8590}
             </style></head>
