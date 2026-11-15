@@ -41,6 +41,7 @@ public class LoginController {
               button:hover{background:#2ea043}
               button:focus-visible{background:#2ea043}
               .msg{margin:1rem 0 0;font-size:.85rem;color:#f85149}
+              .msg:empty{display:none}
               .out{margin-top:1rem;font-size:.85rem;color:#7d8590}
             </style></head>
             <body><form class="card" action="/factory/login" method="post">
