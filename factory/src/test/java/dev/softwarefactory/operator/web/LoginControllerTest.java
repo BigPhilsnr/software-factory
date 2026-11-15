@@ -33,6 +33,7 @@ class LoginControllerTest {
         assertTrue(html.contains(PASSWORD_AUTOCOMPLETE), "the password field needs autocomplete");
         assertTrue(html.contains(ALERT_REGION), "status messages need an alert region");
         assertTrue(html.contains(FOCUS_STYLE), "keyboard focus needs a visible outline");
+        assertTrue(html.contains("aria-describedby"), "fields should reference the status message");
     }
 
     @Test
