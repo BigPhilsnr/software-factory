@@ -55,8 +55,7 @@ public class LoginController {
             @org.springframework.web.bind.annotation.RequestParam(value = "loggedout", defaultValue = "") boolean loggedOut) {
         if (authentication != null) {
             return org.springframework.http.ResponseEntity.status(302)
-                    .header("Location", "/factory/")
-                    .build();
+                    .header("Location", "/factory/").build();
         }
         String message = error ? "Invalid email or password." : loggedOut ? "You have been signed out." : "";
         return org.springframework.http.ResponseEntity.ok(PAGE.formatted(message));
