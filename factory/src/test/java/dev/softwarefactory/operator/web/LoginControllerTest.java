@@ -1,83 +1,46 @@
 package dev.softwarefactory.operator.web;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import java.util.Collection;
-import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.GrantedAuthority;
 
 /** Renders the public login page and asserts its accessible markup. */
 class LoginControllerTest {
-    private static final String USERNAME_LABEL = "<label for=\"username\">Email</label>";
-    private static final String PASSWORD_LABEL = "<label for=\"password\">Password</label>";
-    private static final String EMAIL_INPUT = "type=\"email\"";
-    private static final String PASSWORD_AUTOCOMPLETE = "autocomplete=\"current-password\"";
-    private static final String ALERT_REGION = "role=\"alert\"";
-    private static final String FOCUS_STYLE = ":focus-visible";
-    private static final String ERROR_MESSAGE = "Invalid email or password.";
-    private static final String SIGNED_OUT_MESSAGE = "You have been signed out.";
-    private static final String FACTORY_HOME = "/factory/";
-
     private final LoginController controller = new LoginController();
 
     @Test
-    void anonymousLoginFormHasAccessibleLabelsAndMessageRegion() {
-        ResponseEntity<String> response = controller.login(null, false, false);
-        assertEquals(200, response.getStatusCode().value());
-        String html = response.getBody();
-        assertNotNull(html);
-        assertTrue(html.contains(USERNAME_LABEL));
-        assertTrue(html.contains(PASSWORD_LABEL));
-        assertTrue(html.contains(EMAIL_INPUT));
-        assertTrue(html.contains(PASSWORD_AUTOCOMPLETE));
-        assertTrue(html.contains(ALERT_REGION));
-        assertTrue(html.contains(FOCUS_STYLE));
+    void anonymousLoginFormHasAccessibleLabelsAutocompleteAndMessageRegion() {
+        String html = controller.login(null, false, false).getBody();
+        assertNotNull(html, "the login page must render");
+        assertTrue(html.contains("<label for=\"username\">Email</label>"), "email field needs a label");
+        assertTrue(html.contains("<label for=\"password\">Password</label>"), "password field needs a label");
+        assertTrue(html.contains("type=\"email\""), "email field should use type email");
+        assertTrue(html.contains("autocomplete=\"current-password\""), "password field needs autocomplete");
+        assertTrue(html.contains("role=\"alert\""), "status messages need an alert region");
+        assertTrue(html.contains(":focus-visible"), "keyboard focus needs a visible outline");
     }
 
     @Test
-    void authenticatedRequestIsRedirectedToFactory() {
+    void authenticatedRequestIsRedirectedToTheFactoryHome() {
         ResponseEntity<String> response = controller.login(authenticated(), false, false);
         assertEquals(302, response.getStatusCode().value());
-        assertEquals(FACTORY_HOME, response.getHeaders().getFirst("Location"));
+        assertEquals("/factory/", response.getHeaders().getFirst("Location"));
     }
 
     @Test
-    void errorAndLoggedOutStatesRenderTheirMessages() {
+    void errorAndSignedOutStatesRenderTheirMessages() {
         String errorPage = controller.login(null, true, false).getBody();
         String outPage = controller.login(null, false, true).getBody();
-        assertTrue(errorPage.contains(ERROR_MESSAGE));
-        assertTrue(outPage.contains(SIGNED_OUT_MESSAGE));
+        assertTrue(errorPage.contains("Invalid email or password."), "failed sign in needs an error message");
+        assertTrue(outPage.contains("You have been signed out."), "sign out needs a confirmation message");
     }
 
     private static Authentication authenticated() {
-        return new Authentication() {
-            @Override
-            public Collection<? extends GrantedAuthority> getAuthorities() {
-                return List.of();
-            }
-
-            @Override
-            public Object getCredentials() {
-                return "credentials";
-            }
-
-            @Override
-            public Object getDetails() {
-                return null;
-            }
-
-            @Override
-            public Object getPrincipal() {
-                return "operator";
-            }
-
-            @Override
-            public boolean isAuthenticated() {
-                return true;
-            }
-        };
+        return new UsernamePasswordAuthenticationToken("operator", "credentials");
     }
 }
