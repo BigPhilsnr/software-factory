@@ -71,6 +71,11 @@ class LoginControllerTest {
             public boolean isAuthenticated() {
                 return true;
             }
+
+            @Override
+            public void setAuthenticated(boolean authenticated) {
+                throw new UnsupportedOperationException();
+            }
         };
     }
 }
