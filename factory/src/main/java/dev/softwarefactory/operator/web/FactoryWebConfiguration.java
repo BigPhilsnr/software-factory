@@ -57,25 +57,26 @@ public class FactoryWebConfiguration implements WebMvcConfigurer {
     }
 
     @Bean
-    SecurityFilterChain operatorSecurity(HttpSecurity http, LocalOperatorFilter boundary,
-            @Value("${factory.auth.enabled:true}") boolean authEnabled) throws Exception {
+    SecurityFilterChain operatorSecurity(
+            HttpSecurity http, LocalOperatorFilter boundary, @Value("${factory.auth.enabled:true}") boolean authEnabled)
+            throws Exception {
         if (authEnabled) {
             // Public console: sign in with the same credentials as the rest of LakeLyon.
             http.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))
                     .authorizeHttpRequests(authorize -> authorize
-                            .requestMatchers("/factory/login", "/actuator/health/**").permitAll()
-                            .anyRequest().authenticated())
+                            .requestMatchers("/factory/login", "/actuator/health/**")
+                            .permitAll()
+                            .anyRequest()
+                            .authenticated())
                     .formLogin(form -> form.loginPage("/factory/login")
                             .defaultSuccessUrl("/factory/", true)
                             .failureUrl("/factory/login?error"))
-                    .logout(logout -> logout.logoutUrl("/factory/logout")
-                            .logoutSuccessUrl("/factory/login?loggedout"));
+                    .logout(logout -> logout.logoutUrl("/factory/logout").logoutSuccessUrl("/factory/login?loggedout"));
         } else {
             http.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                     .authorizeHttpRequests(authorize -> authorize.anyRequest().permitAll());
         }
-        return http
-                .csrf(AbstractHttpConfigurer::disable)
+        return http.csrf(AbstractHttpConfigurer::disable)
                 .headers(headers -> headers.contentTypeOptions(Customizer.withDefaults())
                         .frameOptions(frame -> frame.deny())
                         .addHeaderWriter(new DelegatingRequestMatcherHeaderWriter(
