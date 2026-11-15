@@ -50,17 +50,16 @@ public class LoginController {
             """;
 
     @GetMapping(value = "/factory/login", produces = "text/html;charset=UTF-8")
-    public org.springframework.http.ResponseEntity<String> login(
-            Authentication authentication,
+    public org.springframework.http.ResponseEntity<String> login(Authentication authentication,
             @org.springframework.web.bind.annotation.RequestParam(value = "error", defaultValue = "") boolean error,
-            @org.springframework.web.bind.annotation.RequestParam(value = "loggedout", defaultValue = "")
-                    boolean loggedOut) {
+            @org.springframework.web.bind.annotation.RequestParam(value = "loggedout", defaultValue = "") boolean loggedOut) {
         if (authentication != null) {
             return org.springframework.http.ResponseEntity.status(302)
-                    .header("Location", "/factory/")
-                    .build();
+                    .header("Location", "/factory/").build();
         }
-        String message = error ? "Invalid email or password." : loggedOut ? "You have been signed out." : "";
+        String message = error
+                ? "Invalid email or password."
+                : loggedOut ? "You have been signed out." : "";
         return org.springframework.http.ResponseEntity.ok(PAGE.formatted(message));
     }
 }
