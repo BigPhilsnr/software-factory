@@ -141,3 +141,42 @@
           </execution>
         </executions>
       </plugin>
+
+      <!-- Quality gate: `mvn verify` = format check + PMD + SpotBugs/FindSecBugs + coverage floor. `mvn test` skips the checks. -->
+      <plugin>
+        <groupId>com.diffplug.spotless</groupId>
+        <artifactId>spotless-maven-plugin</artifactId>
+        <version>${spotless-maven-plugin.version}</version>
+        <configuration>
+          <java>
+            <removeUnusedImports/>
+            <importOrder>
+              <order>\#,</order>
+            </importOrder>
+            <palantirJavaFormat>
+              <version>${palantir-java-format.version}</version>
+            </palantirJavaFormat>
+            <trimTrailingWhitespace/>
+            <endWithNewline/>
+          </java>
+          <pom>
+            <sortPom>
+              <expandEmptyElements>false</expandEmptyElements>
+              <spaceBeforeCloseEmptyElement>false</spaceBeforeCloseEmptyElement>
+              <nrOfIndentSpace>2</nrOfIndentSpace>
+              <keepBlankLines>true</keepBlankLines>
+            </sortPom>
+            <trimTrailingWhitespace/>
+            <endWithNewline/>
+          </pom>
+        </configuration>
+        <executions>
+          <execution>
+            <id>format-check</id>
+            <goals>
+              <goal>check</goal>
+            </goals>
+            <phase>verify</phase>
+          </execution>
+        </executions>
+      </plugin>
