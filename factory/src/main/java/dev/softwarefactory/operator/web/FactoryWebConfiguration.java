@@ -68,7 +68,8 @@ public class FactoryWebConfiguration implements WebMvcConfigurer {
                     .formLogin(form -> form.loginPage("/factory/login")
                             .defaultSuccessUrl("/factory/", true)
                             .failureUrl("/factory/login?error"))
-                    .logout(logout -> logout.logoutUrl("/factory/logout").logoutSuccessUrl("/factory/login?loggedout"));
+                    .logout(logout -> logout.logoutUrl("/factory/logout")
+                            .logoutSuccessUrl("/factory/login?loggedout"));
         } else {
             http.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                     .authorizeHttpRequests(authorize -> authorize.anyRequest().permitAll());
