@@ -58,8 +58,7 @@ public class FactoryWebConfiguration implements WebMvcConfigurer {
 
     @Bean
     SecurityFilterChain operatorSecurity(
-            HttpSecurity http, LocalOperatorFilter boundary, @Value("${factory.auth.enabled:true}") boolean authEnabled)
-            throws Exception {
+            HttpSecurity http, LocalOperatorFilter boundary, @Value("${factory.auth.enabled:true}") boolean authEnabled) {
         if (authEnabled) {
             // Public console: sign in with the same credentials as the rest of LakeLyon.
             http.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))
