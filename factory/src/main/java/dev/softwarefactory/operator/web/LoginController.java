@@ -21,10 +21,11 @@ public class LoginController {
             <meta name="viewport" content="width=device-width,initial-scale=1">
             <title>Software Factory - Sign in</title>
             <style>
-              body{margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;
+              body{margin:0;min-height:100vh;min-height:100svh;display:flex;align-items:center;justify-content:center;
                 background:#0d1117;color:#e6edf3;font:16px/1.5 system-ui,sans-serif}
               .card{background:#161b22;border:1px solid #30363d;border-radius:12px;
-                padding:2.5rem 2.25rem;width:min(22rem,92vw)}
+                padding:2.5rem 2.25rem;width:min(22rem,92vw);box-sizing:border-box}
+              @media (max-width:24rem){.card{padding:1.75rem 1.25rem}}
               .eyebrow{font-size:.72rem;letter-spacing:.12em;text-transform:uppercase;color:#7d8590}
               h1{font-size:1.3rem;margin:.35rem 0 1.4rem}
               label{display:block;font-size:.85rem;color:#9da7b1;margin:.9rem 0 .3rem}
