@@ -50,9 +50,11 @@ public class LoginController {
               <span class="eyebrow">Software Factory</span>
               <h1>Sign in</h1>
               <label for="username">Email</label>
-              <input id="username" name="username" type="email" autocomplete="username" required autofocus>
+              <input id="username" name="username" type="email" autocomplete="username" required autofocus
+                aria-describedby="form-message">
               <label for="password">Password</label>
-              <input id="password" name="password" type="password" autocomplete="current-password" required>
+              <input id="password" name="password" type="password" autocomplete="current-password" required
+                aria-describedby="form-message">
               <button type="submit">Sign in</button>
               <p class="msg" role="alert" tabindex="-1">%s</p>
             </form></body></html>
