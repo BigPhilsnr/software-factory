@@ -71,16 +71,6 @@ class LoginControllerTest {
             public boolean isAuthenticated() {
                 return true;
             }
-
-            @Override
-            public void setAuthenticated(boolean isAuthenticated) {
-                // no-op for test
-            }
-
-            @Override
-            public void eraseCredentials() {
-                // no credentials to erase
-            }
         };
     }
 }
