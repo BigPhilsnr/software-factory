@@ -60,9 +60,7 @@ public class LoginController {
                     .header("Location", "/factory/")
                     .build();
         }
-        String message = error
-                ? "Invalid email or password."
-                : loggedOut ? "You have been signed out." : "";
+        String message = error ? "Invalid email or password." : loggedOut ? "You have been signed out." : "";
         return org.springframework.http.ResponseEntity.ok(PAGE.formatted(message));
     }
 }
