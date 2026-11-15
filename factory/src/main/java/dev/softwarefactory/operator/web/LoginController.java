@@ -29,7 +29,6 @@ public class LoginController {
                 padding:clamp(1.25rem,4vw,2.5rem) clamp(1.25rem,4vw,2.25rem);
                 width:min(22rem,100%%);max-width:100%%;box-sizing:border-box}
               @media (max-width:30rem){body{align-items:flex-start;padding:1rem 0}}
-              @media (max-width:24rem){.card{padding:1.75rem 1.25rem}}
               .eyebrow{font-size:.72rem;letter-spacing:.12em;text-transform:uppercase;color:#7d8590}
               h1{font-size:1.3rem;margin:.35rem 0 1.4rem}
               label{display:block;font-size:.85rem;color:#9da7b1;margin:.9rem 0 .3rem}
