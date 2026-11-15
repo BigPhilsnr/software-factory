@@ -39,6 +39,32 @@ class LoginControllerTest {
     }
 
     private static Authentication authenticated() {
-        return UsernamePasswordAuthenticationToken.authenticated("operator", "credentials", List.of());
+        return new Authentication() {
+            @Override
+            public java.util.Collection<? extends org.springframework.security.core.GrantedAuthority>
+                    getAuthorities() {
+                return List.of();
+            }
+
+            @Override
+            public Object getCredentials() {
+                return "credentials";
+            }
+
+            @Override
+            public Object getDetails() {
+                return null;
+            }
+
+            @Override
+            public Object getPrincipal() {
+                return "operator";
+            }
+
+            @Override
+            public boolean isAuthenticated() {
+                return true;
+            }
+        };
     }
 }
