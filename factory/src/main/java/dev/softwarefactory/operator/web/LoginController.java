@@ -27,7 +27,8 @@ public class LoginController {
                 background:#0d1117;color:#e6edf3;font:16px/1.5 system-ui,sans-serif}
               .card{background:#161b22;border:1px solid #30363d;border-radius:12px;
                 padding:clamp(1.25rem,4vw,2.5rem) clamp(1.25rem,4vw,2.25rem);
-                width:min(22rem,100%%);max-width:100%%;box-sizing:border-box}
+                width:min(22rem,100%%);max-width:100%%;box-sizing:border-box;
+                margin:0 1rem}
               @media (max-width:30rem){body{align-items:flex-start;padding:1rem 0}}
               .eyebrow{font-size:.72rem;letter-spacing:.12em;text-transform:uppercase;color:#7d8590}
               h1{font-size:1.3rem;margin:.35rem 0 1.4rem}
