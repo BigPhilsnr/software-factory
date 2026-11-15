@@ -26,9 +26,43 @@ class LoginControllerTest {
         assertTrue(html.contains(":focus-visible"));
     }
 
+    private static Authentication authenticated() {
+        return new Authentication() {
+            @Override
+            public Object getPrincipal() {
+                return "operator";
+            }
+
+            @Override
+            public Object getCredentials() {
+                return "credentials";
+            }
+
+            @Override
+            public java.util.Collection<? extends org.springframework.security.core.GrantedAuthority> getAuthorities() {
+                return List.of();
+            }
+
+            @Override
+            public boolean isAuthenticated() {
+                return true;
+            }
+
+            @Override
+            public void eraseCredentials() {
+                // no credentials to erase
+            }
+
+            @Override
+            public String getName() {
+                return "operator";
+            }
+        };
+    }
+
     @Test
     void authenticatedRequestIsRedirectedToFactory() {
-        Authentication auth = Mockito.mock(Authentication.class);
+        Authentication auth = authenticated();
         ResponseEntity<String> response = controller.login(auth, false, false);
         assertEquals(302, response.getStatusCode().value());
         assertEquals("/factory/", response.getHeaders().getFirst("Location"));
